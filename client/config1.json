@@ -1,0 +1,12 @@
+{
+  "miner_monitoring": {
+    "timeout": 30
+  },
+  "miner_config": {
+    "update_interval": 30,
+    "miner": "claymore",
+    "miner_directory": "claymore10",
+    "miner_exe": "",
+    "manier_command_line": ""
+  }
+}

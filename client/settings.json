@@ -1,0 +1,28 @@
+{
+  "email": "egor.fedorov@gmail.com",
+  "logger": {
+    "port": 9020,
+    "server": "localhost"
+  },
+  "miner_config": {
+    "config_name": "Test ETH+DCR",
+    "env": {
+      "GPU_FORCE_64BIT_PTR": "0",
+      "GPU_MAX_ALLOC_PERCENT": "100",
+      "GPU_MAX_HEAP_SIZE": "100",
+      "GPU_SINGLE_ALLOC_PERCENT": "100",
+      "GPU_USE_SYNC_OBJECTS": "1"
+    },
+    "miner": "Pseudo Claymore Miner",
+    "miner_command_line": "miner_emu.py --file ETHDCR-digger20.txt --delay 0.3 ",
+    "miner_directory": "miner_emu",
+    "miner_exe": "python.exe",
+    "miner_family": "claymore"
+  },
+  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
+  "server": "localhost:5000",
+  "task_manager": {
+    "request_interval_sec": 30
+  },
+  "worker": "digger20"
+}

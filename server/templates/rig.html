@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block head %}
+
+<script type="text/javascript" >
+var rig_data = {{ rig_data|tojson|safe }}
+</script>
+
+{% endblock %}
+{% block body %}
+{% from "_formhelpers.html" import render_field %}
+
+<h1>Rig configuration</h1>
+
+<h2>Profit management </h2>
+<div class="row">
+  <div class="col-4">
+    <div class="list-group" id="list-tab" role="tablist">
+      <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Manual</a>
+      <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">Automatic</a>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="tab-content" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
+        In Manual mode you can set your own mining configuration. You can choose currency, pool and wallet.
+        Each rig in this mode charged 2$/month fee.
+      </div>
+      <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
+        In Automatic mode BestMiner will choose most profitable currency/pool for mining and make you best profit.
+        Whole mined revenue will be converted to your primary chosen currency (BTC or ETH)
+        There are 2% fee for this mode.
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div>
+  Set miner configuration:
+    <form action="set_config" action="GET">
+    <select id="config" name="config">
+    {% for config in configs %}
+        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
+    {% endfor %}
+    </select>
+      <input type="submit" value="Set">
+    </form>
+
+  </div>
+<script>
+  $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
+  e.target // newly activated tab
+  e.relatedTarget // previous active tab
+})
+</script>
+<h2>Screen view</h2>
+<script type="text/javascript" >
+function get_log() {
+  $.ajax({
+  url: "/rig/" + rig_data.uuid + "/log",
+  success: function(result) {
+   $("#log_area").html(result);
+  }
+});
+setTimeout('get_log()',5000)
+}
+
+get_log()
+
+</script>
+<pre id="log_area">
+{{ log }}
+</pre>
+{% endblock %}

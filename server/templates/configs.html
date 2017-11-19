@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script>
+$(document).ready(function() {
+    var table = $('#datalist').DataTable({
+        "ajax": "configs.json",
+        "paging": false,
+        "scrollY": 400,
+        "columns": [
+            { "data": "name" },
+            { "data": "currency" },
+            { "data": "pool" },
+            { "data": "exchange" },
+            { "data": "wallet" },
+            { "data": "miner_programm" },
+            {
+                "targets": -1,
+                "data": null,
+                "defaultContent": "<button class='edit'>EDIT</button> <button class='delete' title='Delete'>X</button>"
+            }
+
+        ]
+ });
+
+$( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      autoOpen: false,
+      buttons: [
+        {
+         text: "YES",
+
+         classes: {
+    "ui-button": "highlight"
+  },
+  click: function() {
+            $( this ).dialog( "close" );
+            }
+        },
+        {
+         text: 'Cancel',
+         click: function() {
+            $( this ).dialog( "close" );
+           }
+        }
+      ]
+    });
+
+ // https://datatables.net/examples/ajax/null_data_source.html
+     $('#datalist tbody').on( 'click', 'button.edit', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        window.location.href = '/config/' + data['id']
+    } );
+
+} );
+</script>
+{% endblock %}
+
+{% block body %}
+<div class=page>
+<h1>Miners configurations</h1>
+        <button class="ui-button ui-corner-all ui-widget" onclick="location.href='config/'">ADD</button>
+<table id="datalist" class="display" cellspacing="0" width="800">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Currency</th>
+                <th>Pool</th>
+                <th>Exchange</th>
+                <th>Wallet</th>
+                <th>Miner</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+</table>
+
+</div>
+{% endblock %}

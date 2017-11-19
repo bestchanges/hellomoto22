@@ -1,0 +1,22 @@
+ETH: 11/06/17-15:27:56 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 150.825 Mh/s, Total Shares: 5885, Rejected: 0, Time: 52:25
+ETH: GPU0 29.366 Mh/s, GPU1 28.578 Mh/s, GPU2 20.002 Mh/s, GPU3 19.723 Mh/s, GPU4 28.627 Mh/s, GPU5 24.529 Mh/s
+DCR - Total Speed: 3921.437 Mh/s, Total Shares: 8654, Rejected: 96
+DCR: GPU0 763.508 Mh/s, GPU1 743.022 Mh/s, GPU2 520.042 Mh/s, GPU3 512.789 Mh/s, GPU4 744.310 Mh/s, GPU5 637.766 Mh/s
+DCR: 11/06/17-15:28:02 - SHARE FOUND - (GPU 4)
+DCR: Share accepted (65 ms)!
+GPU0 t=72C fan=100%, GPU1 t=70C fan=100%, GPU2 t=67C fan=72%, GPU3 t=66C fan=72%, GPU4 t=69C fan=72%, GPU5 t=68C fan=72%
+ETH: 11/06/17-15:28:13 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 147.895 Mh/s, Total Shares: 5885, Rejected: 0, Time: 52:26
+ETH: GPU0 28.608 Mh/s, GPU1 28.859 Mh/s, GPU2 21.935 Mh/s, GPU3 22.376 Mh/s, GPU4 28.639 Mh/s, GPU5 17.479 Mh/s
+DCR - Total Speed: 3845.275 Mh/s, Total Shares: 8655, Rejected: 96
+DCR: GPU0 743.812 Mh/s, GPU1 750.343 Mh/s, GPU2 570.301 Mh/s, GPU3 581.771 Mh/s, GPU4 744.605 Mh/s, GPU5 454.443 Mh/s
+ETH: 11/06/17-15:28:15 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 149.632 Mh/s, Total Shares: 5885, Rejected: 0, Time: 52:26
+ETH: GPU0 29.337 Mh/s, GPU1 28.894 Mh/s, GPU2 21.915 Mh/s, GPU3 22.236 Mh/s, GPU4 29.149 Mh/s, GPU5 18.101 Mh/s
+DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
+DCR: GPU0 762.760 Mh/s, GPU1 751.232 Mh/s, GPU2 569.788 Mh/s, GPU3 578.132 Mh/s, GPU4 757.883 Mh/s, GPU5 470.631 Mh/s
+DCR: 11/06/17-15:28:18 - SHARE FOUND - (GPU 1)
+DCR: Share accepted (65 ms)!
+DCR: 11/06/17-15:28:35 - New job from dcr.coinmine.pl:2222
+ETH: 11/06/17-15:28:37 - New job from eu1.ethermine.org:4444

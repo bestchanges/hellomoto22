@@ -1,0 +1,23 @@
+ETH: GPU0 23.739 Mh/s, GPU1 23.766 Mh/s, GPU2 23.663 Mh/s, GPU3 23.746 Mh/s
+ETH: 11/06/17-15:27:19 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
+ETH: GPU0 23.756 Mh/s, GPU1 23.744 Mh/s, GPU2 23.663 Mh/s, GPU3 23.728 Mh/s
+ETH: 11/06/17-15:27:20 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 94.958 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
+ETH: GPU0 23.801 Mh/s, GPU1 23.739 Mh/s, GPU2 23.649 Mh/s, GPU3 23.769 Mh/s
+GPU0 t=69C fan=49%, GPU1 t=71C fan=50%, GPU2 t=71C fan=52%, GPU3 t=71C fan=50%
+ETH: 11/06/17-15:27:37 - SHARE FOUND - (GPU 3)
+ETH: Share accepted (75 ms)!
+ETH: 11/06/17-15:27:38 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 94.914 Mh/s, Total Shares: 474, Rejected: 0, Time: 05:22
+ETH: GPU0 23.759 Mh/s, GPU1 23.754 Mh/s, GPU2 23.664 Mh/s, GPU3 23.738 Mh/s
+ETH: 11/06/17-15:27:56 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 94.935 Mh/s, Total Shares: 474, Rejected: 0, Time: 05:23
+ETH: GPU0 23.759 Mh/s, GPU1 23.757 Mh/s, GPU2 23.647 Mh/s, GPU3 23.772 Mh/s
+ETH: 11/06/17-15:28:02 - SHARE FOUND - (GPU 0)
+ETH: Share accepted (74 ms)!
+GPU0 t=69C fan=49%, GPU1 t=71C fan=50%, GPU2 t=71C fan=52%, GPU3 t=71C fan=50%
+ETH: 11/06/17-15:28:13 - New job from eu1.ethermine.org:4444
+ETH - Total Speed: 94.931 Mh/s, Total Shares: 475, Rejected: 0, Time: 05:23
+ETH: GPU0 23.770 Mh/s, GPU1 23.760 Mh/s, GPU2 23.658 Mh/s, GPU3 23.743 Mh/s
+ETH: 11/06/17-15:28:15 - New job from eu1.ethermine.org:4444

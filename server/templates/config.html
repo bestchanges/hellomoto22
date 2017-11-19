@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block body %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.name) }}
+  {{ render_field(form.miner_program) }}
+  {{ render_field(form.currency) }}
+  {{ render_field(form.pool) }}
+  {{ render_field(form.pool_login) }}
+  {{ render_field(form.pool_password) }}
+  {{ render_field(form.exchange) }}
+  {{ render_field(form.wallet) }}
+  <hr>
+  Dual settings:
+  {{ render_field(form.dual_currency) }}
+  {{ render_field(form.dual_pool) }}
+  {{ render_field(form.dual_pool_login) }}
+  {{ render_field(form.dual_pool_password) }}
+  {{ render_field(form.dual_exchange) }}
+  {{ render_field(form.dual_wallet) }}
+  <p><input type=submit value=Save>
+</form>
+{% endblock %}

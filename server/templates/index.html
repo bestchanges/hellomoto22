@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script>
+$(document).ready(function() {
+    var table = $('#example').DataTable({
+        "ajax": "data/rigs.json",
+        "columns": [
+            { "data": "name" },
+            { "data": "uptime" },
+            { "data": "currency" },
+            { "data": "temp" },
+            {
+            "targets": -1,
+            "data": null,
+            "defaultContent": "<button class='cl'>Click!</button> <button class='o' title='Reboot rig'>R</button>"
+        }
+        ]
+ });
+
+$( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      autoOpen: false,
+      buttons: [
+        {
+         text: "YES",
+         
+         classes: {
+    "ui-button": "highlight"
+  },
+  click: function() {
+            $( this ).dialog( "close" );
+            }
+        },
+        {
+         text: 'Cancel',
+         click: function() {
+            $( this ).dialog( "close" );
+           }
+        }
+      ]
+    });
+    
+ // https://datatables.net/examples/ajax/null_data_source.html
+     $('#example tbody').on( 'click', 'button.cl', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        alert( data['name'] +"'s info is "+ data['info'] );
+    } );
+
+    $('#example tbody').on( 'click', 'button.o', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        $("#dialog-rig-name").text(data['name']);
+        $( "#dialog-confirm" ).dialog("open");
+    } );
+} );
+</script>
+{% endblock %}
+{% block body %}
+<h1>Rig list</h1>
+<table id="example" class="display" cellspacing="0" width="800">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Uptime</th>
+                <th>Currency</th>
+                <th>Temperature</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+</table>
+
+<div id="dialog-confirm" title="Reboot confirmation">
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>Are you shure you want to reboot rig <span id="dialog-rig-name"></span>?</p>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+rig = {
+client_config: {
+  update_interval: 30,
+  miner: 'claymore'
+  miner_directory: 'claymore10'
+  miner_exe: '',
+  manier_command_line: '',
+},
+system_configuration: {
+cards : [
+  model: 'RX 470'
+  vendor: amd/nvidia
+  producer:
+  memory: 4g,
+  memory_vendor: 'samsung'
+  target_hashates: {
+     'ethash': 23.5,
+     'equihash': 278,
+     ...
+  },
+],
+cpu: 'name',
+motherborad: 'name',
+},
+
+status: {
+online: true/false,
+updated: unixepoch
+card_temp: [
+  47,49,44,67,80
+],
+card_load: [
+  100,100,100,100,98
+],
+algo: 'ethash',
+screen: '',
+}
+}

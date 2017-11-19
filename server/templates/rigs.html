@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script>
+$(document).ready(function() {
+    var table = $('#datalist').DataTable({
+        "ajax": "rigs.json",
+        "paging": false,
+        "scrollY": 400,
+        "columns": [
+            { "data": "name" },
+            { "data": "uptime" },
+            { "data": "profit" },
+            { "data": "hashrate" ,
+                render: function ( data, type, row ) {
+                    return data.value + ' ' + data.units
+                }
+            },
+            { "data": "miner",
+                render: function ( data, type, row ) {
+                    return data.configuration_name + ' (' + data.currency + ')'
+                }
+            },
+            { "data": "temp" },
+            {
+                "targets": -1,
+                "data": null,
+                "defaultContent": "<button class='edit' title='Edit'>Edit</button> <button class='cl'>Info</button> <button class='o' title='Reboot rig'>R</button>"
+            }
+        ]
+ });
+
+$( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      autoOpen: false,
+      buttons: [
+        {
+         text: "YES",
+         
+         classes: {
+    "ui-button": "highlight"
+  },
+  click: function() {
+            $( this ).dialog( "close" );
+            }
+        },
+        {
+         text: 'Cancel',
+         click: function() {
+            $( this ).dialog( "close" );
+           }
+        }
+      ]
+    });
+    
+ // https://datatables.net/examples/ajax/null_data_source.html
+     $('#datalist tbody').on( 'click', 'button.cl', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        alert( data['name'] +"'s info is "+ data['info'] );
+    } );
+
+     $('#datalist tbody').on( 'click', 'button.edit', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        window.location.href = '/rig/' + data['uuid'] + '/info'
+    } );
+
+    $('#datalist tbody').on( 'click', 'button.o', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        $("#dialog-rig-name").text(data['name']);
+        $( "#dialog-confirm" ).dialog("open");
+    } );
+} );
+</script>
+{% endblock %}
+
+{% block body %}
+<div class=page>
+<h1>Rig list</h1>
+<table id="datalist" class="display" cellspacing="0" width="800">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Uptime</th>
+                <th>Profit</th>
+                <th>Hashrate</th>
+                <th>Mining</th>
+                <th>Temperature</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+</table>
+
+<div id="dialog-confirm" title="Reboot confirmation">
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>Are you shure you want to reboot rig <span id="dialog-rig-name"></span>?</p>
+</div>
+
+</div>
+
+
+{% endblock %}

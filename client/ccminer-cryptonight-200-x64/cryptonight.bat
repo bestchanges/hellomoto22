@@ -1,0 +1,1 @@
+ccminer -a cryptonight -o stratum+tcp://cryptonight.eu.nicehash.com:3355 -u 3HWi6x29mFoX6CNouvEiggEHhdEMtyqRyF -p x

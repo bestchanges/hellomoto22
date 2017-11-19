@@ -39,10 +39,10 @@ class CryptoDataProvider:
             "Gh/s": 1e9,
             "Th/s": 1e12,
             "Ph/s": 1e15,
-            "sol/s": 1,
-            "Ksol/s": 1e3,
-            "Msol/s": 1e6,
-            "Gsol/s": 1e9,
+            "Sol/s": 1,
+            "KSol/s": 1e3,
+            "MSol/s": 1e6,
+            "GSol/s": 1e9,
         }
         if units in unit_measures.keys():
             return value * unit_measures[units]

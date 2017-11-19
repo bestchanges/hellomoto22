@@ -135,7 +135,8 @@ def get_profit(currency_code, hashrate_units, units):
         hashrate = crypto_data.hashrate_from_units(hashrate_units, units)
         profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
         return profit
-    except Exception:
+    except Exception as e:
+        logging.error("Exception get_profit: %s" % e)
         return None
 
 

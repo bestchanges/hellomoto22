@@ -136,8 +136,8 @@ def get_rig_state_object(rig_uuid):
     return rig_state
 
 
-class SaveClientLogHistory(logging.Filter):
-    def filter(self, record):
+class SaveClientLogHistory(logging.Handler):
+    def handle(self, record):
         global rigs_logs
         rig_uuid = str(record.rig_id)
         if rig_uuid in rigs_logs.keys():
@@ -148,11 +148,11 @@ class SaveClientLogHistory(logging.Filter):
         list.append(record.msg)
 
 
-class ClientStatisticFilter(logging.Filter):
+class ClientStatisticHandler(logging.Handler):
     '''
     Get statistic info from client and process it
     '''
-    def filter(self, record):
+    def handle(self, record):
         line = record.msg
         rig_uuid = record.rig_id
         #UPTIME={"hms": "20:44:38", "sec": 74678, "rebooted": "2017-11-18 02:09:36+03:00", "rebooted_epoch": 1510960176}
@@ -166,8 +166,8 @@ class ClientStatisticFilter(logging.Filter):
                 rig_state.save()
 
 
-class ClaymoreFilter(logging.Filter):
-    def filter(self, record):
+class ClaymoreHandler(logging.Handler):
+    def handle(self, record):
         # hashrate info
         # ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
         # DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
@@ -202,6 +202,33 @@ class ClaymoreFilter(logging.Filter):
         return True
 
 
+class EwbfHandler(logging.Handler):
+
+    def handle(self, record):
+        line = record.msg
+        rig_uuid = record.rig_id
+        # Total speed: 1763 Sol/s
+        m = re.findall('Total speed: ([\d\.]+) ([\w\/]+)', line)
+        if len(m) > 0:
+            value, units = m[0]
+            val = float(value)
+            algorithm = 'Equihash'
+            rig_state = get_rig_state_object(rig_uuid)
+            rig_state.hashrate[algorithm] = { 'value': val, 'units': units }
+            rig_state.save()
+        #Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
+        m = re.findall('GPU(\d+): (\d+)C', line)
+        if len(m) > 0:
+            temps = []
+            for num, temp in m:
+                temps.append(temp)
+            rig_state = get_rig_state_object(rig_uuid)
+            rig_state.cards_temp = temps
+            rig_state.save()
+        #GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s
+        return True
+
+
 class LoggingServer(Thread):
     def __init__(self):
         super().__init__()
@@ -209,14 +236,17 @@ class LoggingServer(Thread):
         root_logger = logging.getLogger("logging_server")
         root_logger.propagate = False
         self.root_logger = root_logger
+
         history_logger = logging.getLogger("history_logger")
-        history_logger.addFilter(SaveClientLogHistory())
+        history_logger.addHandler(SaveClientLogHistory())
         history_logger.propagate = False
 
-        claymore_logger = logging.getLogger(root_logger.name + ".miner_claymore")
         statistic_logger = logging.getLogger(root_logger.name + ".statistic")
-        statistic_logger.addFilter(ClientStatisticFilter())
-        claymore_logger.addFilter(ClaymoreFilter())
+        statistic_logger.addHandler(ClientStatisticHandler())
+        claymore_logger = logging.getLogger(root_logger.name + ".miner_claymore")
+        claymore_logger.addHandler(ClaymoreHandler())
+        ewbf_logger = logging.getLogger(root_logger.name + ".miner_ewbf")
+        ewbf_logger.addHandler(EwbfHandler())
 
     def run(self):
         logging.info('Starting TCP logging server...')

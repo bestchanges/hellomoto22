@@ -5,12 +5,12 @@
     "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Test ZEC",
-    "miner": "Pseudo EWBF Miner",
-    "miner_family": "ewbf",
+    "config_name": "Test ETH+DCR",
+    "miner": "Pseudo Claymore Miner",
+    "miner_family": "claymore",
     "miner_directory": "miner_emu",
     "miner_exe": "python.exe",
-    "miner_command_line": "miner_emu.py --file ZEC-digger20.txt --delay 1 ",
+    "miner_command_line": "miner_emu.py --file ETHDCR-digger20.txt --delay 0.3 ",
     "env": {
       "GPU_MAX_HEAP_SIZE": "100",
       "GPU_USE_SYNC_OBJECTS": "1",

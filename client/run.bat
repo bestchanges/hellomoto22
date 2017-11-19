@@ -1,3 +1,1 @@
-
-..\..\..\env_bestminer\Scripts\activate
-python bestminer-client.py
+python_win\scripts\python bestminer-client.py

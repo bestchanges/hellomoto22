@@ -132,6 +132,7 @@ def get_rig_state_object(rig_uuid):
     else:
         rig_state = RigState()
         rig_state.rig = rig
+        rig_state.save()
     return rig_state
 
 

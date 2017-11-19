@@ -115,19 +115,25 @@ def get_config():
     Get/update config from server. Save updated config
     :return:
     """
-    global config
+    global config, config_ini
     try:
         config = json.load(open('settings.json'))
     except Exception as e:
         # json config not exists. OK, we will request it from server
         pass
-    # get configuration from user-edited config file. Merge it into config
-    if 'server' not in config:
-        config['server'] = 'localhost:5000'  # TODO: set default public server here
+    # default server
+    # TODO: set default public server here
+    server_address = 'localhost:5000'
+    if 'server' in config:
+        # last contacted server
+        server_address = config['server']
+    if 'server' in config_ini:
+        # can override from user configuration
+        server_address = config_ini['server']
     # Ok. Now we call server and update config from it
     try:
         # send current config to the server for update and review
-        newconfig = call_server_api("client/rig_config")
+        newconfig = call_server_api("client/rig_config", server_address=server_address)
         print(newconfig)
         if newconfig['rig_id']:
             # Save config from server as new
@@ -354,11 +360,12 @@ def get_state_info():
     return state_info
 
 
-def call_server_api(path, data={}):
+def call_server_api(path, data={}, server_address=None):
     global config, rig_id, config_ini
     vars = {'rig_id': rig_id, 'email': config_ini['email'], 'api_key': config_ini['api_key'],
             'worker': config_ini['worker']}
-    server_address = config["server"]
+    if not server_address:
+        server_address = config["server"]
     url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
     #    'application/json'
     response = requests.post(url=url, json=data)

@@ -67,7 +67,7 @@ def test_data():
         set__code = 'pseudo_claymore_miner',
         set__dir = 'miner_emu',
         set__win_exe = 'python.exe',
-        set__command_line = 'miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%-%WORKER%.txt --delay 0.3 ',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 0.3 ',
         set__env={
             'GPU_MAX_HEAP_SIZE': '100',
             'GPU_USE_SYNC_OBJECTS': '1',
@@ -83,7 +83,7 @@ def test_data():
         set__code = 'pseudo_ewbf_miner',
         set__dir = 'miner_emu',
         set__win_exe = 'python.exe',
-        set__command_line = 'miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%-%WORKER%.txt --delay 1 ',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 1 ',
         set__env={
             'GPU_MAX_HEAP_SIZE': '100',
             'GPU_USE_SYNC_OBJECTS': '1',

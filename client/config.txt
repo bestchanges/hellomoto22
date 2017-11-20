@@ -1,5 +1,3 @@
 email=egor.fedorov@gmail.com
-worker=
+api_key=empty
 server=localhost:5000
-
-

@@ -17,6 +17,9 @@ from finik.crypto_data import CryptoDataProvider
 from finik.cryptonator import Cryptonator
 from models import User, Rig, RigState, MinerProgram, Pool, Currency, ConfigurationGroup, Todo
 
+#DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
+DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
+
 crypto_data = CryptoDataProvider("coins1.json")
 cryptonator = Cryptonator()
 
@@ -224,7 +227,6 @@ def client_config():
     :return: updated config
     """
     email = request.args.get('email')
-    worker = request.args.get('worker')
     rig_uuid = request.args.get('rig_id')
     api_key = request.args.get('rig_id')
     config = request.json
@@ -235,23 +237,25 @@ def client_config():
     rigs = Rig.objects(uuid=rig_uuid)
     import server
     if len(rigs) == 0:
+        user_rigs = Rig.objects(user=user)
+        nrigs = len(user_rigs)
         rig = Rig()
         rig.uuid = rig_uuid
         rig.user = user
-        rig.worker = worker
-        rig.configuration_group = ConfigurationGroup.objects.get(name=server.DEFAULT_CONFIGURATION_GROUP)
+        rig.worker = 'worker%03d' % (nrigs + 1)
+        rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
+        rig.save()
     else:
         rig = rigs[0]
     if not "miner_config" in config or not config["miner_config"]:
-        # TODO(?): get the best coin config(?)
-        rig.configuration_group = ConfigurationGroup.objects.get(name=server.DEFAULT_CONFIGURATION_GROUP)
-    rig.save()
+        rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
+        rig.save()
     conf = rig.configuration_group
     config["miner_config"] = get_miner_config_for_configuration(conf, rig)
     config['server'] = request.host  # 127.0.0.1:5000
     config['rig_id'] = rig_uuid
     config['email'] = email
-    config['worker'] = worker
+    config['worker'] = rig.worker
     server_host = request.host.split(":")[0]
     config['logger'] = {
         'server': server_host,

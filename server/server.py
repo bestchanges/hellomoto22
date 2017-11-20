@@ -9,9 +9,6 @@ from finik.crypto_data import CryptoDataProvider
 from logging_server import LoggingServer
 from models import *
 
-#DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
-DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
-
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
 app.config['MONGODB_SETTINGS'] = {'DB': 'testing'}

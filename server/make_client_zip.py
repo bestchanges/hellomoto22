@@ -13,7 +13,7 @@ def client_zip():
     includes = '''
 ccminer-cryptonight-200-x64
 claymore10
-config.ini
+config.txt
 ewbf_0.3.4b
 bestminer-client.py
 miner_emu
@@ -39,4 +39,5 @@ version.txt
                     myzip.write(fn, arcname=rel)
     print("... done")
 
-client_zip()
+if __name__ == '__main__':
+    client_zip()

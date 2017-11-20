@@ -19,7 +19,7 @@ def load_config_ini():
     result = {}
     with open("config.txt") as file:
         for line in file:
-            m = re.findall('([\w\d_]+)\s*=(.+)', line)
+            m = re.findall('([\w\d_]+)\s*=(.*)', line)
             if len(m) > 0:
                 (param, value) = m[0]
                 value = value.strip()
@@ -211,8 +211,8 @@ def run_miner(miner_config):
     server_log("Run miner from '%s' %s" % (miner_dir, " ".join(args)))
     env = miner_config["env"]
     full_env = {**os.environ, **env}
-    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1,
-                                     env=full_env, cwd=miner_dir, encoding="utf-8", errors='ignore')
+    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
+                                     env=full_env, universal_newlines=True, cwd=miner_dir, encoding="utf-8", errors='ignore')
 
     miner_out_reader = threading.Thread(target=read_miner_output)
     miner_out_reader.start()
@@ -359,8 +359,11 @@ def get_state_info():
 
 def call_server_api(path, data={}, server_address=None):
     global config, rig_id, config_ini
-    vars = {'rig_id': rig_id, 'email': config_ini['email'], 'api_key': config_ini['api_key'],
-            'worker': config_ini['worker']}
+    vars = {
+        'rig_id': rig_id,
+        'email': config_ini['email'],
+        'api_key': config_ini['api_key'],
+    }
     if not server_address:
         server_address = config["server"]
     url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
@@ -442,6 +445,7 @@ if __name__ == "__main__":
     if not 'rig_id' in config:
         logging.error("Cannot load config from server. Exiting")
         exit(800)
+    logging.info("Running as worker '%s'" % config['worker'])
     socketHandler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
     logger.addHandler(socketHandler)
 

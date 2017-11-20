@@ -4,12 +4,19 @@ import pickle
 import logging
 import logging.handlers
 import re
+import threading
+
 import globals
 import socketserver
 import struct
 from threading import Thread
 
 from models import RigState, Rig
+
+
+LOGGING_SERVER_ROOT = "logging_server"
+
+logger = logging.getLogger(__name__)
 
 class LimitedList(list):
     '''
@@ -60,7 +67,11 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         according to whatever policy is configured locally.
         """
         while True:
-            chunk = self.connection.recv(4)
+            try:
+                chunk = self.connection.recv(4)
+            except Exception as e:
+                logger.warning("logging server connection broken: %s" % e)
+                break
             if len(chunk) < 4:
                 break
             slen = struct.unpack('>L', chunk)[0]
@@ -79,16 +90,18 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             # ignore unauthorized message
             return
 
-        # combine logging_server root logger and record logger recieved from client
-        name = "logging_server." + record.name
+        # logger name record.name defined in client. Sample: 'miner_ewbf', 'statistic'
+        # combine logging_server root logger and record logger received from client
+        name = LOGGING_SERVER_ROOT + "." + record.name
+        # the handlers for these loggers is set up in class LoggingServer
         # possible DDOS with millions record.name instances for abusing getLogger()
         # TODO: check if rig_id is registered rig
-        logger = logging.getLogger(name)
+        client_logger = logging.getLogger(name)
         try:
-            logger.handle(record)
+            client_logger.handle(record)
         except Exception as e:
             # we shall be able to keep working
-            print("Error processing log from cleint: %s" % e)
+            logger.error("Error processing log from cleint: %s" % e)
             pass
 
         # save tail of the log
@@ -233,19 +246,18 @@ class LoggingServer(Thread):
     def __init__(self):
         super().__init__()
         self.tcpserver = LogRecordSocketReceiver()
-        root_logger = logging.getLogger("logging_server")
-        root_logger.propagate = False
-        self.root_logger = root_logger
+        client_logs_root_logger = logging.getLogger(LOGGING_SERVER_ROOT)
+        client_logs_root_logger.propagate = False
 
         history_logger = logging.getLogger("history_logger")
         history_logger.addHandler(SaveClientLogHistory())
         history_logger.propagate = False
 
-        statistic_logger = logging.getLogger(root_logger.name + ".statistic")
+        statistic_logger = logging.getLogger(client_logs_root_logger.name + ".statistic")
         statistic_logger.addHandler(ClientStatisticHandler())
-        claymore_logger = logging.getLogger(root_logger.name + ".miner_claymore")
+        claymore_logger = logging.getLogger(client_logs_root_logger.name + ".miner_claymore")
         claymore_logger.addHandler(ClaymoreHandler())
-        ewbf_logger = logging.getLogger(root_logger.name + ".miner_ewbf")
+        ewbf_logger = logging.getLogger(client_logs_root_logger.name + ".miner_ewbf")
         ewbf_logger.addHandler(EwbfHandler())
 
     def run(self):

@@ -15,12 +15,9 @@ import requests
 import uuid
 import psutil
 
-STDOUT_HISTORY_LINES = 3  # how many lines will be kept and send to the server
-
-
 def load_config_ini():
     result = {}
-    with open("config.ini") as file:
+    with open("config.txt") as file:
         for line in file:
             m = re.findall('([\w\d_]+)\s*=(.+)', line)
             if len(m) > 0:

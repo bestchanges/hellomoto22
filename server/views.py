@@ -354,3 +354,4 @@ def rig_set_config(uuid):
     rig.save()
     # TODO: SET TASK
     return rig_info(uuid)
+

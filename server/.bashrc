@@ -1,0 +1,1 @@
+. ~/.virtualenvs/bestminer/bin/activate

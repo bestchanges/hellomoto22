@@ -1,10 +1,8 @@
 import logging
 
-import globals
 import sample_data
 import views
 import flask
-from finik.crypto_data import CryptoDataProvider
 
 from logging_server import LoggingServer
 from models import *

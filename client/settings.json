@@ -2,7 +2,7 @@
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
-    "server": "localhost"
+    "server": "biznesoft.ru"
   },
   "miner_config": {
     "config_name": "Test ETH+DCR",
@@ -20,7 +20,7 @@
     "miner_family": "claymore"
   },
   "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
-  "server": "localhost:5000",
+  "server": "biznesoft.ru:5000",
   "task_manager": {
     "request_interval_sec": 30
   },

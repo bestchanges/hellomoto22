@@ -23,6 +23,7 @@ run.bat
 version.txt
 '''
     include = set(includes.split())
+    print("Building bestminer client in %s" % zip_location)
     with ZipFile(zip_location, 'w') as myzip:
         for root, dirs, files in os.walk(dirname):
             for file in files:
@@ -36,5 +37,6 @@ version.txt
                 if do_add:
                     rel = os.path.join(client_dir, rel)
                     myzip.write(fn, arcname=rel)
+    print("... done")
 
 client_zip()

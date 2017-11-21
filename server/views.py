@@ -235,6 +235,7 @@ def client_config():
     :return: updated config
     """
     email = request.args.get('email')
+    rig_os = request.args.get('os')
     rig_uuid = request.args.get('rig_id')
     api_key = request.args.get('rig_id')
     config = request.json
@@ -248,13 +249,17 @@ def client_config():
         user_rigs = Rig.objects(user=user)
         nrigs = len(user_rigs)
         rig = Rig()
+        rig.os = rig_os
         rig.uuid = rig_uuid
         rig.user = user
         rig.worker = 'worker%03d' % (nrigs + 1)
         rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
         rig.save()
     else:
+        # update os. May be user has switched from Windows to Linux
         rig = rigs[0]
+        rig.os = rig_os
+        rig.save()
     if not "miner_config" in config or not config["miner_config"]:
         rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
         rig.save()
@@ -265,6 +270,7 @@ def client_config():
     config['email'] = email
     config['worker'] = rig.worker
     server_host = request.host.split(":")[0]
+    # TODO: get settings from logging_server
     config['logger'] = {
         'server': server_host,
         'port': logging.handlers.DEFAULT_TCP_LOGGING_PORT
@@ -292,43 +298,8 @@ def sendTask():
     ])
 
 
+# TODO: get rid
 def acceptData():
-    """
-    {
-  "miner": {
-    "is_run": false,
-    "config": {
-      "miner": "ewbf",
-      "miner_family": "ewbf",
-      "algorithm": "Equihash",
-      "miner_directory": "miner_emu",
-      "miner_exe": "python.exe",
-      "miner_command_line": "miner_emu/miner_emu.py miner_emu/sample_output_ewbf.txt"
-    }
-  },
-  "hashrate": {
-    "current": {
-      "Equihash": {
-        "value": 1763.0,
-        "when": 1510005374
-      }
-    },
-    "target": {
-      "Equihash": {
-        "value": 1823.0,
-        "when": 1510005374
-      }
-    }
-  },
-  "compute_units": {},
-  "miner_stdout": [
-    "00:56:14 Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C",
-    "00:56:14 GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s",
-    "00:56:14 Total speed: 1763 Sol/s"
-  ]
-}
-    :return:
-    """
     return sendTask()
 
 

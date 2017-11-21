@@ -26,7 +26,7 @@ def initial_data():
             'GPU_FORCE_64BIT_PTR': '0',
         },
         set__algos = ['Ethash+Blake',],
-        set__os = 'windows',
+        set__os = 'Windows',
     )
 
     miner_program = MinerProgram.objects(name='Claymore').modify(
@@ -44,7 +44,7 @@ def initial_data():
             'GPU_FORCE_64BIT_PTR': '0',
         },
         set__algos=['Ethash', ],
-        set__os='windows',
+        set__os='Windows',
     )
 
     miner_program = MinerProgram.objects(name='EWBF').modify(
@@ -62,7 +62,7 @@ def initial_data():
             'GPU_FORCE_64BIT_PTR': '0',
         },
         set__algos=['Equihash', ],
-        set__os='windows',
+        set__os='Windows',
     )
 
 
@@ -82,7 +82,7 @@ def test_data():
             'GPU_FORCE_64BIT_PTR': '0',
         },
         set__algos=['Ethash+Blake', 'Ethash'],
-        set__os='windows',
+        set__os='Windows',
     )
 
     miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
@@ -100,7 +100,7 @@ def test_data():
             'GPU_FORCE_64BIT_PTR': '0',
         },
         set__algos=['Equihash', ],
-        set__os='windows',
+        set__os='Windows',
     )
 
     poloniex = Exchange.objects(name="Poloniex").modify(
@@ -210,7 +210,7 @@ def sample_data():
                 'dcr-as.coinmine.pl:2222'],
         set__server = 'dcr.coinmine.pl:2222',
     )
-    
+
     poloniex = Exchange.objects.get(name="Poloniex")
 
     mp_cd = MinerProgram.objects.get(code="claymore_dual")

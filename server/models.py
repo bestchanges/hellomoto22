@@ -8,7 +8,7 @@ db = MongoEngine()
 ALGORITHMS = (
     'Ethash', 'Equihash', 'SHA256', 'Scrypt', 'Blake', 'X11', 'Pascal', 'LBRY', 'X11Gost', 'CryptoNight', 'NeoScrypt')
 POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine')
-OS_TYPE = ['windows', 'linux']
+OS_TYPE = ['Windows', 'Linux']
 
 class Todo(db.Document):
     title = db.StringField(max_length=60)
@@ -154,6 +154,7 @@ class Rig(db.Document):
     uuid = db.UUIDField(required=True, binary=False, unique=True)
     worker = db.StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
     configuration_group = db.ReferenceField(ConfigurationGroup, required=True)
+    os = db.StringField(choises=OS_TYPE, required=True)
     user = db.ReferenceField(User)
     comment = db.StringField(max_length=100)
 

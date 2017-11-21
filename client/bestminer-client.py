@@ -289,6 +289,7 @@ def call_server_api(path, data={}, server_address=None):
         'rig_id': rig_id,
         'email': config_ini['email'],
         'api_key': config_ini['api_key'],
+        'os': platform.system(),
     }
     if not server_address:
         server_address = config["server"]

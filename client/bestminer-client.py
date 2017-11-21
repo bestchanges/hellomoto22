@@ -9,11 +9,16 @@ import threading
 import time
 import urllib
 from logging import handlers
+from urllib import request
 from uuid import uuid5
 
 import requests
 import uuid
 import psutil
+import urllib3
+
+from python_win.Lib.zipfile import ZipFile
+
 
 def load_config_ini():
     result = {}
@@ -173,6 +178,13 @@ def is_run(process):
     # https://docs.python.org/3/library/subprocess.html#popen-objects
     return process is not None and process.poll() is None
 
+
+def get_miner_version(miner_dir):
+    miner_version_filename = os.path.join(miner_dir, 'version.txt')
+    file = open(miner_version_filename, 'r', encoding='ascii')
+    return file.readline().strip()
+
+
 def run_miner(miner_config):
     """
     Run miner for specified config.
@@ -201,9 +213,16 @@ def run_miner(miner_config):
         save_config()
         # going to start new miner. At first we shall stop current miner process
         kill_process(miner_process)
-    miner_dir = miner_config["miner_directory"]
-    if not os.path.exists(miner_dir):
-        server_log("TODO: Download miner to %s" % miner_dir)
+    miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    if not os.path.exists(miner_dir) or get_miner_version(miner_dir) != miner_config['miner_version']:
+        url = "http://%s/static/miners/%s.zip" % (config['server'], miner_config["miner_directory"])
+        logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
+        zip_file = 'miners/%s.zip' % (miner_config["miner_directory"])
+        request.urlretrieve(url, zip_file)
+        with ZipFile(zip_file, 'r') as myzip:
+            myzip.extractall('miners')
+        os.remove(zip_file)
+        raise Exception()
     miner_exe = miner_config["miner_exe"]
     # elif minerConfig.minerVersion > $minerDir.version.txt - downloadMiner
     args = shlex.split(miner_config["miner_command_line"])

@@ -5,6 +5,7 @@ import math
 from logging import Logger
 from random import random, randint
 
+import os
 from flask import request, Blueprint, render_template, redirect
 
 import flask
@@ -208,8 +209,14 @@ def rig_list_json():
 def rig_list():
     return flask.render_template("rigs.html")
 
+def get_miner_version(miner_program):
+    # let's get miner version from viersion.txt of the client
+    miner_version_filename = os.path.join('../client/miners', miner_program.dir, 'version.txt')
+    file = open(miner_version_filename, 'r', encoding='ascii')
+    return file.readline().strip() + '1'
 
 def get_miner_config_for_configuration(conf, rig):
+
     return {
         "config_name": conf.name,
         "miner": conf.miner_program.name,
@@ -217,6 +224,7 @@ def get_miner_config_for_configuration(conf, rig):
         "miner_directory": conf.miner_program.dir,
         "miner_exe": conf.miner_program.win_exe,
         "miner_command_line": conf.expand_command_line(rig=rig),
+        "miner_version": get_miner_version(conf.miner_program),
         "env": conf.env,
     }
 

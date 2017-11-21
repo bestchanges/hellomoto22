@@ -15,7 +15,7 @@ def initial_data():
         upsert=True,
         set__family = 'claymore',
         set__code = 'claymore_dual',
-        set__dir = 'claymore10',
+        set__dir = 'claymore10_win',
         set__win_exe = 'EthDcrMiner64.exe',
         set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%.%DUAL_WORKER% -ftime 10 -dcri 26 -asm 1',
         set__env = {
@@ -25,13 +25,15 @@ def initial_data():
             'GPU_SINGLE_ALLOC_PERCENT': '100',
             'GPU_FORCE_64BIT_PTR': '0',
         },
+        set__algos = ['Ethash+Blake',],
+        set__os = 'windows',
     )
 
     miner_program = MinerProgram.objects(name='Claymore').modify(
         upsert=True,
         set__family = 'claymore',
         set__code = 'claymore',
-        set__dir = 'claymore10',
+        set__dir = 'claymore10_win',
         set__win_exe = 'EthDcrMiner64.exe',
         set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
         set__env={
@@ -41,13 +43,15 @@ def initial_data():
             'GPU_SINGLE_ALLOC_PERCENT': '100',
             'GPU_FORCE_64BIT_PTR': '0',
         },
+        set__algos=['Ethash', ],
+        set__os='windows',
     )
 
     miner_program = MinerProgram.objects(name='EWBF').modify(
         upsert=True,
         set__family = 'ewbf',
         set__code = 'ewbf',
-        set__dir = 'ewbf_0.3.4b',
+        set__dir = 'ewbf_win',
         set__win_exe = 'miner.exe',
         set__command_line = '--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT%.%WORKER% --pass %POOL_PASSWORD% --eexit 3 --fee 0.5',
         set__env={
@@ -57,6 +61,8 @@ def initial_data():
             'GPU_SINGLE_ALLOC_PERCENT': '100',
             'GPU_FORCE_64BIT_PTR': '0',
         },
+        set__algos=['Equihash', ],
+        set__os='windows',
     )
 
 
@@ -75,6 +81,8 @@ def test_data():
             'GPU_SINGLE_ALLOC_PERCENT': '100',
             'GPU_FORCE_64BIT_PTR': '0',
         },
+        set__algos=['Ethash+Blake', 'Ethash'],
+        set__os='windows',
     )
 
     miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
@@ -91,6 +99,8 @@ def test_data():
             'GPU_SINGLE_ALLOC_PERCENT': '100',
             'GPU_FORCE_64BIT_PTR': '0',
         },
+        set__algos=['Equihash', ],
+        set__os='windows',
     )
 
     poloniex = Exchange.objects(name="Poloniex").modify(

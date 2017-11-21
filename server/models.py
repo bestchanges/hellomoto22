@@ -8,7 +8,7 @@ db = MongoEngine()
 ALGORITHMS = (
     'Ethash', 'Equihash', 'SHA256', 'Scrypt', 'Blake', 'X11', 'Pascal', 'LBRY', 'X11Gost', 'CryptoNight', 'NeoScrypt')
 POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine')
-
+OS_TYPE = ['windows', 'linux']
 
 class Todo(db.Document):
     title = db.StringField(max_length=60)
@@ -69,6 +69,8 @@ class MinerProgram(db.Document):
     win_exe = db.StringField(max_length=100)
     version = db.StringField()
     env = db.DictField(default={})
+    algos = db.ListField(db.StringField(choices=ALGORITHMS), required=True)
+    os = db.StringField(choices=OS_TYPE, required=True)
 
     def __unicode__(self):
         return self.name

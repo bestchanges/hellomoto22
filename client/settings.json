@@ -2,7 +2,7 @@
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
-    "server": "biznesoft.ru"
+    "server": "localhost"
   },
   "miner_config": {
     "config_name": "Test ETH+DCR",
@@ -17,10 +17,11 @@
     "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 ",
     "miner_directory": "miner_emu",
     "miner_exe": "python.exe",
-    "miner_family": "claymore"
+    "miner_family": "claymore",
+    "miner_version": "2.01"
   },
   "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
-  "server": "biznesoft.ru:5000",
+  "server": "localhost:5000",
   "task_manager": {
     "request_interval_sec": 30
   },

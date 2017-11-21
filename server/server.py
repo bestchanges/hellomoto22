@@ -1,6 +1,6 @@
 import logging
 
-import sample_data
+import initial_data
 import views
 import flask
 
@@ -41,9 +41,9 @@ def main():
     logging_server = LoggingServer()
     logging_server.start()
 
-    sample_data.initial_data()
-    sample_data.sample_data()
-    sample_data.test_data()
+    initial_data.initial_data()
+    initial_data.sample_data()
+    initial_data.test_data()
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
 
 if __name__ == "__main__":

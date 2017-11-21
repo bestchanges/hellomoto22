@@ -222,7 +222,7 @@ def run_miner(miner_config):
         with ZipFile(zip_file, 'r') as myzip:
             myzip.extractall('miners')
         os.remove(zip_file)
-        raise Exception()
+        logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
     miner_exe = miner_config["miner_exe"]
     # elif minerConfig.minerVersion > $minerDir.version.txt - downloadMiner
     args = shlex.split(miner_config["miner_command_line"])

@@ -213,7 +213,7 @@ def get_miner_version(miner_program):
     # let's get miner version from viersion.txt of the client
     miner_version_filename = os.path.join('../client/miners', miner_program.dir, 'version.txt')
     file = open(miner_version_filename, 'r', encoding='ascii')
-    return file.readline().strip() + '1'
+    return file.readline().strip()
 
 def get_miner_config_for_configuration(conf, rig):
 

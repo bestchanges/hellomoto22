@@ -16,7 +16,7 @@ import requests
 import uuid
 import psutil
 
-from python_win.Lib.zipfile import ZipFile
+from zipfile import ZipFile
 
 
 def load_config_ini():

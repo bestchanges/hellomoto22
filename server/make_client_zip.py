@@ -38,7 +38,7 @@ def client_zip():
     includes = '''
 config.txt
 bestminer-client.py
-OpenHardwareMonitor
+distr_win
 python_win
 run.bat
 version.txt

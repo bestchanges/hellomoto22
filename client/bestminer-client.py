@@ -48,9 +48,9 @@ def get_cpu_id():
     :return: array of CPUIDs
     '''
     cpu_ids = []
-    proc = subprocess.run("wmic cpu get ProcessorId /format:csv", stdout=subprocess.PIPE, encoding="ASCII")
+    proc = subprocess.run("wmic cpu get ProcessorId /format:csv", stdout=subprocess.PIPE)
     for line in proc.stdout.split():
-        node, cpu_id = line.split(",")
+        node, cpu_id = line.decode().split(",")
         if cpu_id == 'ProcessorId':
             # skip head of CSV
             continue
@@ -231,7 +231,7 @@ def run_miner(miner_config):
     env = miner_config["env"]
     full_env = {**os.environ, **env}
     miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
-                                     env=full_env, universal_newlines=True, cwd=miner_dir, encoding="utf-8", errors='ignore')
+                                     env=full_env, cwd=miner_dir)
 
     miner_out_reader = threading.Thread(target=read_miner_output)
     miner_out_reader.start()
@@ -251,7 +251,7 @@ def read_miner_output():
         if not is_run(miner_process):
             logger.warning("Miner was terminated. Stop monitoring stdout")
             break
-        line = miner_process.stdout.readline()
+        line = miner_process.stdout.readline().decode()
         if line != '':
             line = line.rstrip()
             logger.info(line)

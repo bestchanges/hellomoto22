@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import os, subprocess
+import platform
 import re
 import shlex
 import threading
@@ -17,6 +18,8 @@ import uuid
 import psutil
 
 from zipfile import ZipFile
+
+import uptime as uptime
 
 
 def load_config_ini():
@@ -47,44 +50,36 @@ def get_cpu_id():
     '''
     :return: array of CPUIDs
     '''
-    cpu_ids = []
-    proc = subprocess.run("wmic cpu get ProcessorId /format:csv", stdout=subprocess.PIPE)
-    for line in proc.stdout.split():
-        node, cpu_id = line.decode().split(",")
-        if cpu_id == 'ProcessorId':
-            # skip head of CSV
-            continue
-        cpu_ids.append(cpu_id)
-    return cpu_ids
+    system = platform.system()
+    if system == 'Windows':
+        cpu_ids = []
+        proc = subprocess.run("wmic cpu get ProcessorId /format:csv", stdout=subprocess.PIPE)
+        for line in proc.stdout.split():
+            node, cpu_id = line.decode().split(",")
+            if cpu_id == 'ProcessorId':
+                # skip head of CSV
+                continue
+            cpu_ids.append(cpu_id)
+        return cpu_ids
+    elif system == 'Linux':
+        # PROC: sudo dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g'
+        # 76060100FFFBEBBF
+        # MB: sudo dmidecode --string baseboard-serial-number | sed 's/.*ID://;s/ //g' | tr '[:upper:]' '[:lower:]'
+        # czc8493tp3
+        # MAC: ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g'
+        # 002264bbfc3a
+        proc = subprocess.run("sudo dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g'", shell=True, stdout=subprocess.PIPE)
+        id = proc.stdout.decode().strip()
+        return [id]
+    else:
+        raise Exception("Unsupported platform %s" % platform)
 
 
 def get_reboot_time():
     '''
     :return: datetime object of moment of boot
     '''
-    line = ""
-    try:
-        proc = subprocess.run("wmic os get lastbootuptime", stdout=subprocess.PIPE, encoding="ASCII")
-        head = True
-        for line in proc.stdout.split():
-            if head:
-                # skip head
-                head = False
-                continue
-            # line = 20171118020936.495470+180
-            m = re.findall("(\d+)\.\d+([+\-])(\d+)", line)
-            date_time, tz_sign, timezone_offset = m[0]
-            # need to convert timzeone offset to the form +HHMM as need %z
-            # https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior
-            hh = int(timezone_offset) / 60
-            mm = int(timezone_offset) - hh * 60
-            tz = tz_sign + "%02d%02d" % (hh,mm)
-            p = datetime.datetime.strptime(date_time+tz, "%Y%m%d%H%M%S%z")
-            logger.debug("Reboot time: %s" % p)
-            return p
-    except Exception:
-        logger.error("Cannot get reboot time. Line: %s" % line)
-    return None
+    return uptime.boottime()
 
 
 def get_rig_id():
@@ -230,7 +225,7 @@ def run_miner(miner_config):
     server_log("Run miner from '%s' %s" % (miner_dir, " ".join(args)))
     env = miner_config["env"]
     full_env = {**os.environ, **env}
-    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
+    miner_process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
                                      env=full_env, cwd=miner_dir)
 
     miner_out_reader = threading.Thread(target=read_miner_output)

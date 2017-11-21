@@ -1,29 +1,29 @@
 {
+  "task_manager": {
+    "request_interval_sec": 30
+  },
+  "logger": {
+    "port": 9020,
+    "server": "localhost"
+  },
+  "email": "egor.fedorov@gmail.com",
+  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
+  "worker": "worker001",
   "miner_config": {
     "miner": "Pseudo Claymore Miner",
     "miner_version": "1.0",
-    "miner_family": "claymore",
     "env": {
-      "GPU_FORCE_64BIT_PTR": "0",
-      "GPU_USE_SYNC_OBJECTS": "1",
+      "GPU_SINGLE_ALLOC_PERCENT": "100",
       "GPU_MAX_ALLOC_PERCENT": "100",
+      "GPU_FORCE_64BIT_PTR": "0",
       "GPU_MAX_HEAP_SIZE": "100",
-      "GPU_SINGLE_ALLOC_PERCENT": "100"
+      "GPU_USE_SYNC_OBJECTS": "1"
     },
-    "miner_exe": "python.exe",
+    "miner_family": "claymore",
+    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 ",
     "config_name": "Test ETH+DCR",
     "miner_directory": "miner_emu",
-    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 "
+    "miner_exe": "python"
   },
-  "email": "egor.fedorov@gmail.com",
-  "logger": {
-    "server": "localhost",
-    "port": 9020
-  },
-  "server": "localhost:5000",
-  "worker": "worker001",
-  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
-  "task_manager": {
-    "request_interval_sec": 30
-  }
+  "server": "localhost:5000"
 }

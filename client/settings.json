@@ -18,7 +18,7 @@
     "miner_directory": "miner_emu",
     "miner_exe": "python.exe",
     "miner_family": "claymore",
-    "miner_version": "2.0"
+    "miner_version": "1.0"
   },
   "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
   "server": "localhost:5000",

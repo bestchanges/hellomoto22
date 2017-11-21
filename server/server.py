@@ -24,6 +24,7 @@ db.init_app(app)
 app.add_url_rule('/client/rig_config', view_func=views.client_config, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/stat_and_task', view_func=views.acceptData, methods=["GET", "POST", "PUT"])
 
+app.add_url_rule('/', view_func=views.index)
 app.add_url_rule('/rigs', view_func=views.rig_list)
 app.add_url_rule('/rigs.json', view_func=views.rig_list_json)
 app.add_url_rule('/rig/<uuid>/info', view_func=views.rig_info)

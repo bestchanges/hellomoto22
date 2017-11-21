@@ -15,7 +15,6 @@ from uuid import uuid5
 import requests
 import uuid
 import psutil
-import urllib3
 
 from python_win.Lib.zipfile import ZipFile
 
@@ -213,18 +212,19 @@ def run_miner(miner_config):
         save_config()
         # going to start new miner. At first we shall stop current miner process
         kill_process(miner_process)
+    # Let's download miner if required to update
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
     if not os.path.exists(miner_dir) or get_miner_version(miner_dir) != miner_config['miner_version']:
         url = "http://%s/static/miners/%s.zip" % (config['server'], miner_config["miner_directory"])
         logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
         zip_file = 'miners/%s.zip' % (miner_config["miner_directory"])
+        if not os.path.exists('miners'): os.mkdir('miners')
         request.urlretrieve(url, zip_file)
         with ZipFile(zip_file, 'r') as myzip:
             myzip.extractall('miners')
         os.remove(zip_file)
         logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
     miner_exe = miner_config["miner_exe"]
-    # elif minerConfig.minerVersion > $minerDir.version.txt - downloadMiner
     args = shlex.split(miner_config["miner_command_line"])
     args.insert(0, miner_exe)
     server_log("Run miner from '%s' %s" % (miner_dir, " ".join(args)))
@@ -240,72 +240,6 @@ def run_miner(miner_config):
 
 def restart_miner():
     run_miner(config['miner_config'])
-
-
-def set_current_hashrate(algo, value):
-    """
-    Store current hashrate in global variables. Also adjust target hashrate if required
-
-    :param algo:
-    :param value:
-    :return:
-    """
-    global current_hashrate, target_hashrate
-    algo_hashrate = {"value": value, "when": int(time.time())}
-    current_hashrate[algo] = algo_hashrate
-    global config
-    if "target_hashrate" not in config:
-        config["target_hashrate"] = {}
-    target_hashrate = config["target_hashrate"]
-    if not algo in target_hashrate:
-        target_hashrate[algo] = algo_hashrate
-        print(target_hashrate)
-    else:
-        if target_hashrate[algo]["value"] < algo_hashrate["value"]:
-            target_hashrate[algo] = algo_hashrate
-            print(target_hashrate)
-
-
-def process_miner_stdout_line(line):
-    """
-    deprecated: Logic moved to the server. Remove from here
-
-
-    Gather useful information from miner output (aka hashrate)
-
-    :param line: one line from STDOUT of miner
-    :return: nothing
-    """
-    global config
-    miner_config = config['miner_config']
-    miner_family = miner_config['miner_family']
-    if miner_family == "claymore":
-        # try get hashing info
-        # ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
-        # DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
-        m = re.findall('(\w+) - Total Speed: ([\d\.]+) ', line)
-        if len(m) > 0:
-            (code, value) = m[0]
-            val = float(value)
-            is_dual = 'algorithm_dual' in miner_config and miner_config['algorithm_dual'] != ''
-            if code == "ETH":
-                if is_dual:
-                    algo = 'Ethash Dual'
-                else:
-                    algo = 'Ethash'
-                set_current_hashrate(algo, val)
-            if code == "DCR":
-                # take into consideration when mining single Blake
-                # if miner_config["algorith_dual"] != "":
-                set_current_hashrate('Blake (14r) Dual', val)
-    elif miner_family == "ewbf":
-        # Total speed: 1623 Sol/s
-        m = re.findall('Total speed: ([\d\.]+) ', line)
-        if len(m) > 0:
-            value = m[0]
-            val = float(value)
-            current_hashrate['Equihash'] = {"value": val, "when": int(time.time())}
-            set_current_hashrate('Equihash', val)
 
 
 def read_miner_output():
@@ -324,28 +258,6 @@ def read_miner_output():
         else:
             logger.warning("Miner has finished")
             break
-
-
-def get_open_hardware_monitor_statistics():
-    """
-    not implemented yet. There is UAC problem and also problem installing pypiwin32/pywin32
-    :return:
-    """
-    import psutil
-    if not "OpenHardwareMonitor.exe" in (p.name() for p in psutil.process_iter()):
-        # not runned. Run now
-        subprocess.Popen("OpenHardwareMonitor\OpenHardwareMonitor.exe")
-    else:
-        print("OHW runned")
-    import wmi
-    c = wmi.WMI()
-    for s in c.Win32_Service():
-        if s.State == 'Stopped':
-            print(s.Caption, s.State)
-            #		$os = Get-WmiCustom -class win32_operatingsystem -timeout 10
-            #		$uptime = $os.ConvertToDateTime($os.LocalDateTime) - $os.ConvertToDateTime($os.LastBootUptime)
-
-    return {"HWINFO": 1}
 
 
 def get_state_info():
@@ -474,29 +386,3 @@ if __name__ == "__main__":
     stat_manager.start()
     task_manager = threading.Thread(target=task_manager)
     task_manager.start()
-
-'''
-
-
-def send_stat_and_got_task()
-    * отправить текущее состояние
-        * workersInfo(Temp, fan, config), miner (state, config, hashrate, screen, lastUpdate)
-    * response.
-    * response.task
-        * Задания: restartMiner, reboot, runMiner
-    * threading.Timer(10, send_stat_and_got_task).start()
-
-def monitor_miner(start_periodic=False, timout_seconds=30)
-    miner_config = config['minerConfig']
-    # https://docs.python.org/3/library/subprocess.html#subprocess.Popen.poll
-    if not task_run(miner_config['process_name'])
-        server_log("Miner not run", leve="WARN")
-    timout_seconds = config['miner_monitoring']['timeout']
-    if start_periodic
-        threading.Timer(timout_seconds, monitor_miner(...)).start()
-
-def reboot
-    * server_log ("going reboot")
-    * run shutdown command
-
-'''

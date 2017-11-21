@@ -367,3 +367,6 @@ def rig_set_config(uuid):
     # TODO: SET TASK
     return rig_info(uuid)
 
+
+def index():
+    return flask.render_template('index.html')

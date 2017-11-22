@@ -11,12 +11,16 @@ import socketserver
 import struct
 from threading import Thread
 
+import models
 from models import RigState, Rig
 
+# name of logger that is root for client loggers (need to make stop propogate processing to the main root logger)
+CLIENT_LOGGER_ROOT = "client_logger"
 
-LOGGING_SERVER_ROOT = "logging_server"
-
-logger = logging.getLogger(__name__)
+my_logger = logging.getLogger(__name__)
+my_logger.addHandler(logging.handlers.TimedRotatingFileHandler("log/logging_server.log", when='midnight'))
+my_logger.addHandler(logging.StreamHandler())
+my_logger.error("test")
 
 class LimitedList(list):
     '''
@@ -45,6 +49,7 @@ LIMIT_LOG_ENTRIES_TO_KEEP = 30
 # uuid -> LimitedList
 rigs_logs = {}
 
+
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     """Handler for a streaming logging request.
     This handler captures all logging output client send to the server
@@ -70,7 +75,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             try:
                 chunk = self.connection.recv(4)
             except Exception as e:
-                logger.warning("logging server connection broken: %s" % e)
+                my_logger.warning("logging server connection broken: %s" % e)
                 break
             if len(chunk) < 4:
                 break
@@ -92,7 +97,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
 
         # logger name record.name defined in client. Sample: 'miner_ewbf', 'statistic'
         # combine logging_server root logger and record logger received from client
-        name = LOGGING_SERVER_ROOT + "." + record.name
+        name = CLIENT_LOGGER_ROOT + "." + record.name
         # the handlers for these loggers is set up in class LoggingServer
         # possible DDOS with millions record.name instances for abusing getLogger()
         # TODO: check if rig_id is registered rig
@@ -101,7 +106,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             client_logger.handle(record)
         except Exception as e:
             # we shall be able to keep working
-            logger.error("Error processing log from cleint: %s" % e)
+            my_logger.error("Error processing log from cleint: %s" % e)
             pass
 
         # save tail of the log
@@ -165,10 +170,11 @@ class ClientStatisticHandler(logging.Handler):
     '''
     Get statistic info from client and process it
     '''
+
     def handle(self, record):
         line = record.msg
         rig_uuid = record.rig_id
-        #UPTIME={"hms": "20:44:38", "sec": 74678, "rebooted": "2017-11-18 02:09:36+03:00", "rebooted_epoch": 1510960176}
+        # UPTIME={"hms": "20:44:38", "sec": 74678, "rebooted": "2017-11-18 02:09:36+03:00", "rebooted_epoch": 1510960176}
         if "UPTIME" in line:
             mark, jsons = line.split("=", 1)
             data = json.loads(jsons)
@@ -180,12 +186,58 @@ class ClientStatisticHandler(logging.Handler):
 
 
 class ClaymoreHandler(logging.Handler):
+    def __init__(self, level=logging.NOTSET):
+        # local data for gather multiline records
+        self.local = threading.local()
+        super().__init__(level)
+
     def handle(self, record):
+        line = record.msg
+        rig_uuid = record.rig_id
+        # GPU #0: Ellesmere, 4096 MB available, 32 compute units
+        # GPU #0 recognized as Radeon RX 470/570
+        '''
+        AMD Cards available: 5
+        GPU #0: Ellesmere, 4096 MB available, 32 compute units
+        GPU #0 recognized as Radeon RX 470/570
+        GPU #1: Ellesmere, 4096 MB available, 32 compute units
+        GPU #1 recognized as Radeon RX 470/570
+        GPU #2: Ellesmere, 4096 MB available, 32 compute units
+        GPU #2 recognized as Radeon RX 470/570
+        GPU #3: Ellesmere, 4096 MB available, 32 compute units
+        GPU #3 recognized as Radeon RX 470/570
+        GPU #4: Ellesmere, 4096 MB available, 32 compute units
+        GPU #4 recognized as Radeon RX 470/570        '''
+
+        m = re.findall('AMD Cards available: (\d+)', line)
+        if len(m) > 0:
+            self.local.expect_amd_cards = int(m[0])
+            self.local.amd_cards = []
+        if hasattr(self.local, 'expect_amd_cards'):
+            m = re.findall('GPU #(\d+) recognized as (Radeon RX) (470/570)', line)
+            if len(m) > 0:
+                gpu_num, family, model = m[0]
+                gpu_num = int(gpu_num)
+                if family == 'Radeon RX':
+                    if model == '470/570':
+                        card = models.GPU_RX_470
+                    else:
+                        card = models.GPU_RX
+                else:
+                    my_logger.error('Cannot recognize AMD family %s' % family)
+                if card:
+                    self.local.amd_cards.append(card)
+                my_logger.info("cards %s, gpu_num %d, expect")
+                if gpu_num == self.local.expect_amd_cards - 1:
+                    rig = Rig.objects.get(uuid=rig_uuid)
+                    rig.system_gpu_list = self.local.amd_cards
+                    rig.save()
+                    del self.local.amd_cards
+                    del self.local.expect_amd_cards
+
         # hashrate info
         # ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
         # DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
-        line = record.msg
-        rig_uuid = record.rig_id
         m = re.findall('(\w+) - Total Speed: ([\d\.]+) ([\w\/]+)', line)
         if len(m) > 0:
             (code, value, units) = m[0]
@@ -196,7 +248,7 @@ class ClaymoreHandler(logging.Handler):
                 # take into consideration when mining single Blake
                 algorithm = 'Blake (14r)'
             rig_state = get_rig_state_object(rig_uuid)
-            rig_state.hashrate[algorithm] = { 'value': val, 'units': units }
+            rig_state.hashrate[algorithm] = {'value': val, 'units': units}
             rig_state.save()
 
         # now take care about temperaure and fan speed
@@ -216,7 +268,6 @@ class ClaymoreHandler(logging.Handler):
 
 
 class EwbfHandler(logging.Handler):
-
     def handle(self, record):
         line = record.msg
         rig_uuid = record.rig_id
@@ -227,9 +278,9 @@ class EwbfHandler(logging.Handler):
             val = float(value)
             algorithm = 'Equihash'
             rig_state = get_rig_state_object(rig_uuid)
-            rig_state.hashrate[algorithm] = { 'value': val, 'units': units }
+            rig_state.hashrate[algorithm] = {'value': val, 'units': units}
             rig_state.save()
-        #Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
+        # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
         m = re.findall('GPU(\d+): (\d+)C', line)
         if len(m) > 0:
             temps = []
@@ -238,7 +289,7 @@ class EwbfHandler(logging.Handler):
             rig_state = get_rig_state_object(rig_uuid)
             rig_state.cards_temp = temps
             rig_state.save()
-        #GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s
+        # GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s
         return True
 
 
@@ -246,7 +297,7 @@ class LoggingServer(Thread):
     def __init__(self):
         super().__init__()
         self.tcpserver = LogRecordSocketReceiver()
-        client_logs_root_logger = logging.getLogger(LOGGING_SERVER_ROOT)
+        client_logs_root_logger = logging.getLogger(CLIENT_LOGGER_ROOT)
         client_logs_root_logger.propagate = False
 
         history_logger = logging.getLogger("history_logger")

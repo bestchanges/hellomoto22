@@ -41,8 +41,8 @@ miner_stdout = []  # last N lines from STDOUT of process
 current_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
 target_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
 
-logger = logging.getLogger('')
-logger.setLevel(logging.INFO)
+my_logger = logging.getLogger('')
+my_logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(asctime)s|%(name)-10s|%(levelname)-4s: %(message)s')
 
 
@@ -142,7 +142,7 @@ def get_config():
 
 
 def server_log(msg, level=logging.INFO, data={}):
-    logger.log(level, msg)
+    my_logger.log(level, msg)
     pass
 
 
@@ -211,14 +211,14 @@ def run_miner(miner_config):
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
     if not os.path.exists(miner_dir) or get_miner_version(miner_dir) != miner_config['miner_version']:
         url = "http://%s/static/miners/%s.zip" % (config['server'], miner_config["miner_directory"])
-        logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
+        my_logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
         zip_file = 'miners/%s.zip' % (miner_config["miner_directory"])
         if not os.path.exists('miners'): os.mkdir('miners')
         request.urlretrieve(url, zip_file)
         with ZipFile(zip_file, 'r') as myzip:
             myzip.extractall('miners')
         os.remove(zip_file)
-        logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
+        my_logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
     miner_exe = miner_config["miner_exe"]
     args = shlex.split(miner_config["miner_command_line"])
     args.insert(0, miner_exe)
@@ -230,7 +230,7 @@ def run_miner(miner_config):
 
     miner_out_reader = threading.Thread(target=read_miner_output)
     miner_out_reader.start()
-    logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
+    my_logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
 
 
 def restart_miner():
@@ -318,14 +318,14 @@ def task_manager():
         request_interval = config["task_manager"]["request_interval_sec"]
         time.sleep(request_interval)
         try:
-            logger.info("Gather the state")
+            my_logger.info("Gather the state")
             state_info = get_state_info()
         except Exception as e:
-            logger.error("Error getting state: %s" % str(e))
+            my_logger.error("Error getting state: %s" % str(e))
         try:
             tasks = call_server_api("client/stat_and_task", state_info)
         except Exception as e:
-            logger.error("Error with send stat and run task: %s" % e)
+            my_logger.error("Error with send stat and run task: %s" % e)
             continue
         for task in tasks:
             task_name = task['task']
@@ -374,7 +374,7 @@ if __name__ == "__main__":
         exit(800)
     logging.info("Running as worker '%s'" % config['worker'])
     socketHandler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
-    logger.addHandler(socketHandler)
+    my_logger.addHandler(socketHandler)
 
     restart_miner()
 

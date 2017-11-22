@@ -1,29 +1,29 @@
 {
-  "miner_config": {
-    "env": {
-      "GPU_MAX_ALLOC_PERCENT": "100",
-      "GPU_USE_SYNC_OBJECTS": "1",
-      "GPU_MAX_HEAP_SIZE": "100",
-      "GPU_FORCE_64BIT_PTR": "0",
-      "GPU_SINGLE_ALLOC_PERCENT": "100"
-    },
-    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 ",
-    "miner_version": "1.0",
-    "miner_family": "claymore",
-    "miner": "Pseudo Claymore Miner",
-    "miner_directory": "miner_emu",
-    "config_name": "Test ETH+DCR",
-    "miner_exe": "python"
-  },
   "server": "localhost:5000",
-  "email": "egor.fedorov@gmail.com",
-  "task_manager": {
-    "request_interval_sec": 30
-  },
-  "worker": "worker001",
   "logger": {
     "server": "localhost",
     "port": 9020
   },
-  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459"
+  "worker": "worker001",
+  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
+  "task_manager": {
+    "request_interval_sec": 30
+  },
+  "email": "egor.fedorov@gmail.com",
+  "miner_config": {
+    "miner_exe": "python",
+    "env": {
+      "GPU_FORCE_64BIT_PTR": "0",
+      "GPU_USE_SYNC_OBJECTS": "1",
+      "GPU_SINGLE_ALLOC_PERCENT": "100",
+      "GPU_MAX_HEAP_SIZE": "100",
+      "GPU_MAX_ALLOC_PERCENT": "100"
+    },
+    "miner": "Pseudo Claymore Miner",
+    "miner_directory": "miner_emu",
+    "config_name": "Test ETH+DCR",
+    "miner_version": "1.0",
+    "miner_family": "claymore",
+    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 "
+  }
 }

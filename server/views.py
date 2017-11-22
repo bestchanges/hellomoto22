@@ -1,6 +1,11 @@
 import datetime
 import json
 import logging
+import re
+from uuid import UUID
+
+import models
+from globals import assert_expr
 import math
 from logging import Logger
 from random import random, randint
@@ -18,7 +23,7 @@ from finik.crypto_data import CryptoDataProvider
 from finik.cryptonator import Cryptonator
 from models import User, Rig, RigState, MinerProgram, Pool, Currency, ConfigurationGroup, Todo
 
-#DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
+# DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
 DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
 
 crypto_data = CryptoDataProvider("coins1.json")
@@ -71,6 +76,7 @@ def config_list_json():
 def config_edit(id=''):
     class AConverter(ModelConverter):
         ''' not using now .... but in future may be '''
+
         @converts('ReferenceField')
         def conv_Reference(self, model, field, kwargs):
             return ModelSelectField(model=field.document_type, **kwargs)
@@ -155,7 +161,7 @@ def rounds(num, max_=2):
         nums = []
         for n in right:
             nums.append(n)
-            if len(nums)>=max_:
+            if len(nums) >= max_:
                 break
         return '.'.join([left, ''.join(nums)])
     else:
@@ -180,12 +186,12 @@ def rig_list_json():
             target_currency = rig.user.target_currency
             exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
             profit_target_currency = profit * exchange_rate
-            profit_string = "%s %s" % (rounds(profit_target_currency,2), target_currency)
+            profit_string = "%s %s" % (rounds(profit_target_currency, 2), target_currency)
         except Exception as e:
             if profit is None:
                 profit_string = "? %s" % (currency.code)
             else:
-                profit_string = "%s %s" % (rounds(profit,2), currency.code)
+                profit_string = "%s %s" % (rounds(profit, 2), currency.code)
         data.append({
             'name': rig.worker,
             'uuid': rig.uuid,
@@ -209,24 +215,39 @@ def rig_list_json():
 def rig_list():
     return flask.render_template("rigs.html")
 
-def get_miner_version(miner_program):
+
+def get_miner_version(dir):
     # let's get miner version from viersion.txt of the client
-    miner_version_filename = os.path.join('../client/miners', miner_program.dir, 'version.txt')
+    miner_version_filename = os.path.join('../client/miners', dir, 'version.txt')
     file = open(miner_version_filename, 'r', encoding='ascii')
     return file.readline().strip()
 
-def get_miner_config_for_configuration(conf, rig):
 
-    return {
+def get_miner_config_for_configuration(conf, rig):
+    os = rig.os
+    if not os in conf.miner_program.supported_os:
+        raise Exception("rig '%s' os %s not supported in miner %s" % (rig.name, os, conf.miner_program))
+    if os == "Linux":
+        bin = conf.miner_program.linux_bin
+        dir = conf.miner_program.dir_linux
+    elif os == "Windows":
+        bin = conf.miner_program.win_exe
+        dir = conf.miner_program.dir
+    else:
+        raise Exception("usupported os %s" % os)
+    # TODO: check if miner supports OS of rig
+    # TODO: check if miner supports PU of rig
+    conf = {
         "config_name": conf.name,
         "miner": conf.miner_program.name,
         "miner_family": conf.miner_program.family,
-        "miner_directory": conf.miner_program.dir,
-        "miner_exe": conf.miner_program.win_exe,
+        "miner_directory": dir,
+        "miner_exe": bin,
         "miner_command_line": conf.expand_command_line(rig=rig),
-        "miner_version": get_miner_version(conf.miner_program),
+        "miner_version": get_miner_version(dir),
         "env": conf.env,
     }
+    return conf
 
 
 def client_config():
@@ -235,8 +256,11 @@ def client_config():
     :return: updated config
     """
     email = request.args.get('email')
+    assert_expr(re.match(r'^[^@]+@[^@]+$', email), "valid mail requred")
     rig_os = request.args.get('os')
+    assert_expr(rig_os in models.OS_TYPE, "invalid os '%s' passed. Possible: %s" % (os, models.OS_TYPE))
     rig_uuid = request.args.get('rig_id')
+    assert_expr(UUID(rig_uuid))
     api_key = request.args.get('rig_id')
     config = request.json
     if config is None:
@@ -244,7 +268,6 @@ def client_config():
     user = User.objects.get(email=email)
     # TODO: create new user(?)
     rigs = Rig.objects(uuid=rig_uuid)
-    import server
     if len(rigs) == 0:
         user_rigs = Rig.objects(user=user)
         nrigs = len(user_rigs)
@@ -286,6 +309,7 @@ def test_get_random_config(rig):
     name_new_config = configs[randint(0, len(configs) - 1)]
     return ConfigurationGroup.objects.get(name=name_new_config)
 
+
 def sendTask():
     '''
     Send task data to the specified client
@@ -294,7 +318,8 @@ def sendTask():
     rig_uuid = request.args.get('rig_id')
     rig = Rig.objects.get(uuid=rig_uuid)
     return json.dumps([
-        {"task": "switch_miner", "data": {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)}}
+        {"task": "switch_miner",
+         "data": {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)}}
     ])
 
 

@@ -1,15 +1,31 @@
+import json
+
 from models import *
+
+DEFAULT_MINER_ENV = {
+    'GPU_MAX_HEAP_SIZE': '100',
+    'GPU_USE_SYNC_OBJECTS': '1',
+    'GPU_MAX_ALLOC_PERCENT': '100',
+    'GPU_SINGLE_ALLOC_PERCENT': '100',
+    'GPU_FORCE_64BIT_PTR': '0',
+}
 
 def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
-    Currency.objects(code="ZEC").update_one(algo='Equihash', upsert=True)
-    Currency.objects(code="DCR").update_one(algo='Blake', upsert=True)
-    Currency.objects(code="SIA").update_one(algo='Blake', upsert=True)
-    Currency.objects(code="ETH").update_one(algo='Ethash', upsert=True)
-    Currency.objects(code="ETC").update_one(algo='Ethash', upsert=True)
+    wtm = json.load(open('coins1.json', 'r'))
+    for currency, data in wtm['coins'].items():
+        Currency.objects(
+            code=data['tag'],
+        ).update_one(
+            algo=data["algorithm"],
+            block_reward=data["block_reward"],
+            difficulty=data["difficulty"],
+            nethash=data["nethash"],
+            upsert=True
+        )
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
-    Exchange.objects(name="Poloniex").update_one(website="https://poloniex.com", upsert=True)
+    Exchange.objects(name="Poloniex").update_one(handler='PoloniexExchange', upsert=True)
 
     miner_program = MinerProgram.objects(name='Claymore Dual').modify(
         upsert=True,
@@ -20,13 +36,7 @@ def initial_data():
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
         set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%.%DUAL_WORKER% -ftime 10 -dcri 26 -asm 1',
-        set__env = {
-            'GPU_MAX_HEAP_SIZE': '100',
-            'GPU_USE_SYNC_OBJECTS': '1',
-            'GPU_MAX_ALLOC_PERCENT': '100',
-            'GPU_SINGLE_ALLOC_PERCENT': '100',
-            'GPU_FORCE_64BIT_PTR': '0',
-        },
+        set__env = DEFAULT_MINER_ENV,
         set__algos = ['Ethash+Blake',],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu = ['nvidia', 'amd'],
@@ -41,13 +51,7 @@ def initial_data():
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
         set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
-        set__env={
-            'GPU_MAX_HEAP_SIZE': '100',
-            'GPU_USE_SYNC_OBJECTS': '1',
-            'GPU_MAX_ALLOC_PERCENT': '100',
-            'GPU_SINGLE_ALLOC_PERCENT': '100',
-            'GPU_FORCE_64BIT_PTR': '0',
-        },
+        set__env=DEFAULT_MINER_ENV,
         set__algos=['Ethash', ],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
@@ -62,13 +66,7 @@ def initial_data():
         set__dir_linux = 'ewbf_linux',
         set__linux_bin = 'miner',
         set__command_line = '--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT%.%WORKER% --pass %POOL_PASSWORD% --eexit 3 --fee 0.5',
-        set__env={
-            'GPU_MAX_HEAP_SIZE': '100',
-            'GPU_USE_SYNC_OBJECTS': '1',
-            'GPU_MAX_ALLOC_PERCENT': '100',
-            'GPU_SINGLE_ALLOC_PERCENT': '100',
-            'GPU_FORCE_64BIT_PTR': '0',
-        },
+        set__env=DEFAULT_MINER_ENV,
         set__algos=['Equihash', ],
         set__supported_os=['Windows', 'Linux'],
         set__supported_pu = ['nvidia', ],
@@ -85,13 +83,7 @@ def test_data():
         set__dir_linux = 'miner_emu',
         set__linux_bin = 'python',
         set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 0.3 ',
-        set__env={
-            'GPU_MAX_HEAP_SIZE': '100',
-            'GPU_USE_SYNC_OBJECTS': '1',
-            'GPU_MAX_ALLOC_PERCENT': '100',
-            'GPU_SINGLE_ALLOC_PERCENT': '100',
-            'GPU_FORCE_64BIT_PTR': '0',
-        },
+        set__env=DEFAULT_MINER_ENV,
         set__supported_os=['Windows', 'Linux'],
         set__algos=['Ethash+Blake', 'Ethash'],
     )
@@ -105,13 +97,7 @@ def test_data():
         set__dir_linux = 'miner_emu',
         set__linux_bin = 'python',
         set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 1 ',
-        set__env={
-            'GPU_MAX_HEAP_SIZE': '100',
-            'GPU_USE_SYNC_OBJECTS': '1',
-            'GPU_MAX_ALLOC_PERCENT': '100',
-            'GPU_SINGLE_ALLOC_PERCENT': '100',
-            'GPU_FORCE_64BIT_PTR': '0',
-        },
+        set__env=DEFAULT_MINER_ENV,
         set__supported_os=['Windows', 'Linux'],
         set__algos=['Equihash', ],
     )

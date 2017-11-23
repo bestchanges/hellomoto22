@@ -34,10 +34,11 @@ class User(db.Document):
 
 class Currency(db.Document):
     code = db.StringField(max_length=20, unique=True)
-    difficulty = db.FloatField()
+    difficulty = db.DecimalField()
     algo = db.StringField(max_length=50) # actually should be named 'algorithm' TODO: rename
-    block_time = db.IntField()  # seconds
-    nethash = db.IntField()
+    block_time = db.FloatField()  # seconds
+    block_reward = db.DecimalField()
+    nethash = db.DecimalField()
     def __unicode__(self):
         return self.code
 
@@ -90,6 +91,7 @@ class MinerProgram(db.Document):
 class Exchange(db.Document):
     name = db.StringField(max_length=50, unique=True)
     website = db.StringField(max_length=200)
+    handler = db.StringField(max_length=200) # subclass of Exchange
 
     def __unicode__(self):
         return self.name

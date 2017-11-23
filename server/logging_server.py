@@ -6,6 +6,8 @@ import logging.handlers
 import re
 import threading
 
+import os
+
 import globals
 import socketserver
 import struct
@@ -18,7 +20,10 @@ from models import RigState, Rig
 CLIENT_LOGGER_ROOT = "client_logger"
 
 my_logger = logging.getLogger(__name__)
-my_logger.addHandler(logging.handlers.TimedRotatingFileHandler("log/logging_server.log", when='midnight'))
+h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", when='midnight', encoding='utf-8')
+h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
+my_logger.addHandler(h)
+
 
 class LimitedList(list):
     '''
@@ -45,7 +50,7 @@ class LimitedList(list):
 
 LIMIT_LOG_ENTRIES_TO_KEEP = 30
 # uuid -> LimitedList
-rigs_logs = {}
+rigs_memery_log = {}
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
@@ -81,6 +86,8 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             except Exception as e:
                 thread_name = threading.current_thread().name
                 my_logger.info("Thread={} uuid={} connection closed: {}".format(thread_name, self.uuid, e))
+
+                # TODO: close client log!
                 break
             if len(chunk) < 4:
                 break
@@ -164,14 +171,52 @@ def get_rig_state_object(rig_uuid):
 
 
 class SaveClientLogHistory(logging.Handler):
+    '''
+    keep client log in memeory for last LIMIT_LOG_ENTRIES_TO_KEEP lines.
+    store LOG files for specified uuids
+    '''
+    def __init__(self, level=logging.NOTSET):
+        self.uuid_file_logs = {}
+        super().__init__(level)
+
+    def add_loggable_uuid(self, uuid):
+        if uuid in self.uuid_file_logs.keys():
+            # already added
+            return
+        self.uuid_file_logs[uuid] = None
+
     def handle(self, record):
-        global rigs_logs
+        global rigs_memery_log
         rig_uuid = str(record.rig_id)
-        if rig_uuid in rigs_logs.keys():
-            list = rigs_logs[rig_uuid]
+
+        # temporaly logs all clients
+        self.add_loggable_uuid(rig_uuid)
+
+        # file log
+        if rig_uuid in self.uuid_file_logs.keys():
+            value = self.uuid_file_logs[rig_uuid]
+            if value is None:
+                dirs = os.path.join('log', 'clients')
+                if not os.path.exists(dirs):
+                    os.makedirs(dirs)
+                client_log_file_logger = logging.getLogger("client_logger_{}".format(rig_uuid))
+                log_filename = "{}-{}.log".format(rig_uuid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+                log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
+                h = logging.StreamHandler(log_file)
+                h.setFormatter(logging.Formatter('%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s)'))
+                client_log_file_logger.addHandler(h)
+                client_log_file_logger.propagate = False
+                self.uuid_file_logs[rig_uuid] = client_log_file_logger
+                # TODO: close logger then client disconnects!
+            client_log_file_logger = self.uuid_file_logs[rig_uuid]
+            client_log_file_logger.handle(record)
+
+        # in-memory log
+        if rig_uuid in rigs_memery_log.keys():
+            list = rigs_memery_log[rig_uuid]
         else:
             list = LimitedList(limit=LIMIT_LOG_ENTRIES_TO_KEEP)
-            rigs_logs[rig_uuid] = list
+            rigs_memery_log[rig_uuid] = list
         list.append(record.msg)
 
 

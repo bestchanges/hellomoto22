@@ -1,6 +1,7 @@
 import json
 
 from models import *
+from profit_manager import update_currency_data_from_whattomine
 
 DEFAULT_MINER_ENV = {
     'GPU_MAX_HEAP_SIZE': '100',
@@ -12,17 +13,7 @@ DEFAULT_MINER_ENV = {
 
 def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
-    wtm = json.load(open('coins1.json', 'r'))
-    for currency, data in wtm['coins'].items():
-        Currency.objects(
-            code=data['tag'],
-        ).update_one(
-            algo=data["algorithm"],
-            block_reward=data["block_reward"],
-            difficulty=data["difficulty"],
-            nethash=data["nethash"],
-            upsert=True
-        )
+    update_currency_data_from_whattomine(json.load(open('coins1.json', 'r')))
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
 

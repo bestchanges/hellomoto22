@@ -345,7 +345,7 @@ def rig_info(uuid=None):
 
 
 def rig_log(uuid):
-    logs = logging_server.rigs_logs
+    logs = logging_server.rigs_memery_log
     log = ''
     if uuid in logs.keys():
         log = "\n".join(logs[uuid])

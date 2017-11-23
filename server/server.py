@@ -6,6 +6,7 @@ import flask
 
 from logging_server import LoggingServer
 from models import *
+from profit_manager import ProfitManager
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
@@ -47,6 +48,8 @@ def main():
     initial_data.initial_data()
     initial_data.sample_data()
     initial_data.test_data()
+    profit_manager = ProfitManager()
+    profit_manager.start()
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
 
 if __name__ == "__main__":

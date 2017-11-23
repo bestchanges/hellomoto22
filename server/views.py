@@ -223,6 +223,16 @@ def get_miner_version(dir):
     return file.readline().strip()
 
 
+def get_client_version():
+    '''
+    returns client version stored in ../client/version.txt
+    :param dir:
+    :return:
+    '''
+    version_filename = os.path.join('..', 'client', 'version.txt')
+    file = open(version_filename, 'r', encoding='ascii')
+    return file.readline().strip()
+
 def get_miner_config_for_configuration(conf, rig):
     os = rig.os
     if not os in conf.miner_program.supported_os:
@@ -292,6 +302,7 @@ def client_config():
     config['rig_id'] = rig_uuid
     config['email'] = email
     config['worker'] = rig.worker
+    config['client_version'] = get_client_version()
     server_host = request.host.split(":")[0]
     # TODO: get settings from logging_server
     config['logger'] = {

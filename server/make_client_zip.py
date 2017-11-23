@@ -27,11 +27,11 @@ def miners_zip():
     print("... done")
 
 
-def client_zip():
+def client_zip_windows():
     # root directory in client archive
-    client_dir = "BestMiner"
+    client_dir = "."
     # where to put distributive on the server
-    zip_location = 'static/client/BestMiner-win64.zip'
+    zip_location = 'static/client/BestMiner-Windows.zip'
     # client source dir
     source_dir = '../client'
     # prefix of directories/files to add to archive
@@ -40,7 +40,7 @@ config.txt
 bestminer-client.py
 distr_win
 python_win
-run.bat
+BestMiner.bat
 version.txt
 '''
     include = set(includes.split())
@@ -61,5 +61,5 @@ version.txt
     print("... done")
 
 if __name__ == '__main__':
-    client_zip()
+    client_zip_windows()
     miners_zip()

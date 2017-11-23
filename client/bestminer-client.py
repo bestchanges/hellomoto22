@@ -106,7 +106,7 @@ class BestMinerSocketHandler(handlers.SocketHandler):
         super().emit(record)
 
 
-def get_config():
+def register_on_server():
     """
     Get/update config from server. Save updated config
     :return:
@@ -131,6 +131,9 @@ def get_config():
         # send current config to the server for update and review
         newconfig = call_server_api("client/rig_config", server_address=server_address)
         print(newconfig)
+        if newconfig['client_version'] != get_client_version():
+            logging.info("New version available! Going to install version {}".format(newconfig['client_version']))
+            self_update()
         if newconfig['rig_id']:
             # Save config from server as new
             config = newconfig
@@ -178,6 +181,36 @@ def get_miner_version(miner_dir):
     file = open(miner_version_filename, 'r', encoding='ascii')
     return file.readline().strip()
 
+
+def get_client_version():
+    version_filename = 'version.txt'
+    file = open(version_filename, 'r', encoding='ascii')
+    return file.readline().strip()
+
+
+
+def self_update():
+    '''
+    Self update
+    download client.zip from the server.
+    unpack it to dir 'update'
+    exit with code 200.
+    Runner script shall catch exit code 200 and copy content of 'update' to root dir.
+    :return:
+    '''
+    update_dir = 'update'
+    if not os.path.exists(update_dir):
+        os.mkdir(update_dir)
+    my_os = get_my_os()
+    zip_filename = "BestMiner-{}.zip".format(my_os)
+    url = "http://{}/static/client/{}".format(config['server'], zip_filename)
+    my_logger.info("Downloading program from {}".format(url))
+    request.urlretrieve(url, zip_filename)
+    with ZipFile(zip_filename, 'r') as myzip:
+        myzip.extractall(update_dir)
+    os.remove(zip_filename)
+    my_logger.info("Download complete. Going to install program.")
+    exit(200)
 
 def run_miner(miner_config):
     """
@@ -283,13 +316,17 @@ def get_state_info():
     return state_info
 
 
+def get_my_os():
+    return platform.system()
+
+
 def call_server_api(path, data={}, server_address=None):
     global config, rig_id, config_ini
     vars = {
         'rig_id': rig_id,
         'email': config_ini['email'],
         'api_key': config_ini['api_key'],
-        'os': platform.system(),
+        'os': get_my_os(),
     }
     if not server_address:
         server_address = config["server"]
@@ -368,7 +405,7 @@ class StatisticManager(threading.Thread):
 
 if __name__ == "__main__":
     logging.info("Starting BestMiner")
-    get_config()
+    register_on_server()
     if not 'rig_id' in config:
         logging.error("Cannot load config from server. Exiting")
         exit(800)

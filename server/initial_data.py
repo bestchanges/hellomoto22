@@ -25,6 +25,7 @@ def initial_data():
         )
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
+
     Exchange.objects(name="Poloniex").update_one(handler='PoloniexExchange', upsert=True)
 
     miner_program = MinerProgram.objects(name='Claymore Dual').modify(

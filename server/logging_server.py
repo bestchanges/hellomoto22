@@ -19,8 +19,6 @@ CLIENT_LOGGER_ROOT = "client_logger"
 
 my_logger = logging.getLogger(__name__)
 my_logger.addHandler(logging.handlers.TimedRotatingFileHandler("log/logging_server.log", when='midnight'))
-my_logger.addHandler(logging.StreamHandler())
-my_logger.error("test")
 
 class LimitedList(list):
     '''
@@ -65,6 +63,12 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
 
     """
 
+    def __init__(self, request, client_address, server):
+        self.uuid = None
+        thread_name = threading.current_thread().name
+        my_logger.info("Thread={} uuid={} connection opened".format(thread_name, self.uuid))
+        super().__init__(request, client_address, server)
+
     def handle(self):
         """
         Handle multiple requests - each expected to be a 4-byte length,
@@ -75,7 +79,8 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             try:
                 chunk = self.connection.recv(4)
             except Exception as e:
-                my_logger.warning("logging server connection broken: %s" % e)
+                thread_name = threading.current_thread().name
+                my_logger.info("Thread={} uuid={} connection closed: {}".format(thread_name, self.uuid, e))
                 break
             if len(chunk) < 4:
                 break
@@ -94,6 +99,10 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         if not hasattr(record, 'rig_id'):
             # ignore unauthorized message
             return
+        if self.uuid is None:
+            self.uuid = record.rig_id
+            thread_name = threading.current_thread().name
+            my_logger.info("Thread={} uuid={} UUID detected".format(thread_name, self.uuid))
 
         # logger name record.name defined in client. Sample: 'miner_ewbf', 'statistic'
         # combine logging_server root logger and record logger received from client
@@ -106,7 +115,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             client_logger.handle(record)
         except Exception as e:
             # we shall be able to keep working
-            my_logger.error("Error processing log from cleint: %s" % e)
+            my_logger.error("Error processing log from client: %s" % e)
             pass
 
         # save tail of the log
@@ -227,7 +236,6 @@ class ClaymoreHandler(logging.Handler):
                     my_logger.error('Cannot recognize AMD family %s' % family)
                 if card:
                     self.local.amd_cards.append(card)
-                my_logger.info("cards %s, gpu_num %d, expect")
                 if gpu_num == self.local.expect_amd_cards - 1:
                     rig = Rig.objects.get(uuid=rig_uuid)
                     rig.system_gpu_list = self.local.amd_cards
@@ -297,6 +305,7 @@ class LoggingServer(Thread):
     def __init__(self):
         super().__init__()
         self.tcpserver = LogRecordSocketReceiver()
+        self.clients_log_files = {} # uuid->{filename='uuid'}
         client_logs_root_logger = logging.getLogger(CLIENT_LOGGER_ROOT)
         client_logs_root_logger.propagate = False
 
@@ -312,7 +321,7 @@ class LoggingServer(Thread):
         ewbf_logger.addHandler(EwbfHandler())
 
     def run(self):
-        logging.info('Starting TCP logging server...')
+        my_logger.info('Starting TCP logging server...')
         self.tcpserver.serve_until_stopped()
 
 # if __name__ == '__main__':

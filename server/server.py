@@ -15,7 +15,9 @@ app.config['SECRET_KEY'] = 'flask+mongoengine<=3'
 app.debug = False
 
 logging.basicConfig(
-    format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s')  # %(client_id)-15s
+    format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
+    level=logging.INFO
+)
 #        format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')  # %(client_id)-15s
 
 db.init_app(app)

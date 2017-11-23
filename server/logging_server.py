@@ -71,7 +71,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     def __init__(self, request, client_address, server):
         self.uuid = None
         thread_name = threading.current_thread().name
-        my_logger.info("Thread={} uuid={} connection opened".format(thread_name, self.uuid))
+        my_logger.info("Thread={} client={} uuid={} connection opened".format(thread_name, client_address, self.uuid))
         super().__init__(request, client_address, server)
 
     def handle(self):
@@ -85,7 +85,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                 chunk = self.connection.recv(4)
             except Exception as e:
                 thread_name = threading.current_thread().name
-                my_logger.info("Thread={} uuid={} connection closed: {}".format(thread_name, self.uuid, e))
+                my_logger.info("Thread={} client={} uuid={} connection closed: {}".format(thread_name, self.client_address, self.uuid, e))
 
                 # TODO: close client log!
                 break
@@ -109,7 +109,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         if self.uuid is None:
             self.uuid = record.rig_id
             thread_name = threading.current_thread().name
-            my_logger.info("Thread={} uuid={} UUID detected".format(thread_name, self.uuid))
+            my_logger.info("Thread={} client={} uuid={} UUID detected".format(thread_name, self.client_address, self.uuid))
 
         # logger name record.name defined in client. Sample: 'miner_ewbf', 'statistic'
         # combine logging_server root logger and record logger received from client

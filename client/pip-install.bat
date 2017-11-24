@@ -1,0 +1,1 @@
+pip install -t python_win1 -r requirements.txt

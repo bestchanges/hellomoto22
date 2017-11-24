@@ -408,7 +408,7 @@ if __name__ == "__main__":
     register_on_server()
     if not 'rig_id' in config:
         logging.error("Cannot load config from server. Exiting")
-        exit(800)
+        exit()
     logging.info("Running as worker '%s'" % config['worker'])
     socketHandler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
     my_logger.addHandler(socketHandler)

@@ -2,7 +2,7 @@
 
 :START
 echo start bestminer
-python_win\scripts\python bestminer-client.py
+epython\python bestminer-client.py
 IF ERRORLEVEL 200 GOTO INSTALL_UPDATE
 echo Normal exit
 GOTO END

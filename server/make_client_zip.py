@@ -39,7 +39,7 @@ def client_zip_windows():
 config.txt
 bestminer-client.py
 distr_win
-python_win
+epython
 BestMiner.bat
 version.txt
 '''

@@ -12,7 +12,7 @@
     <content url="file://$MODULE_DIR$/trading-bot">
       <sourceFolder url="file://$MODULE_DIR$/trading-bot" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.5.4 virtualenv at C:\Users\i\Documents\allminer\env\server" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.5.4 virtualenv at C:\Users\i\Documents\allminer\env\idea\bestminer server for pycharm" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TemplatesService">

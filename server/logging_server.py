@@ -300,9 +300,12 @@ class ClaymoreHandler(logging.Handler):
             if code == "DCR":
                 # take into consideration when mining single Blake
                 algorithm = 'Blake (14r)'
-            rig_state = get_rig_state_object(rig_uuid)
-            rig_state.hashrate[algorithm] = {'value': val, 'units': units}
-            rig_state.save()
+            else:
+                algorithm = None
+            if algorithm:
+                rig_state = get_rig_state_object(rig_uuid)
+                rig_state.hashrate[algorithm] = {'value': val, 'units': units}
+                rig_state.save()
 
         # now take care about temperaure and fan speed
         # GPU0 t=55C fan=52%, GPU1 t=50C fan=43%, GPU2 t=57C fan=0%, GPU3 t=52C fan=48%, GPU4 t=49C fan=0%, GPU5 t=53C

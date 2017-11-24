@@ -9,7 +9,7 @@ GOTO END
 
 :INSTALL_UPDATE
 echo install update
-robocopy /e update .
+robocopy /e update . /xf config.txt
 echo install update finish. Going to restart
 GOTO START
 

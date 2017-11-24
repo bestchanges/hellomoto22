@@ -272,13 +272,14 @@ def client_config():
     rig_uuid = request.args.get('rig_id')
     assert_expr(UUID(rig_uuid))
     api_key = request.args.get('rig_id')
-    config = request.json
+    config = request.get_json()
     if config is None:
         config = {}
     user = User.objects.get(email=email)
     # TODO: create new user(?)
     rigs = Rig.objects(uuid=rig_uuid)
     if len(rigs) == 0:
+        # register new rig
         user_rigs = Rig.objects(user=user)
         nrigs = len(user_rigs)
         rig = Rig()
@@ -289,10 +290,12 @@ def client_config():
         rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
         rig.save()
     else:
+        # register existing rig
         # update os. May be user has switched from Windows to Linux
         rig = rigs[0]
         rig.os = rig_os
         rig.save()
+    # if miner config empty then set default miner config
     if not "miner_config" in config or not config["miner_config"]:
         rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
         rig.save()

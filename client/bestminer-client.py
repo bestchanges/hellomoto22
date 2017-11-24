@@ -129,7 +129,7 @@ def register_on_server():
     # Ok. Now we call server and update config from it
     try:
         # send current config to the server for update and review
-        newconfig = call_server_api("client/rig_config", server_address=server_address)
+        newconfig = call_server_api("client/rig_config", data=config, server_address=server_address)
         print(newconfig)
         if newconfig['client_version'] != get_client_version():
             logging.info("New version available! Going to install version {}".format(newconfig['client_version']))
@@ -258,7 +258,7 @@ def run_miner(miner_config):
     server_log("Run miner from '%s' %s" % (miner_dir, " ".join(args)))
     env = miner_config["env"]
     full_env = {**os.environ, **env}
-    miner_process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
+    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
                                      env=full_env, cwd=miner_dir)
 
     miner_out_reader = threading.Thread(target=read_miner_output)
@@ -279,7 +279,7 @@ def read_miner_output():
         if not is_run(miner_process):
             logger.warning("Miner was terminated. Stop monitoring stdout")
             break
-        line = miner_process.stdout.readline().decode()
+        line = miner_process.stdout.readline()
         if line != '':
             line = line.rstrip()
             logger.info(line)
@@ -332,7 +332,7 @@ def call_server_api(path, data={}, server_address=None):
         server_address = config["server"]
     url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
     #    'application/json'
-    response = requests.post(url=url, json=data)
+    response = requests.put(url=url, json=data)
     error_code = response.status_code
     if error_code != 200:
         raise Exception("Got error code %s for url %s" % (error_code, url))

@@ -301,6 +301,7 @@ class ClaymoreHandler(logging.Handler):
                 # take into consideration when mining single Blake
                 algorithm = 'Blake (14r)'
             else:
+                my_logger.error("Unexpected currency code={}".format(code))
                 algorithm = None
             if algorithm:
                 rig_state = get_rig_state_object(rig_uuid)

@@ -258,8 +258,9 @@ def run_miner(miner_config):
     server_log("Run miner from '%s' %s" % (miner_dir, " ".join(args)))
     env = miner_config["env"]
     full_env = {**os.environ, **env}
-    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
-                                     env=full_env, cwd=miner_dir)
+
+    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1,
+                                     env=full_env, cwd=miner_dir, universal_newlines=True)
 
     miner_out_reader = threading.Thread(target=read_miner_output)
     miner_out_reader.start()

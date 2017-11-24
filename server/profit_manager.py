@@ -16,10 +16,13 @@ def load_data_from_whattomine():
         q.add_header('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5')
         a = urlopen(q)
         response = a.read().decode('utf-8')
-        return json.loads(response)
+        result = json.loads(response)
+        if len(result) > 0:
+            fout = open('coins.json', 'w')
+            json.dump(result, fout, indent=2)
+        return result
     except Exception as e:
         logging.error("Error loading currencies: {} ".format(e))
-        raise e
 
 
 def update_currency_data_from_whattomine(wtm):
@@ -42,7 +45,11 @@ def update_currency_data_from_whattomine(wtm):
 
 class ProfitManager(Thread):
     def run(self):
-        while True:
+        # update once from file
+        update_currency_data_from_whattomine(json.load(open('coins.json')))
+
+        # False = disable periodical load
+        while False:
             update_currency_data_from_whattomine(load_data_from_whattomine())
             time.sleep(300)
 

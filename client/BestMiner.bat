@@ -1,4 +1,5 @@
 @echo off
+set PYTHONUNBUFFERED=1
 
 :START
 echo start bestminer

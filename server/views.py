@@ -5,6 +5,7 @@ import re
 from uuid import UUID
 
 import models
+import task_manager
 from globals import assert_expr
 import math
 from logging import Logger
@@ -317,6 +318,9 @@ def client_config1():
     config['task_manager'] = {
         "request_interval_sec": 15,
     }
+    config['statistic_manager'] = {
+        "request_interval_sec": 30,
+    }
     return flask.jsonify(config)
 
 
@@ -326,28 +330,59 @@ def test_get_random_config(rig):
     return ConfigurationGroup.objects.get(name=name_new_config)
 
 
-def sendTask():
-    '''
-    Send task data to the specified client
-    :return:
-    '''
-    rig_uuid = request.args.get('rig_id')
-    rig = Rig.objects.get(uuid=rig_uuid)
-    return json.dumps([
-        {"task": "switch_miner",
-         "data": {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)}}
-    ])
-
-
 def set_target_hashrate_from_current(rig):
     '''
     Update this rig target hashrate. If current hashrate for given algo exceedes the target hashrate then update target
-    :param rig:
-    :return:
+    Rig object not saved.
+    :param rig: rig model
+    :return: boolean if was updated
     '''
-    pass
+    algo = rig.configuration_group.algo
+    current_hashrate = rig.hashrate
+    if not algo in rig.target_hashrate:
+        rig.target_hashrate[algo] = {}
+    for algorithm in algo.split('+'):
+        if algorithm in rig.target_hashrate[algo]:
+            target_value = rig.target_hashrate[algo][algorithm]
+        else:
+            target_value = 0
+        if algorithm in current_hashrate and current_hashrate[algorithm] > target_value:
+            # update value
+            rig.target_hashrate[algo][algorithm] = current_hashrate[algorithm]
+    return False
 
 def recieve_stat_and_return_task():
+    receive_stat()
+    return send_task()
+
+def send_task():
+    rig_uuid = request.args.get('rig_id')
+    rig = Rig.objects.get(uuid=rig_uuid)
+    # TODO: authorize uuid
+    task = task_manager.task_manager.pop_task(rig.uuid)
+    tasks = []
+    if task:
+        tasks.append({
+            "task": task['name'],
+            "data": task['data'],
+        })
+    return json.dumps(tasks)
+
+
+def add_switch_miner_task(rig):
+    """
+    Add to task manager command for rig to switch miner to current configuration_group.
+    :param rig:
+    :return:
+    """
+    task_manager.task_manager.add_task(
+        "switch_miner",
+        {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)},
+        rig.uuid
+    )
+
+
+def receive_stat():
     '''
 {
   "hashrate": {
@@ -380,21 +415,29 @@ def recieve_stat_and_return_task():
     "46"
   ],
   "reboot_timestamp": 1511326434
+  "client_version": "0.9"
 }
     '''
     stat = request.get_json()
     rig_uuid = request.args.get('rig_id')
-    rig_state = Rig.objects.get(uuid=rig_uuid)
+    rig = Rig.objects.get(uuid=rig_uuid)
     # TODO: validate all data received from the client to the server!
-    rig_state.cards_fan = stat['pu_fanspeed']
-    rig_state.cards_temp = stat['pu_temperatire']
-    rig_state.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
-    rig_state.hashrate = stat["hashrate"]["current"]
-    set_target_hashrate_from_current(rig_state)
-    rig_state.save()
-    # TODO: if configuration grup from client different when send task to change miner
-    # TODO: send client version from client. If server has newer client version - then add client_update_task
-    return sendTask()
+    rig.cards_fan = stat['pu_fanspeed']
+    rig.cards_temp = stat['pu_temperatire']
+    rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
+    rig.hashrate = stat["hashrate"]["current"]
+    set_target_hashrate_from_current(rig)
+    rig.is_online = stat['miner']['is_run']
+    if rig.is_online:
+        rig.last_online_at = datetime.datetime.now
+    rig.save()
+    # If server has newer client version - then add client update task
+    if stat['client_version'] != get_client_version():
+        task_manager.task_manager.add_task(task_name="self_update", data={}, client=rig.uuid)
+    # if configuration grup from client different when send task to change miner
+    if stat['miner']['config']['config_name'] != rig.configuration_group.name:
+        add_switch_miner_task(rig)
+    return flask.jsonify('OK')
 
 
 def rig_info(uuid=None):
@@ -423,13 +466,12 @@ def rig_log(uuid):
 
 def rig_set_config(uuid):
     config_id = request.args.get('config')
-
     # TODO: SECURITY: check if it user's config
     rig = Rig.objects.get(uuid=uuid)
     config = ConfigurationGroup.objects.get(id=config_id)
     rig.configuration_group = config
     rig.save()
-    # TODO: SET TASK
+    add_switch_miner_task(rig)
     return rig_info(uuid)
 
 

@@ -20,6 +20,10 @@ logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
     level=logging.INFO
 )
+webserver_logger = logging.getLogger("werkzeug")
+# TODO: add store logs to rotating file
+webserver_logger.propagate = False
+
 #        format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')  # %(client_id)-15s
 
 db.init_app(app)
@@ -30,6 +34,8 @@ client_zip_windows()
 # prepare data for work
 app.add_url_rule('/client/rig_config', view_func=views.client_config1, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/stat_and_task', view_func=views.recieve_stat_and_return_task, methods=["GET", "POST", "PUT"])
+app.add_url_rule('/client/stat', view_func=views.receive_stat, methods=["GET", "POST", "PUT"])
+app.add_url_rule('/client/task', view_func=views.send_task, methods=["GET", "POST", "PUT"])
 
 app.add_url_rule('/', view_func=views.index)
 app.add_url_rule('/rigs', view_func=views.rig_list)

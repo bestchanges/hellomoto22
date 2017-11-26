@@ -182,6 +182,7 @@ class Rig(db.Document):
     hashrate = db.DictField(default={})
     target_hashrate = db.DictField(default={}) # { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 }, 'Ethash': { 'Ethash': 25 }
     is_online = db.BooleanField(default=False)
+    last_online_at = db.DateTimeField()
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)

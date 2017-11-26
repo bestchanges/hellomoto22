@@ -19,6 +19,7 @@ import psutil
 
 from zipfile import ZipFile
 
+import sys
 import uptime as uptime
 
 
@@ -234,13 +235,15 @@ def self_update():
     my_os = get_my_os()
     zip_filename = "BestMiner-{}.zip".format(my_os)
     url = "http://{}/static/client/{}".format(config['server'], zip_filename)
-    my_logger.info("Downloading program from {}".format(url))
+    my_logger.info("Downloading latest program from {}".format(url))
     request.urlretrieve(url, zip_filename)
     with ZipFile(zip_filename, 'r') as myzip:
         myzip.extractall(update_dir)
     os.remove(zip_filename)
     my_logger.info("Download complete. Going to install program.")
-    exit(200)
+    global miner_process
+    kill_process(miner_process)
+    os._exit(200)
 
 def run_miner(miner_config):
     """
@@ -544,6 +547,7 @@ def get_state_info():
         "processing_units": compute_units_info,
         "miner_stdout": miner_stdout,
         "reboot_timestamp": calendar.timegm(get_reboot_time().utctimetuple()),
+        'client_version': get_client_version()
     }
     return state_info
 
@@ -572,68 +576,61 @@ def call_server_api(path, data={}, server_address=None):
     return response.json()
 
 
-def execute_task(task):
-    task_name = task['task']
-    task_data = task['data']
-    if task_name == "switch_miner":
-        miner_config = task_data["miner_config"]
-        run_miner(miner_config)
+class TaskManager(threading.Thread):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
+        self.logger = logging.getLogger("task_manager")
+        super().__init__(group, target, name, args, kwargs, daemon=daemon)
 
-
-def task_manager():
-    global config
-    request_interval = 30
-    state_info = {}
-    while True:
-        request_interval = config["task_manager"]["request_interval_sec"]
-        time.sleep(request_interval)
-        try:
-            my_logger.info("Gather the state")
-            state_info = get_state_info()
-        except Exception as e:
-            my_logger.error("Error getting state: %s" % str(e))
-        try:
-            tasks = call_server_api("client/stat_and_task", state_info)
-        except Exception as e:
-            my_logger.error("Error with send stat and run task: %s" % e)
-            continue
+    def get_and_execute_task(self):
+        self.logger.info("Check tasks...")
+        tasks = call_server_api("client/task")
         for task in tasks:
             task_name = task['task']
             task_data = task['data']
-            print("Task %s: %s" % (task_name, task_data))
-            execute_task(task)
+            self.logger.info("Get task '{}'".format(task_name))
+            if task_name == "switch_miner":
+                miner_config = task_data["miner_config"]
+                run_miner(miner_config)
+            elif task_name == "self_update":
+                self_update()
+            else:
+                raise Exception("Received unknown task '{}'".format(task_name))
+
+    def run(self):
+        request_interval = config["task_manager"]["request_interval_sec"]
+        if request_interval is None or request_interval == 0:
+            request_interval = 30
+        while True:
+            try:
+                self.get_and_execute_task()
+            except Exception as e:
+                self.logger.error("Exception running task: %s" % e)
+            time.sleep(request_interval)
 
 
 class StatisticManager(threading.Thread):
-
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
-        self.logger = logging.getLogger("statistic")
+        self.logger = logging.getLogger("statistic_manager")
         super().__init__(group, target, name, args, kwargs, daemon=daemon)
 
     def send_stat(self):
-        booted_orig = get_reboot_time()
-        # remove TZ as can't subtract offset-naive and offset-aware datetimes
-        booted = booted_orig.replace(tzinfo=None, microsecond=0)
-        now = datetime.datetime.now()
-        now = now.replace(microsecond=0)
-        diff = now - booted
-        data = {
-            'hms': str(diff),
-            'sec': diff.seconds,
-            'rebooted': str(booted_orig),
-            'rebooted_epoch': calendar.timegm(booted_orig.utctimetuple()),
-        }
-        self.logger.info("UPTIME=%s" % json.dumps(data))
+        state_info = get_state_info()
+        result = call_server_api("client/stat", state_info)
 
     def run(self):
+        request_interval = config["statistic_manager"]["request_interval_sec"]
+        if request_interval is None or request_interval == 0:
+            request_interval = 30
+        # for first run wait while statistic will be ready
+        time.sleep(request_interval)
         while True:
             try:
+                self.logger.info("send stat to server")
                 self.send_stat()
             except Exception as e:
-                self.logger.error("Exception running send_stat: %s" % e)
+                self.logger.error("Exception sending stat: %s" % e)
                 pass
-            time.sleep(30)
-
+            time.sleep(request_interval)
 
 
 if __name__ == "__main__":
@@ -650,5 +647,5 @@ if __name__ == "__main__":
 
     stat_manager = StatisticManager()
     stat_manager.start()
-    task_manager = threading.Thread(target=task_manager)
+    task_manager = TaskManager()
     task_manager.start()

@@ -297,7 +297,7 @@ class ClaymoreHandler(logging.Handler):
             val = float(value)
             if code == "ETH":
                 algorithm = 'Ethash'
-            if code == "DCR":
+            elif code == "DCR":
                 # take into consideration when mining single Blake
                 algorithm = 'Blake (14r)'
             else:

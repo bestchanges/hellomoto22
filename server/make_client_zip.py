@@ -2,6 +2,8 @@ from zipfile import ZipFile
 import os
 
 
+# TODO: make server update ZIP on 1) startup 2) when client version has changed
+
 def miners_zip():
     '''
     make zip for all miners located in client/miners

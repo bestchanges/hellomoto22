@@ -27,7 +27,7 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%.%DUAL_WORKER% -ftime 10 -dcri 26 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%.%DUAL_WORKER% -ftime 10 -dcri 26 -asm 1',
         set__env = DEFAULT_MINER_ENV,
         set__algos = ['Ethash+Blake',],
         set__supported_os = ['Windows', 'Linux'],
@@ -42,7 +42,7 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
         set__env=DEFAULT_MINER_ENV,
         set__algos=['Ethash', ],
         set__supported_os = ['Windows', 'Linux'],
@@ -57,7 +57,7 @@ def initial_data():
         set__win_exe = 'miner.exe',
         set__dir_linux = 'ewbf_linux',
         set__linux_bin = 'miner',
-        set__command_line = '--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT%.%WORKER% --pass %POOL_PASSWORD% --eexit 3 --fee 0.5',
+        set__command_line = '--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT%.%WORKER% --log 2 --pass %POOL_PASSWORD% --eexit 3 --fee 0.5',
         set__env=DEFAULT_MINER_ENV,
         set__algos=['Equihash', ],
         set__supported_os=['Windows', 'Linux'],
@@ -74,10 +74,11 @@ def test_data():
         set__win_exe = 'python',
         set__dir_linux = 'miner_emu',
         set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 0.3 ',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
         set__env=DEFAULT_MINER_ENV,
-        set__supported_os=['Windows', 'Linux'],
         set__algos=['Ethash+Blake', 'Ethash'],
+        set__supported_os=['Windows', 'Linux'],
+        set__supported_pu=['nvidia', 'amd'],
     )
 
     miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
@@ -88,10 +89,11 @@ def test_data():
         set__win_exe = 'python',
         set__dir_linux = 'miner_emu',
         set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --delay 1 ',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
         set__env=DEFAULT_MINER_ENV,
-        set__supported_os=['Windows', 'Linux'],
         set__algos=['Equihash', ],
+        set__supported_os=['Windows', 'Linux'],
+        set__supported_pu=['nvidia', ],
     )
 
     poloniex = Exchange.objects(name="Poloniex").modify(

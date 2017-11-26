@@ -22,6 +22,32 @@ from zipfile import ZipFile
 import uptime as uptime
 
 
+class LimitedList(list):
+    '''
+    Limit list for no more than LIMIT entries.
+    If number of entries exceed limit, then delete first items until it ok
+    '''
+
+    def __init__(self, limit) -> None:
+        self.limit = limit
+        super().__init__()
+
+    def append(self, object) -> None:
+        super().append(object)
+        self.trunc()
+
+    def insert(self, index: int, object) -> None:
+        super().insert(index, object)
+        self.trunc()
+
+    def trunc(self):
+        while len(self) > self.limit:
+            self.pop(0)
+
+
+stdout_history = LimitedList(30)
+
+
 def load_config_ini():
     result = {}
     with open("config.txt") as file:
@@ -40,9 +66,12 @@ miner_process = None
 miner_stdout = []  # last N lines from STDOUT of process
 current_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
 target_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
+compute_units_info = []  #
+compute_units_fan = []
+compute_units_temp = []
 
 my_logger = logging.getLogger('')
-my_logger.setLevel(logging.INFO)
+my_logger.setLevel(logging.DEBUG)
 logging.basicConfig(format='%(asctime)s|%(name)-10s|%(levelname)-4s: %(message)s')
 
 
@@ -153,22 +182,23 @@ def save_config():
     if not config["server"]:
         raise Exception("Broken config. Not saving")
     file = open("settings.json", "w")
-    json.dump(config, file, indent=2)
+    json.dump(config, file, indent=2, sort_keys=True)
 
 
 def kill_process(miner_process):
     # Kill currently running process
     logging.info("Terminating process ...")
-    miner_process.terminate()
-    time.sleep(2)
 
     if not is_run(miner_process):
+        logging.info("Process not run. No need to terminate")
         # process not run
         return
     process = psutil.Process(miner_process.pid)
     for proc in process.children(recursive=True):
         proc.kill()
     process.kill()
+    time.sleep(2)
+    my_logger.debug("Process has stopped. Process run: {}".format(is_run(miner_process)))
 
 
 def is_run(process):
@@ -259,11 +289,20 @@ def run_miner(miner_config):
     env = miner_config["env"]
     full_env = {**os.environ, **env}
 
-    miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1,
-                                     env=full_env, cwd=miner_dir, universal_newlines=True)
+    if miner_config['send_output']:
+        miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
+                                         env=full_env, cwd=miner_dir, universal_newlines=True)
+        miner_out_reader = threading.Thread(target=read_miner_output)
+        miner_out_reader.start()
+    else:
+        miner_process = subprocess.Popen(args, shell=True, stdout=None, stderr=None, bufsize=0,
+                                         env=full_env, cwd=miner_dir, universal_newlines=True)
+    # запустить майнер хэндлер по типу семейства
+    miner_handler_method = globals()[miner_config['miner_family'] + '_handler']
+    my_logger.debug("Going to start handler: {}".format(miner_handler_method))
+    miner_handler = threading.Thread(target=miner_handler_method)
+    miner_handler.start()
 
-    miner_out_reader = threading.Thread(target=read_miner_output)
-    miner_out_reader.start()
     my_logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
 
 
@@ -289,6 +328,180 @@ def read_miner_output():
             break
 
 
+def claymore_handle_line(line):
+    global current_hashrate, compute_units_info, compute_units_temp, compute_units_fan
+
+
+    global stdout_history
+    stdout_history.append(line.strip())
+
+    # GPU #0: Ellesmere, 4096 MB available, 32 compute units
+    # GPU #0 recognized as Radeon RX 470/570
+    '''
+    AMD Cards available: 5
+    GPU #0: Ellesmere, 4096 MB available, 32 compute units
+    GPU #0 recognized as Radeon RX 470/570
+    GPU #1: Ellesmere, 4096 MB available, 32 compute units
+    GPU #1 recognized as Radeon RX 470/570
+    GPU #2: Ellesmere, 4096 MB available, 32 compute units
+    GPU #2 recognized as Radeon RX 470/570
+    GPU #3: Ellesmere, 4096 MB available, 32 compute units
+    GPU #3 recognized as Radeon RX 470/570
+    GPU #4: Ellesmere, 4096 MB available, 32 compute units
+    GPU #4 recognized as Radeon RX 470/570        '''
+
+    m = re.findall('GPU #(\d+) recognized as (Radeon RX) (470/570)', line)
+    if len(m) > 0:
+        gpu_num, family, model = m[0]
+        gpu_num = int(gpu_num)
+        if family == 'Radeon RX':
+            if model == '470/570':
+                card ='amd_rx_470'
+            else:
+                card = 'amd_rx'
+        else:
+            my_logger.error('Cannot recognize AMD family %s' % family)
+        if gpu_num == 0:
+            compute_units_info.clear()
+        if card:
+            compute_units_info.append(card)
+
+    '''
+    01:41:44:605	1d20	NVIDIA Cards available: 3 
+    01:41:44:610	1d20	CUDA Driver Version/Runtime Version: 9.1/8.0
+    01:41:44:615	1d20	GPU #0: GeForce GTX 1060 3GB, 3072 MB available, 9 compute units, capability: 6.1
+    01:41:44:621	1d20	GPU #1: GeForce GTX 1060 3GB, 3072 MB available, 9 compute units, capability: 6.1
+    01:41:44:627	1d20	GPU #2: GeForce GTX 1060 3GB, 3072 MB available, 9 compute units, capability: 6.1
+    01:41:44:632	1d20	Total cards: 3 
+    '''
+    m = re.findall('GPU #(\d+): (GeForce GTX) ([^\s]+) (\d+)GB', line)
+    if len(m) > 0:
+        gpu_num, family, model, memory = m[0]
+        gpu_num = int(gpu_num)
+        if family == 'GeForce GTX':
+            card ='nvidia_gtx_{}_{}gb'.format(model, memory)
+        else:
+            my_logger.error('Cannot recognize NVIDIA family %s' % family)
+        if gpu_num == 0:
+            compute_units_info.clear()
+        if card:
+            compute_units_info.append(card)
+
+    # hashrate info
+    # ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
+    # DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
+    m = re.findall('(\w+) - Total Speed: ([\d\.]+) ([\w\/]+)', line)
+    if len(m) > 0:
+        (code, value, units) = m[0]
+        val = float(value)
+        if code == "ETH":
+            algorithm = 'Ethash'
+        elif code == "DCR":
+            # take into consideration when mining single Blake
+            algorithm = 'Blake (14r)'
+        else:
+            my_logger.error("Unexpected currency code={}".format(code))
+            algorithm = None
+        if algorithm:
+            current_hashrate[algorithm] = {'value': val, 'units': units}
+
+    # now take care about temperaure and fan speed
+    # GPU0 t=55C fan=52%, GPU1 t=50C fan=43%, GPU2 t=57C fan=0%, GPU3 t=52C fan=48%, GPU4 t=49C fan=0%, GPU5 t=53C
+    m = re.findall('GPU(\d+) t=(\d+). fan=(\d+)', line)
+    if len(m) > 0:
+        temps = []
+        fans = []
+        for num, temp, fan in m:
+            temps.append(temp)
+            fans.append(fan)
+        compute_units_temp = temps
+        compute_units_fan = fans
+    return True
+
+
+def claymore_handler():
+    global config
+    # give time for miner to start
+    time.sleep(6)
+    miner_config = config['miner_config']
+    miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    while True:
+        fn = os.path.join(miner_dir, 'log_noappend.txt')
+        fp = open(fn, 'r', encoding='866', newline='')
+        # need to seek to the end if log file appendable by miner.
+        # in claymore if filename has "noappend" the log will be truncated
+        # fp.seek(0, 2)
+        while True:
+            new = fp.readline()
+            # Once all lines are read this just returns ''
+            # until the file changes and a new line appears
+            if new:
+                # my_logger.info(new.strip())
+                claymore_handle_line(new)
+            else:
+                # check if miner_process is alive. If not then exit
+                # A None value indicates that the process hasn't terminated yet
+                if is_run(miner_process):
+                    # wait for new line
+                    time.sleep(1)
+                else:
+                    my_logger.debug("STOP claymore_miner handler thread")
+                    return
+
+def ewbf_handle_line(line):
+    global current_hashrate, compute_units_temp
+
+    # Total speed: 1763 Sol/s
+    m = re.findall('Total speed: ([\d\.]+) ([\w\/]+)', line)
+    if len(m) > 0:
+        value, units = m[0]
+        val = float(value)
+        algorithm = 'Equihash'
+        current_hashrate[algorithm] = {'value': val, 'units': units}
+
+    # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
+    # Temp: GPU0: 56C GPU1: 52C GPU2: 50C
+    m = re.findall('GPU(\d+): (\d+)C', line)
+    if len(m) > 0:
+        temps = []
+        for num, temp in m:
+            temps.append(temp)
+        compute_units_temp = temps
+    # GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s
+    # GPU0: 281 Sol/s GPU1: 288 Sol/s GPU2: 283 Sol/s
+    return True
+
+
+def ewbf_handler():
+    global config
+    # give time for miner to start
+    time.sleep(3)
+    miner_config = config['miner_config']
+    miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    while True:
+        fn = os.path.join(miner_dir, 'miner.log')
+        fp = open(fn, 'r', encoding='866', newline='')
+        # need to seek to the end if log file appendable by miner.
+        # in claymore if filename has "noappend" the log will be truncated
+        # fp.seek(0, 2)
+        while True:
+            new = fp.readline()
+            # Once all lines are read this just returns ''
+            # until the file changes and a new line appears
+            if new:
+                # my_logger.info(new.strip())
+                ewbf_handle_line(new)
+            else:
+                # check if miner_process is alive. If not then exit
+                # A None value indicates that the process hasn't terminated yet
+                if is_run(miner_process):
+                    # wait for new line
+                    time.sleep(1)
+                else:
+                    my_logger.debug("STOP ewbf_miner handler thread")
+                    return
+
+
 def get_state_info():
     """
     make a bunch of state information for sending to the server
@@ -296,10 +509,8 @@ def get_state_info():
     :return:
     """
 
-    compute_units_info = {}  # get_open_hardware_monitor_statistics()
-
     # workersInfo(Temp, fan, config), miner(state, config, hashrate, screen, lastUpdate)
-    global miner_process, target_hashrate, current_hashrate
+    global miner_process, target_hashrate, current_hashrate, compute_units_info, miner_stdout
 
     state_info = {
         "miner": {
@@ -310,7 +521,9 @@ def get_state_info():
             "current": current_hashrate,
             "target": target_hashrate,
         },
-        "compute_units": compute_units_info,
+        'pu_fanspeed': compute_units_fan,
+        'pu_temperatire': compute_units_temp,
+        "processing_units": compute_units_info,
         "miner_stdout": miner_stdout,
         "reboot_timestamp": calendar.timegm(get_reboot_time().utctimetuple()),
     }
@@ -332,6 +545,7 @@ def call_server_api(path, data={}, server_address=None):
     if not server_address:
         server_address = config["server"]
     url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
+    my_logger.debug("Request server API: {}".format(url))
     #    'application/json'
     response = requests.put(url=url, json=data)
     error_code = response.status_code

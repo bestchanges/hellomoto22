@@ -183,4 +183,5 @@ class RigState(db.Document):
     cards_temp = db.ListField(db.IntField(), default=list)
     cards_fan = db.ListField(db.IntField(), default=list)
     hashrate = db.DictField(default={})
+    is_online = db.BooleanField(default=False)
 

@@ -150,7 +150,7 @@ def get_profit(currency_code, hashrate_units, units):
         return None
 
 
-def rounds(num, max_=2):
+def round_to_n(num, max_=2):
     '''
     round to the not more that max_ value digits after comma. (0.00034)
     But if int part > 0 then just N digits after comma (360.00)
@@ -186,12 +186,12 @@ def rig_list_json():
             target_currency = rig.user.target_currency
             exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
             profit_target_currency = profit * exchange_rate
-            profit_string = "%s %s" % (rounds(profit_target_currency, 2), target_currency)
+            profit_string = "%s %s" % (round_to_n(profit_target_currency, 2), target_currency)
         except Exception as e:
             if profit is None:
                 profit_string = "? %s" % (currency.code)
             else:
-                profit_string = "%s %s" % (rounds(profit, 2), currency.code)
+                profit_string = "%s %s" % (round_to_n(profit, 2), currency.code)
         data.append({
             'name': rig.worker,
             'uuid': rig.uuid,
@@ -256,11 +256,12 @@ def get_miner_config_for_configuration(conf, rig):
         "miner_command_line": conf.expand_command_line(rig=rig),
         "miner_version": get_miner_version(dir),
         "env": conf.env,
+        "send_output": False,
     }
     return conf
 
 
-def client_config():
+def client_config1():
     """
     Get config from client. Validate and update it.
     :return: updated config
@@ -313,7 +314,7 @@ def client_config():
         'port': logging.handlers.DEFAULT_TCP_LOGGING_PORT
     }
     config['task_manager'] = {
-        "request_interval_sec": 30,
+        "request_interval_sec": 15,
     }
     return flask.jsonify(config)
 
@@ -338,7 +339,53 @@ def sendTask():
 
 
 # TODO: get rid
-def acceptData():
+def recieve_stat_and_return_task():
+    '''
+{
+  "hashrate": {
+    "current": {
+      "Ethash": {
+        "units": "Mh/s",
+        "value": 0.0
+      }
+    },
+    "target": {}
+  },
+  "miner": {
+    "config": {
+      "config_name": "Test ETH",
+      ...
+    },
+    "is_run": true,
+  },
+  "miner_stdout": [],
+  "processing_units": [
+    "nvidia_gtx_1060_3gb",
+    "nvidia_gtx_1060_3gb",
+    "nvidia_gtx_1060_3gb"
+  ],
+  "pu_fanspeed": [
+    "45",
+    "34",
+    "30"
+  ],
+  "pu_temperatire": [
+    "53",
+    "48",
+    "46"
+  ],
+  "reboot_timestamp": 1511326434
+}
+    '''
+    stat = request.get_json()
+    rig_uuid = request.args.get('rig_id')
+    rig_state = logging_server.get_rig_state_object(rig_uuid)
+    # TODO: validate all data received from the client to the server!
+    rig_state.cards_fan = stat['pu_fanspeed']
+    rig_state.cards_temp = stat['pu_temperatire']
+    rig_state.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
+    rig_state.hashrate = stat["hashrate"]["current"]
+    rig_state.save()
     return sendTask()
 
 

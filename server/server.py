@@ -5,6 +5,7 @@ import views
 import flask
 
 from logging_server import LoggingServer
+from make_client_zip import client_zip_windows
 from models import *
 from profit_manager import ProfitManager
 
@@ -23,9 +24,12 @@ logging.basicConfig(
 
 db.init_app(app)
 
+# recreate client zip
+client_zip_windows()
+
 # prepare data for work
-app.add_url_rule('/client/rig_config', view_func=views.client_config, methods=["GET", "POST", "PUT"])
-app.add_url_rule('/client/stat_and_task', view_func=views.acceptData, methods=["GET", "POST", "PUT"])
+app.add_url_rule('/client/rig_config', view_func=views.client_config1, methods=["GET", "POST", "PUT"])
+app.add_url_rule('/client/stat_and_task', view_func=views.recieve_stat_and_return_task, methods=["GET", "POST", "PUT"])
 
 app.add_url_rule('/', view_func=views.index)
 app.add_url_rule('/rigs', view_func=views.rig_list)

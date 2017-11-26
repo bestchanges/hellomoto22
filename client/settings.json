@@ -1,30 +1,31 @@
 {
+  "client_version": "0.9",
+  "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
     "server": "localhost"
   },
   "miner_config": {
-    "miner_command_line": "--server eu1-zcash.flypool.org --port 3333 --user t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.worker001 --pass x --eexit 3 --fee 0.5",
-    "miner": "EWBF",
-    "miner_directory": "ewbf_win",
-    "miner_exe": "miner.exe",
-    "miner_version": "0.3.4b",
-    "config_name": "ZEC(poloniex)",
-    "miner_family": "ewbf",
+    "config_name": "Test ZEC",
     "env": {
+      "GPU_FORCE_64BIT_PTR": "0",
+      "GPU_MAX_ALLOC_PERCENT": "100",
       "GPU_MAX_HEAP_SIZE": "100",
       "GPU_SINGLE_ALLOC_PERCENT": "100",
-      "GPU_USE_SYNC_OBJECTS": "1",
-      "GPU_FORCE_64BIT_PTR": "0",
-      "GPU_MAX_ALLOC_PERCENT": "100"
-    }
+      "GPU_USE_SYNC_OBJECTS": "1"
+    },
+    "miner": "Pseudo EWBF Miner",
+    "miner_command_line": "-u miner_emu.py --file ZEC.txt --dst_file miner.log --delay 0.5 ",
+    "miner_directory": "miner_emu",
+    "miner_exe": "python",
+    "miner_family": "ewbf",
+    "miner_version": "1.0",
+    "send_output": false
   },
+  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
   "server": "localhost:5000",
   "task_manager": {
-    "request_interval_sec": 30
+    "request_interval_sec": 15
   },
-  "worker": "worker001",
-  "email": "egor.fedorov@gmail.com",
-  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
-  "client_version": "0.6"
+  "worker": "worker001"
 }

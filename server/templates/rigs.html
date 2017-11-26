@@ -13,7 +13,11 @@ $(document).ready(function() {
             { "data": "profit" },
             { "data": "hashrate" ,
                 render: function ( data, type, row ) {
-                    return data.value + ' ' + data.units
+                    result = '';
+                    for (var i = 0; i < data.length; i++) {
+                        result = result + data[i].value + ' ' + data[i].units + ' ';
+                    }
+                    return result;
                 }
             },
             { "data": "miner",

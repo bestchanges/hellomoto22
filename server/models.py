@@ -101,6 +101,9 @@ class ConfigurationGroup(db.Document):
     name = db.StringField(max_length=100, required=True, verbose_name="Name")
     user = db.ReferenceField(User, required=True)
     miner_program = db.ReferenceField(MinerProgram, required=True, verbose_name="Miner")
+    # algo: for single currency has taken from currency algo, for dual concatenate using '+'
+    # example: 'Ethash', 'Ethash+Blake'
+    algo = db.StringField(required=True)
     command_line = db.StringField()
     env = db.DictField(default={})
     currency = db.ReferenceField(Currency, required=True, verbose_name="Coin", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
@@ -173,15 +176,14 @@ class Rig(db.Document):
     user = db.ReferenceField(User)
     comment = db.StringField(max_length=100)
     system_gpu_list = db.ListField(db.StringField(), default=[])
-
-    def __unicode__(self):
-        return self.worker
-
-class RigState(db.Document):
-    rig = db.ReferenceField(Rig)
     rebooted = db.DateTimeField()
     cards_temp = db.ListField(db.IntField(), default=list)
     cards_fan = db.ListField(db.IntField(), default=list)
     hashrate = db.DictField(default={})
+    target_hashrate = db.DictField(default={}) # { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 }, 'Ethash': { 'Ethash': 25 }
     is_online = db.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "rig '{}' (uuid={})".format(self.worker, self.uuid)
+
 

@@ -14,7 +14,7 @@ import struct
 from threading import Thread
 
 import models
-from models import RigState, Rig
+from models import Rig
 
 # name of logger that is root for client loggers (need to make stop propogate processing to the main root logger)
 CLIENT_LOGGER_ROOT = "client_logger"
@@ -158,16 +158,9 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
             abort = self.abort
 
 
-def get_rig_state_object(rig_uuid):
+def get_rig(rig_uuid):
     rig = Rig.objects.get(uuid=rig_uuid)
-    result = RigState.objects(rig=rig)
-    if len(result) == 1:
-        rig_state = result[0]
-    else:
-        rig_state = RigState()
-        rig_state.rig = rig
-        rig_state.save()
-    return rig_state
+    return rig
 
 
 class SaveClientLogHistory(logging.Handler):
@@ -234,7 +227,7 @@ class ClientStatisticHandler(logging.Handler):
             data = json.loads(jsons)
             if data['rebooted_epoch']:
                 rebooted = datetime.datetime.fromtimestamp(data['rebooted_epoch'])
-                rig_state = get_rig_state_object(rig_uuid)
+                rig_state = get_rig(rig_uuid)
                 rig_state.rebooted = rebooted
                 rig_state.save()
 
@@ -304,7 +297,7 @@ class ClaymoreHandler(logging.Handler):
                 my_logger.error("Unexpected currency code={}".format(code))
                 algorithm = None
             if algorithm:
-                rig_state = get_rig_state_object(rig_uuid)
+                rig_state = get_rig(rig_uuid)
                 rig_state.hashrate[algorithm] = {'value': val, 'units': units}
                 rig_state.save()
 
@@ -317,7 +310,7 @@ class ClaymoreHandler(logging.Handler):
             for num, temp, fan in m:
                 temps.append(temp)
                 fans.append(fan)
-            rig_state = get_rig_state_object(rig_uuid)
+            rig_state = get_rig(rig_uuid)
             rig_state.cards_temp = temps
             rig_state.cards_fan = fans
             rig_state.save()
@@ -334,7 +327,7 @@ class EwbfHandler(logging.Handler):
             value, units = m[0]
             val = float(value)
             algorithm = 'Equihash'
-            rig_state = get_rig_state_object(rig_uuid)
+            rig_state = get_rig(rig_uuid)
             rig_state.hashrate[algorithm] = {'value': val, 'units': units}
             rig_state.save()
         # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
@@ -343,7 +336,7 @@ class EwbfHandler(logging.Handler):
             temps = []
             for num, temp in m:
                 temps.append(temp)
-            rig_state = get_rig_state_object(rig_uuid)
+            rig_state = get_rig(rig_uuid)
             rig_state.cards_temp = temps
             rig_state.save()
         # GPU0: 284 Sol/s GPU1: 301 Sol/s GPU2: 289 Sol/s GPU3: 299 Sol/s GPU4: 297 Sol/s GPU5: 293 Sol/s

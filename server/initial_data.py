@@ -103,11 +103,14 @@ def test_data():
 
     user = User.objects.get(email='egor.fedorov@gmail.com')
     mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
+    eth = Currency.objects.get(code="ETH")
+    dcr = Currency.objects.get(code="DCR")
     cg = ConfigurationGroup.objects(name="Test ETH+DCR").modify(
         upsert=True,
         set__user = user,
-    	set__currency = Currency.objects.get(code="ETH"),
+    	set__currency = eth,
     	set__miner_program = mp_pc,
+        set__algo = "+".join([eth.algo, dcr.algo]),
         set__command_line=mp_pc.command_line,
         set__env=mp_pc.env,
         set__pool = Pool.objects.get(name="Ethermine"),
@@ -116,7 +119,7 @@ def test_data():
     	set__exchange = poloniex.id,
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = True,
-    	set__dual_currency = Currency.objects.get(code="DCR"),
+    	set__dual_currency = dcr,
     	set__dual_pool = Pool.objects.get(name="Decred Coinmine"),
     	set__dual_pool_login = "egoaga19",
     	set__dual_pool_password = "x",
@@ -127,8 +130,9 @@ def test_data():
     cg = ConfigurationGroup.objects(name="Test ETH").modify(
         upsert=True,
         set__user=user,
-        set__currency = Currency.objects.get(code="ETH"),
+        set__currency = eth,
         set__miner_program=mp_pc,
+        set__algo = eth.algo,
         set__command_line=mp_pc.command_line,
         set__env=mp_pc.env,
         set__pool = Pool.objects.get(name="Ethermine"),
@@ -140,14 +144,15 @@ def test_data():
     )
 
     mp_pe = MinerProgram.objects.get(code="pseudo_ewbf_miner")
-
+    zec = Currency.objects.get(code="ZEC")
     cg = ConfigurationGroup.objects(name="Test ZEC").modify(
         upsert=True,
         set__user = user,
-        set__miner_program=mp_pe,
+        set__miner_program = mp_pe,
+        set__algo= zec.algo,
         set__command_line=mp_pe.command_line,
         set__env=mp_pe.env,
-        set__currency = Currency.objects.get(code="ZEC"),
+        set__currency = zec,
     	set__pool = Pool.objects.get(name="FlyPool"),
     	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
     	set__pool_password = "x",
@@ -207,19 +212,23 @@ def sample_data():
     poloniex = Exchange.objects.get(name="Poloniex")
 
     mp_cd = MinerProgram.objects.get(code="claymore_dual")
+    eth = Currency.objects.get(code="ETH")
+    dcr = Currency.objects.get(code="DCR")
+    zec = Currency.objects.get(code="ZEC")
     cg = ConfigurationGroup.objects(name="ETH+DCR(poloniex)").modify(
         upsert=True,
         set__user = user,
         set__command_line = mp_cd.command_line,
-        set__currency = Currency.objects.get(code="ETH"),
+        set__currency = eth,
     	set__miner_program = mp_cd,
-    	set__pool = Pool.objects.get(name="Ethermine"),
+        set__algo = "+".join([eth.algo, dcr.algo]),
+        set__pool = Pool.objects.get(name="Ethermine"),
     	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__pool_password = "x",
     	set__exchange = poloniex,
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = True,
-    	set__dual_currency = Currency.objects.get(code="DCR"),
+    	set__dual_currency = dcr,
     	set__dual_pool = Pool.objects.get(name="Decred Coinmine"),
     	set__dual_pool_login = "egoaga19",
     	set__dual_pool_password = "x",
@@ -232,9 +241,10 @@ def sample_data():
         upsert=True,
         set__user=user,
         set__miner_program=mp_c,
+        set__algo = "+".join([eth.algo]),
         set__command_line = mp_c.command_line,
         set__env = mp_c.env,
-        set__currency = Currency.objects.get(code="ETH"),
+        set__currency = eth,
     	set__pool = Pool.objects.get(name="Ethermine"),
     	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__pool_password = "x",
@@ -248,9 +258,10 @@ def sample_data():
         upsert=True,
         set__user=user,
         set__miner_program=mp_e,
+        set__algo = "+".join([zec.algo]),
         set__command_line = mp_e.command_line,
         set__env = mp_e.env,
-        set__currency = Currency.objects.get(code="ZEC"),
+        set__currency = zec,
     	set__pool = Pool.objects.get(name="FlyPool"),
     	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
     	set__pool_password = "x",

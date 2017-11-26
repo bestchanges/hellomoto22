@@ -327,6 +327,23 @@ def read_miner_output():
             logger.warning("Miner has finished")
             break
 
+def hashrate_from_units(value, units):
+    unit_measures = {
+        "h/s": 1,
+        "Kh/s": 1e3,
+        "Mh/s": 1e6,
+        "Gh/s": 1e9,
+        "Th/s": 1e12,
+        "Ph/s": 1e15,
+        "Sol/s": 1,
+        "KSol/s": 1e3,
+        "MSol/s": 1e6,
+        "GSol/s": 1e9,
+    }
+    if units in unit_measures.keys():
+        return value * unit_measures[units]
+    raise Exception("Unknown measurement unit %s. Known units %s" % (units, unit_measures.keys()))
+
 
 def claymore_handle_line(line):
     global current_hashrate, compute_units_info, compute_units_temp, compute_units_fan
@@ -403,7 +420,7 @@ def claymore_handle_line(line):
             my_logger.error("Unexpected currency code={}".format(code))
             algorithm = None
         if algorithm:
-            current_hashrate[algorithm] = {'value': val, 'units': units}
+            current_hashrate[algorithm] = hashrate_from_units(val, units)
 
     # now take care about temperaure and fan speed
     # GPU0 t=55C fan=52%, GPU1 t=50C fan=43%, GPU2 t=57C fan=0%, GPU3 t=52C fan=48%, GPU4 t=49C fan=0%, GPU5 t=53C
@@ -457,10 +474,11 @@ def ewbf_handle_line(line):
         value, units = m[0]
         val = float(value)
         algorithm = 'Equihash'
-        current_hashrate[algorithm] = {'value': val, 'units': units}
+        current_hashrate[algorithm] = hashrate_from_units(val, units)
 
     # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
     # Temp: GPU0: 56C GPU1: 52C GPU2: 50C
+    # TODO: temp do not parse due to special codes for color switching before temperature value
     m = re.findall('GPU(\d+): (\d+)C', line)
     if len(m) > 0:
         temps = []

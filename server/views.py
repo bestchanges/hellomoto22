@@ -21,7 +21,7 @@ from flask_mongoengine.wtf.orm import ModelConverter, converts
 import logging_server
 from finik.crypto_data import CryptoDataProvider
 from finik.cryptonator import Cryptonator
-from models import User, Rig, RigState, MinerProgram, Pool, Currency, ConfigurationGroup, Todo
+from models import User, Rig, MinerProgram, Pool, Currency, ConfigurationGroup, Todo
 
 # DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
 DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
@@ -125,29 +125,19 @@ def get_uptime(rig_state):
     return s
 
 
-def get_hashrate(rig_state):
-    rig = rig_state.rig
-    algorithm = rig.configuration_group.currency.algo
-    if rig_state.hashrate and algorithm in rig_state.hashrate:
-        return rig_state.hashrate[rig.configuration_group.currency.algo]
-    return {'value': 0, 'units': ""}
-
-
-def get_profit(currency_code, hashrate_units, units):
+def get_profit(currency_code, hashrate):
     '''
     return daily profit for given currency and hashrate
     :param currency_code: 'ETH' 'Nicehash-Ethash'
-    :param hashrate_units: 141
-    :param units: "Mh/s"
+    :param hashrate: 141000000 (as hashers in second)
     :return:
     '''
     try:
-        hashrate = crypto_data.hashrate_from_units(hashrate_units, units)
         profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
         return profit
     except Exception as e:
         logging.error("Exception get_profit: %s" % e)
-        return None
+        raise e
 
 
 def round_to_n(num, max_=2):
@@ -174,13 +164,24 @@ def round_to_n(num, max_=2):
 
 
 def rig_list_json():
-    rigs_state = RigState.objects.all()
+    rigs_state = Rig.objects.all()
     data = []
     for rig_state in rigs_state:
-        rig = rig_state.rig
-        hashrate = get_hashrate(rig_state)
+        rig = rig_state
+        algo = rig.configuration_group.algo
+        hashrate = []
+        if rig.hashrate:
+            for algorithm in algo.split("+"):
+                if algorithm in rig.hashrate:
+                    hashrate.append({'value': rig.hashrate[algorithm] / 1e6, 'units': 'Mh/s'})
         currency = rig.configuration_group.currency
-        profit = get_profit(currency.code, hashrate['value'], hashrate['units'])
+        profit = 0
+        if currency.algo in rig.hashrate:
+            profit = profit + get_profit(currency.code, rig.hashrate[currency.algo])
+        if rig.configuration_group.is_dual:
+            currency = rig.configuration_group.dual_currency
+            if currency.algo in rig.hashrate:
+                profit = profit + get_profit(currency.code, rig.hashrate[currency.algo])
         try:
             # try to convert to user target currency
             target_currency = rig.user.target_currency
@@ -196,7 +197,7 @@ def rig_list_json():
             'name': rig.worker,
             'uuid': rig.uuid,
             'rebooted': rig_state.rebooted,
-            'hashrate': {'value': hashrate['value'], 'units': hashrate['units']},
+            'hashrate': hashrate,
             'profit': profit_string,
             'uptime': get_uptime(rig_state),
             'miner': {
@@ -338,16 +339,20 @@ def sendTask():
     ])
 
 
-# TODO: get rid
+def set_target_hashrate_from_current(rig):
+    '''
+    Update this rig target hashrate. If current hashrate for given algo exceedes the target hashrate then update target
+    :param rig:
+    :return:
+    '''
+    pass
+
 def recieve_stat_and_return_task():
     '''
 {
   "hashrate": {
     "current": {
-      "Ethash": {
-        "units": "Mh/s",
-        "value": 0.0
-      }
+      "Ethash": 27000000,
     },
     "target": {}
   },
@@ -379,13 +384,16 @@ def recieve_stat_and_return_task():
     '''
     stat = request.get_json()
     rig_uuid = request.args.get('rig_id')
-    rig_state = logging_server.get_rig_state_object(rig_uuid)
+    rig_state = Rig.objects.get(uuid=rig_uuid)
     # TODO: validate all data received from the client to the server!
     rig_state.cards_fan = stat['pu_fanspeed']
     rig_state.cards_temp = stat['pu_temperatire']
     rig_state.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig_state.hashrate = stat["hashrate"]["current"]
+    set_target_hashrate_from_current(rig_state)
     rig_state.save()
+    # TODO: if configuration grup from client different when send task to change miner
+    # TODO: send client version from client. If server has newer client version - then add client_update_task
     return sendTask()
 
 

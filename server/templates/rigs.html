@@ -7,6 +7,10 @@ $(document).ready(function() {
         "ajax": "rigs.json",
         "paging": false,
         "scrollY": 400,
+        "select": {
+            style:    'os',
+            selector: 'td:first-child'
+        },
         "columns": [
             { "data": "name" },
             { "data": "uptime" },

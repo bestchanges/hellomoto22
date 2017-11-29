@@ -7,7 +7,7 @@ import flask
 from logging_server import LoggingServer
 from make_client_zip import client_zip_windows
 from models import *
-from profit_manager import ProfitManager
+from profit_manager import pm
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
@@ -28,15 +28,13 @@ webserver_logger.propagate = False
 
 db.init_app(app)
 
-# recreate client zip
-client_zip_windows()
-
 # prepare data for work
 app.add_url_rule('/client/rig_config', view_func=views.client_config1, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/stat_and_task', view_func=views.recieve_stat_and_return_task, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/stat', view_func=views.receive_stat, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/task', view_func=views.send_task, methods=["GET", "POST", "PUT"])
 
+app.add_url_rule('/promo', view_func=views.index)
 app.add_url_rule('/', view_func=views.index)
 app.add_url_rule('/rigs', view_func=views.rig_list)
 app.add_url_rule('/rigs.json', view_func=views.rig_list_json)
@@ -58,9 +56,13 @@ def main():
     initial_data.initial_data()
     initial_data.sample_data()
     initial_data.test_data()
-    profit_manager = ProfitManager()
-    profit_manager.start()
+
+    # recreate client zip
+    client_zip_windows()
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
+
+    pm.start()
+
 
 if __name__ == "__main__":
     main()

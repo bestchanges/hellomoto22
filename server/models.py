@@ -39,6 +39,7 @@ class Currency(db.Document):
     block_time = db.FloatField()  # seconds
     block_reward = db.DecimalField()
     nethash = db.DecimalField()
+
     def __unicode__(self):
         return self.code
 

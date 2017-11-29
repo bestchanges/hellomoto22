@@ -1,0 +1,12 @@
+if you want to be on top of profit you should
+
+0. every hour check mining profit on sites like whattomine.com
+1. register on pool for every coin 
+2. download and configure appropriate mining software for your GPU's
+3. constantly check your statistic on pool (and pool is online)
+4. maintain wallets for all coins
+5. exchange mined altcoins trying to get best rate on exchange
+6. update mining software when new version issued
+7. keep tracking on your rig health (hashrate, number of gpu's, hangups, etc)
+
+

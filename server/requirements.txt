@@ -13,3 +13,4 @@ psutil
 ConfigParser
 poloniex
 BitEx
+flask-login

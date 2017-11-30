@@ -23,15 +23,6 @@ class Todo(db.Document):
     pub_date = db.DateTimeField(default=datetime.datetime.now)
 
 
-class User(db.Document):
-    name = db.StringField()
-    email = db.StringField(unique=True)
-    api_key = db.StringField(unique=True)
-    target_currency = db.StringField(unique=True, max_length=10)
-    def __unicode__(self):
-        return self.name
-
-
 class Currency(db.Document):
     code = db.StringField(max_length=20, unique=True)
     difficulty = db.DecimalField()
@@ -42,6 +33,25 @@ class Currency(db.Document):
 
     def __unicode__(self):
         return self.code
+
+
+class User(db.Document):
+    name = db.StringField()
+    email = db.StringField(unique=True)
+    api_key = db.StringField(unique=True, min_length=20, max_length=20)
+    password = db.StringField(min_length=8)
+    client_secret = db.StringField(required=True)
+    target_currency = db.StringField(required=True) # code of currency user want to see income
+    def is_authenticated(self):
+        return True
+    def is_active(self):
+        return True
+    def is_anonymous(self):
+        return False
+    def get_id(self):
+        return self.email
+    def __unicode__(self):
+        return self.name
 
 
 class Pool(db.Document):

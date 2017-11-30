@@ -4,6 +4,8 @@ import logging
 import re
 from uuid import UUID
 
+from flask_login import login_required
+
 import models
 import task_manager
 from globals import assert_expr
@@ -53,10 +55,12 @@ def pagination():
     return flask.render_template('pagination.html', todos_page=todos_page)
 
 
+@login_required
 def config_list():
     return render_template('configs.html')
 
 
+@login_required
 def config_list_json():
     configs = ConfigurationGroup.objects()
     #    list = Todo.objects.paginate(page=page_num, per_page=3)
@@ -74,6 +78,7 @@ def config_list_json():
     return flask.jsonify({'data': data})
 
 
+@login_required
 def config_edit(id=''):
     class AConverter(ModelConverter):
         ''' not using now .... but in future may be '''
@@ -164,6 +169,7 @@ def round_to_n(num, max_=2):
         return '.'.join([left, ''.join(zero) + ''.join(nums)])
 
 
+@login_required
 def rig_list_json():
     rigs_state = Rig.objects.all()
     data = []
@@ -214,6 +220,7 @@ def rig_list_json():
     return flask.jsonify({'data': data})
 
 
+@login_required
 def rig_list():
     return flask.render_template("rigs.html")
 
@@ -440,6 +447,7 @@ def receive_stat():
     return flask.jsonify('OK')
 
 
+@login_required
 def rig_info(uuid=None):
     rig = Rig.objects.get(uuid=uuid)
     configs = ConfigurationGroup.objects(user=rig.user)
@@ -456,6 +464,7 @@ def rig_info(uuid=None):
     return flask.render_template('rig.html', rig_data=rig, configs=select_config)
 
 
+@login_required
 def rig_log(uuid):
     logs = logging_server.rigs_memery_log
     log = ''
@@ -464,6 +473,7 @@ def rig_log(uuid):
     return log
 
 
+@login_required
 def rig_set_config(uuid):
     config_id = request.args.get('config')
     # TODO: SECURITY: check if it user's config

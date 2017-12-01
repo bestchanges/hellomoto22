@@ -1,1 +1,4 @@
-var/
+bestminer-server.sh.log
+bestminer-server.sh.pid
+__pycache__/
+**/*.pyc

@@ -5,11 +5,11 @@ jQuery(document).ready(function() {
         Product showcase background
     */
     $('.product-showcase').backstretch([
-    "assets/img/backgrounds/altcoins.jpg"
+    "assets/img/backgrounds/bestminer-sample1.png"
+    , "assets/img/backgrounds/mining-rig-monitor.jpg"
     , "assets/img/backgrounds/exchange-graph.png"
     , "assets/img/backgrounds/coins-bestminer.jpg"
-    , "assets/img/backgrounds/mining-farm.jpg"
-    , "assets/img/backgrounds/mining-rig-monitor.jpg"
+    , "assets/img/backgrounds/altcoins.jpg"
     ], {duration: 3000, fade: 750});
 
     /*

@@ -1,0 +1,19 @@
+{% from "_formhelpers.html" import render_field %}
+{% extends "layout.html" %}
+{% block body %}
+  <h1>Login</h1>
+  {% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+  {% endif %}
+<form method=post>
+{{ form.csrf_token }}
+    <dl>
+    {{ render_field(form.email) }}
+    {{ render_field(form.password) }}
+  </dl>
+  <p><input type=submit value=Login>
+</form>
+    <hr>
+If you do not have account: <a href="/register">Sign up</a>
+{% endblock %}
+

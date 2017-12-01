@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# run this on server side to update server to the latest
+
 ./bestminer-server.sh stop
 git pull
 . .bashrc

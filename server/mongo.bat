@@ -1,1 +1,1 @@
-"C:\Program Files\MongoDB\Server\3.4\bin\mongo.exe"
+"C:\Program Files\MongoDB\Server\3.4\bin\mongo.exe" %1

@@ -1,29 +1,34 @@
 {
-  "miner_config": {
-    "miner": "Pseudo Claymore Miner",
-    "miner_version": "1.0",
-    "miner_family": "claymore",
-    "env": {
-      "GPU_FORCE_64BIT_PTR": "0",
-      "GPU_USE_SYNC_OBJECTS": "1",
-      "GPU_MAX_ALLOC_PERCENT": "100",
-      "GPU_MAX_HEAP_SIZE": "100",
-      "GPU_SINGLE_ALLOC_PERCENT": "100"
-    },
-    "miner_exe": "python.exe",
-    "config_name": "Test ETH+DCR",
-    "miner_directory": "miner_emu",
-    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --delay 0.3 "
-  },
+  "client_version": "0.22",
   "email": "egor.fedorov@gmail.com",
   "logger": {
-    "server": "localhost",
-    "port": 9020
+    "port": 9020,
+    "server": "localhost"
   },
+  "miner_config": {
+    "config_name": "Test ZEC",
+    "env": {
+      "GPU_FORCE_64BIT_PTR": "0",
+      "GPU_MAX_ALLOC_PERCENT": "100",
+      "GPU_MAX_HEAP_SIZE": "100",
+      "GPU_SINGLE_ALLOC_PERCENT": "100",
+      "GPU_USE_SYNC_OBJECTS": "1"
+    },
+    "miner": "Pseudo EWBF Miner",
+    "miner_command_line": "-u miner_emu.py --file ZEC.txt --dst_file miner.log --delay 0.5 ",
+    "miner_directory": "miner_emu",
+    "miner_exe": "python",
+    "miner_family": "ewbf",
+    "miner_version": "1.0",
+    "send_output": false
+  },
+  "rig_id": "047476e2-86bd-5040-aa4c-e44675caa2b4",
   "server": "localhost:5000",
-  "worker": "worker001",
-  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
-  "task_manager": {
+  "statistic_manager": {
     "request_interval_sec": 30
-  }
+  },
+  "task_manager": {
+    "request_interval_sec": 15
+  },
+  "worker": "worker002"
 }

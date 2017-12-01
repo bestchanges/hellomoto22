@@ -1,0 +1,11 @@
+Welcome to BestMiner!
+
+You receive this letter because you (probably) register on BestMiner website.
+
+Your account is registered. The password was generated.
+Please keep your password privately. It is not stored on the server.
+
+Account : {{ user.email }}
+Password: {{ password }}
+
+Now you can login here: {{ login_url }}

@@ -11,3 +11,7 @@ requests
 six
 psutil
 ConfigParser
+poloniex
+BitEx
+flask-login
+Flask-Mail

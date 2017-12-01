@@ -1,0 +1,44 @@
+= Project brief
+
+Maximize your GPU mining profit with BestMiner!
+Up to 38% more earning compatible with other mining 
+
+= How to use.
+
+* Visit bestminer.com
+* Pass easy one-step registration
+* Download BestMiner on each of your mining rig
+* run it
+
+Start earning up to 38% more!
+
+== How it works.
+
+Each GPU mining hardware has different hashrate for each mining algorithm.
+So first of all BestMiner starts with benchmarking your rig of each possible algorithm.
+
+Profit of mining depends on several parameters, including: network hashrate, difficulty, block time, pool luck, exchange rate and others.
+BestMiner continuously monitoring these parameters and choose the most profitable combination of altcoin/pool/exchange.
+When it run corresponding mining algorithm.
+
+After receiving mining revenue from Pool BestMiner converts it to BTC and send to your wallet.
+
+
+== Project features
+
+* Maximize your profit by automatically choosing the most profitable coin to mine
+* Daily payments in BTC. - All mined income will be converted from Altcoins to Bitcoin and send to your wallet daily
+* Easy as 1-2-3 - 1-click registration, Zero configuration, Maximum profit
+* Cross-platform Windows/Windows
+* Single dashboard for all your mining hardware
+* Automatically updates to the latest mining software
+* Monitoring for your hardware and mining hashpower. Receive alerts to Telegram, Mobile App, Email
+* mobile application
+
+== Roadmap
+* beta0.1 rig dashboard, manually configuration, windows only
+* beta0.2 benchmark, autoprofit, linux version
+* beta0.3 fully automatic best profit, payments in btc
+* beta0.4 gui client
+* 1.0 release
+

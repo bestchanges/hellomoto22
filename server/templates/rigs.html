@@ -7,13 +7,21 @@ $(document).ready(function() {
         "ajax": "rigs.json",
         "paging": false,
         "scrollY": 400,
+        "select": {
+            style:    'os',
+            selector: 'td:first-child'
+        },
         "columns": [
             { "data": "name" },
             { "data": "uptime" },
             { "data": "profit" },
             { "data": "hashrate" ,
                 render: function ( data, type, row ) {
-                    return data.value + ' ' + data.units
+                    result = '';
+                    for (var i = 0; i < data.length; i++) {
+                        result = result + data[i].value + ' ' + data[i].units + ' ';
+                    }
+                    return result;
                 }
             },
             { "data": "miner",
@@ -78,7 +86,7 @@ $( "#dialog-confirm" ).dialog({
 
 {% block body %}
 <div class=page>
-<h1>Rig list</h1>
+<h1>Workers list</h1>
 <table id="datalist" class="display" cellspacing="0" width="800">
         <thead>
             <tr>

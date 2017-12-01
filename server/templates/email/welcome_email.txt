@@ -1,0 +1,10 @@
+Welcome to BestMiner!
+
+You receive this letter because you (probably) register on BestMiner website.
+
+Your account was registered. The password was generated.
+
+Account : {{ user.email }}
+Password: {{ password }}
+
+Now you can login here: {{ login_url }}

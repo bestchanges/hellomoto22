@@ -1,4 +1,5 @@
 import json
+from _sha256 import sha256
 
 from models import *
 import profit_manager
@@ -170,6 +171,7 @@ def sample_data():
     user = User.objects(email='egor.fedorov@gmail.com').modify(
         upsert=True,
         name="Egor Fedorov",
+        password=sha256("123".encode('utf-8')).hexdigest(),
         target_currency="RUR",
     )
 

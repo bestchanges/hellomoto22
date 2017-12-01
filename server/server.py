@@ -1,17 +1,22 @@
 import logging
 import random
 import string
+from _sha256 import sha256
 
 import flask_login
 from flask import request, url_for
 from flask_login import LoginManager, login_required, login_user, UserMixin
+from flask_mail import Mail
 from wtforms import validators
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 
 import initial_data
+import server_email
 import views
 import flask
+import auth
+from bestminer.default_settings import Config
 
 from logging_server import LoggingServer
 from make_client_zip import client_zip_windows
@@ -19,11 +24,8 @@ from models import *
 from profit_manager import pm
 
 app = flask.Flask(__name__)
-app.config.from_object(__name__)
-app.config['MONGODB_SETTINGS'] = {'DB': 'testing'}
-app.config['TESTING'] = True
-app.config['SECRET_KEY'] = 'flask+mongoengine<=3'
-app.debug = False
+app.config.from_object('bestminer.default_settings.Config')
+app.config.from_envvar('BESTMINER_SETTINGS')
 
 logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
@@ -54,15 +56,10 @@ def load_user(user_id):
 
 
 login_manager = LoginManager()
-login_manager.init_app(app)
 login_manager.user_callback = load_user
 login_manager.login_view = '/login'
 
-@app.route("/settings")
-@login_required
-def settings():
-    pass
-
+flask_mail = Mail(app)
 
 def gen_password(min_len=8, max_len=10, chars = string.ascii_lowercase + string.digits):
   size = random.randint(min_len, max_len)
@@ -83,15 +80,18 @@ def register():
             flask.flash('This email already registered')
             return login()
 
+        user_password = gen_password(8,10)
         user = User()
         user.email = email
-        user.password = gen_password(8,10)
+        user.password = sha256(user_password.encode('utf-8')).hexdigest()
         user.client_secret = gen_password(6,6)
         user.api_key = gen_password(20,20, chars=string.ascii_uppercase + string.digits)
         user.target_currency = 'USD'
         user.save()
 
-        flask.flash('Account registered. Your password: %s' % user.password)
+        server_email.send_welcome_email(flask_mail, user, user_password, request.host_url + 'login')
+
+        flask.flash('Account registered. Email with password sent to your address.')
         return login()
     return flask.render_template('register.html', form=form)
 
@@ -100,7 +100,7 @@ def register():
 def logout():
     flask_login.logout_user()
     flask.flash('You are logged out.')
-    return flask.redirect(url_for('index'))
+    return flask.redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -115,8 +115,12 @@ def login():
     if request.method == 'POST' and form.validate():
         # Login and validate the user.
         # user should be an instance of your `User` class
-        user = User.objects.get(email=form.email.data)
-
+        users = User.objects(email=form.email.data)
+        password_hash = sha256(form.password.data.encode('utf-8')).hexdigest()
+        if not users or users[0].password != password_hash:
+            flask.flash('Wrong login or password')
+            return flask.render_template('login.html', form=form)
+        user = users[0]
         login_user(user, remember=True)
 
         flask.flash('Logged in successfully.')
@@ -129,6 +133,11 @@ def login():
 
         return flask.redirect(next or flask.url_for('index'))
     return flask.render_template('login.html', form=form)
+
+@app.route("/settings")
+@login_required
+def settings():
+    return 'OK'
 
 
 db.init_app(app)
@@ -161,6 +170,8 @@ def main():
     initial_data.initial_data()
     initial_data.sample_data()
     initial_data.test_data()
+
+    login_manager.init_app(app)
 
     # recreate client zip
     client_zip_windows()

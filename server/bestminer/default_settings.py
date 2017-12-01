@@ -12,9 +12,9 @@ SECRET_KEY= 'flask+mongoengine<=3'
 SESSION_PROTECTION = 'basic'
 
 # mail settings
-MAIL_SERVER = 'smtp.gmail.com',
-MAIL_PORT = 465,
-MAIL_USE_SSL = True,
-MAIL_USERNAME = 'set_in_settings',
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 465
+MAIL_USE_SSL = True
+MAIL_USERNAME = 'set_in_settings'
 MAIL_PASSWORD = 'password?'
 MAIL_DEFAULT_SENDER = 'same_as_username'

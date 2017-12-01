@@ -293,6 +293,9 @@ def run_miner(miner_config):
     full_env = {**os.environ, **env}
 
     if miner_config['send_output']:
+        # we've got some problem using stdout=PIPE because of system buffer of stdout (about 8k).
+        # thus we cannot read stdout in realtime, which is quite useless.
+        # Workaround is to parse miner's log (at least claymore and ewbf write logs)
         miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
                                          env=full_env, cwd=miner_dir, universal_newlines=True)
         miner_out_reader = threading.Thread(target=read_miner_output)
@@ -316,8 +319,9 @@ def restart_miner():
 def read_miner_output():
     global config, miner_process
     miner_config = config['miner_config']
-    miner_family = miner_config['miner_family']
-    logger = logging.getLogger("miner_" + miner_family)
+    # miner_family = miner_config['miner_family']
+    # logger = logging.getLogger("miner_" + miner_family)
+    logger = logging.getLogger("miner")
     while True:
         if not is_run(miner_process):
             logger.warning("Miner was terminated. Stop monitoring stdout")
@@ -445,6 +449,7 @@ def claymore_handler():
     time.sleep(6)
     miner_config = config['miner_config']
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    logger = logging.getLogger("miner")
     while True:
         fn = os.path.join(miner_dir, 'log_noappend.txt')
         fp = open(fn, 'r', encoding='866', newline='')
@@ -456,7 +461,7 @@ def claymore_handler():
             # Once all lines are read this just returns ''
             # until the file changes and a new line appears
             if new:
-                # my_logger.info(new.strip())
+                logger.info(new.strip())
                 claymore_handle_line(new)
             else:
                 # check if miner_process is alive. If not then exit
@@ -499,6 +504,7 @@ def ewbf_handler():
     time.sleep(3)
     miner_config = config['miner_config']
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    logger = logging.getLogger("miner")
     while True:
         fn = os.path.join(miner_dir, 'miner.log')
         fp = open(fn, 'r', encoding='866', newline='')
@@ -510,7 +516,7 @@ def ewbf_handler():
             # Once all lines are read this just returns ''
             # until the file changes and a new line appears
             if new:
-                # my_logger.info(new.strip())
+                logger.info(new.strip())
                 ewbf_handle_line(new)
             else:
                 # check if miner_process is alive. If not then exit

@@ -20,7 +20,7 @@ import flask
 import auth
 
 from logging_server import LoggingServer
-from make_client_zip import client_zip_windows
+from make_client_zip import _client_zip_windows, client_zip_windows_for_user, client_zip_windows_for_update
 from models import *
 from profit_manager import pm
 
@@ -150,11 +150,7 @@ def settings():
 @login_required
 def download_win():
     user = flask_login.current_user.user
-    config = {'email': user.email, 'secret': user.client_secret, 'server': request.host}
-    zip_dir = 'static/client/gen/{}/'.format(user.id)
-    os.makedirs(zip_dir, exist_ok=True)
-    zip_file = zip_dir + '/BestMiner-Windows.zip'
-    client_zip_windows(config, zip_file, 'BestMiner')
+    zip_file = client_zip_windows_for_user(user, request.host)
     return flask.redirect(request.host_url + zip_file)
 
 
@@ -194,7 +190,9 @@ def main():
     login_manager.init_app(app)
 
     # recreate client zip
-    # client_zip_windows()
+    # commented as soon as run separately in update.sh
+    # client_zip_windows_for_update()
+
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
 
     pm.start()

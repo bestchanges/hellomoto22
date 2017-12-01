@@ -8,5 +8,3 @@ if you want to be on top of profit you should
 5. exchange mined altcoins trying to get best rate on exchange
 6. update mining software when new version issued
 7. keep tracking on your rig health (hashrate, number of gpu's, hangups, etc)
-
-

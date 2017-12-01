@@ -193,7 +193,7 @@ class SaveClientLogHistory(logging.Handler):
                 if not os.path.exists(dirs):
                     os.makedirs(dirs)
                 client_log_file_logger = logging.getLogger("client_logger_{}".format(rig_uuid))
-                log_filename = "{}-{}.log".format(rig_uuid, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+                log_filename = "{}.log".format(rig_uuid)
                 log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
                 h = logging.StreamHandler(log_file)
                 h.setFormatter(logging.Formatter('%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s)'))

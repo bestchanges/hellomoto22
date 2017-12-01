@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:
 # Required-Start:    $remote_fs $syslog
@@ -9,16 +9,15 @@
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
-. ~/.virtualenvs/bestminer/bin/activate
+. .bashrc
 
-dir="/home/biznesoft/hellomoto22/server"
+dir="."
 cmd="python server.py"
 user=""
 
 name=`basename $0`
 pid_file="$name.pid"
 stdout_log="$name.log"
-stderr_log="$name.err"
 
 get_pid() {
     cat "$pid_file"
@@ -36,13 +35,13 @@ case "$1" in
         echo "Starting $name"
         cd "$dir"
         if [ -z "$user" ]; then
-            $cmd >> "$stdout_log" 2>> "$stderr_log" &
+            $cmd > "$stdout_log" 2>&1 &
         else
-            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
+            sudo -u "$user" $cmd > "$stdout_log" 2>&1 &
         fi
         echo $! > "$pid_file"
         if ! is_running; then
-            echo "Unable to start, see $stdout_log and $stderr_log"
+            echo "Unable to start, see $stdout_log"
             exit 1
         fi
     fi

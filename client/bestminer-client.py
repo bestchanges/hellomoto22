@@ -76,21 +76,24 @@ my_logger.setLevel(logging.DEBUG)
 logging.basicConfig(format='%(asctime)s|%(name)-10s|%(levelname)-4s: %(message)s')
 
 
-def get_cpu_id():
+def get_system_id():
     '''
     :return: array of CPUIDs
     '''
     system = platform.system()
     if system == 'Windows':
-        cpu_ids = []
-        proc = subprocess.run("wmic cpu get ProcessorId /format:csv", stdout=subprocess.PIPE)
+        # >wmic baseboard get serialnumber
+        # SerialNumber
+        # QB08727640
+        proc = subprocess.run("wmic baseboard get serialnumber", stdout=subprocess.PIPE)
+        firstline = True
         for line in proc.stdout.split():
-            node, cpu_id = line.decode().split(",")
-            if cpu_id == 'ProcessorId':
-                # skip head of CSV
+            line = line.decode().strip()
+            if firstline:
+                # skip head
+                firstline = False
                 continue
-            cpu_ids.append(cpu_id)
-        return cpu_ids
+            return line
     elif system == 'Linux':
         # PROC: sudo dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g'
         # 76060100FFFBEBBF
@@ -98,11 +101,12 @@ def get_cpu_id():
         # czc8493tp3
         # MAC: ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g'
         # 002264bbfc3a
-        proc = subprocess.run("sudo dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g'", shell=True, stdout=subprocess.PIPE)
+        proc = subprocess.run("sudo dmidecode --string baseboard-serial-number | sed 's/.*ID://;s/ //g'", shell=True, stdout=subprocess.PIPE)
         id = proc.stdout.decode().strip()
         return [id]
     else:
         raise Exception("Unsupported platform %s" % platform)
+    raise Exception("Cannot get system unique id")
 
 
 def get_reboot_time():
@@ -115,10 +119,10 @@ def get_reboot_time():
 def get_rig_id():
     global config_ini
     email = config_ini['email']
-    list = get_cpu_id()
-    list.append(email)
-    rigid_key = ",".join(list)
-    import hashlib
+    unique_systemid_components = []
+    unique_systemid_components.append(email)
+    unique_systemid_components.append(get_system_id())
+    rigid_key = ",".join(unique_systemid_components)
     rigid_hash = uuid5(uuid.NAMESPACE_OID, rigid_key)
     #    print(rigid_key, rigid_hash)
     return rigid_hash

@@ -1,5 +1,5 @@
 {
-  "client_version": "0.21",
+  "client_version": "0.22",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
@@ -22,7 +22,7 @@
     "miner_version": "1.0",
     "send_output": false
   },
-  "rig_id": "968ac4cf-06c2-5796-ae74-5c734ddd9459",
+  "rig_id": "047476e2-86bd-5040-aa4c-e44675caa2b4",
   "server": "localhost:5000",
   "statistic_manager": {
     "request_interval_sec": 30
@@ -30,5 +30,5 @@
   "task_manager": {
     "request_interval_sec": 15
   },
-  "worker": "worker001"
+  "worker": "worker002"
 }

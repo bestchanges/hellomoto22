@@ -4,6 +4,7 @@ import logging
 import re
 from uuid import UUID
 
+import flask_login
 from flask_login import login_required
 
 import models
@@ -171,7 +172,8 @@ def round_to_n(num, max_=2):
 
 @login_required
 def rig_list_json():
-    rigs_state = Rig.objects.all()
+    user = flask_login.current_user.user
+    rigs_state = Rig.objects(user=user)
     data = []
     for rig_state in rigs_state:
         rig = rig_state

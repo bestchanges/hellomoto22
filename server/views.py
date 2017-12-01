@@ -487,3 +487,8 @@ def rig_set_config(uuid):
 
 def index():
     return flask.render_template('index.html')
+
+
+@login_required
+def download():
+    return flask.render_template('download.html')

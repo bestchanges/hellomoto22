@@ -2,8 +2,10 @@ import logging
 import random
 import string
 from _sha256 import sha256
+from urllib.parse import urlparse, urljoin
 
 import flask_login
+import os
 from flask import request, url_for
 from flask_login import LoginManager, login_required, login_user, UserMixin
 from flask_mail import Mail
@@ -56,6 +58,7 @@ def load_user(user_id):
 
 login_manager = LoginManager()
 login_manager.user_callback = load_user
+login_manager.session_protection = "strong"
 login_manager.login_view = '/login'
 
 flask_mail = Mail(app)
@@ -68,9 +71,8 @@ def gen_password(min_len=8, max_len=10, chars = string.ascii_lowercase + string.
 def register():
     class RegisterForm(FlaskForm):
         email = StringField('Email', validators=[validators.DataRequired(), validators.Email()])
+
     form = RegisterForm()
-
-
     if request.method == 'POST' and form.validate():
         email = form.email.data.strip()
         email = email.lower()
@@ -101,6 +103,13 @@ def logout():
     flask.flash('You are logged out.')
     return flask.redirect(url_for('login'))
 
+
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Here we use a class of some kind to represent and validate our
@@ -127,7 +136,7 @@ def login():
         next = flask.request.args.get('next')
         # is_safe_url should check if the url is safe for redirects.
         # See http://flask.pocoo.org/snippets/62/ for an example.
-        if False:  # not is_safe_url(next):
+        if not is_safe_url(next):
             return flask.abort(400)
 
         return flask.redirect(next or flask.url_for('index'))
@@ -137,6 +146,16 @@ def login():
 @login_required
 def settings():
     return 'OK'
+
+@login_required
+def download_win():
+    user = flask_login.current_user.user
+    config = {'email': user.email, 'secret': user.client_secret, 'server': request.host}
+    zip_dir = 'static/client/gen/{}/'.format(user.id)
+    os.makedirs(zip_dir, exist_ok=True)
+    zip_file = zip_dir + '/BestMiner-Windows.zip'
+    client_zip_windows(config, zip_file, 'BestMiner')
+    return flask.redirect(request.host_url + zip_file)
 
 
 db.init_app(app)
@@ -149,6 +168,8 @@ app.add_url_rule('/client/task', view_func=views.send_task, methods=["GET", "POS
 
 app.add_url_rule('/promo', view_func=views.index)
 app.add_url_rule('/', view_func=views.index)
+app.add_url_rule('/download', view_func=views.download)
+app.add_url_rule('/download_win', view_func=download_win)
 app.add_url_rule('/rigs', view_func=views.rig_list)
 app.add_url_rule('/rigs.json', view_func=views.rig_list_json)
 app.add_url_rule('/rig/<uuid>/info', view_func=views.rig_info)
@@ -173,7 +194,7 @@ def main():
     login_manager.init_app(app)
 
     # recreate client zip
-    client_zip_windows()
+    # client_zip_windows()
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
 
     pm.start()

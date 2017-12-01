@@ -6,6 +6,12 @@ DEBUG = False
 TESTING = False
 MONGODB_SETTINGS = {'DB': 'testing'}
 SECRET_KEY= 'flask+mongoengine<=3'
+
+# Flask-login
+# https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager
+SESSION_PROTECTION = 'basic'
+
+# mail settings
 MAIL_SERVER = 'smtp.gmail.com',
 MAIL_PORT = 465,
 MAIL_USE_SSL = True,

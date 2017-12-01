@@ -27,16 +27,18 @@ def miners_zip():
     print("... done")
 
 
-def client_zip_windows():
-    # root directory in client archive
-    client_dir = "."
-    # where to put distributive on the server
-    zip_location = 'static/client/BestMiner-Windows.zip'
+def client_zip_windows(client_config={'email': '', 'secret': ''}, zip_location='static/client/BestMiner-Windows.zip', client_dir="."):
+    '''
+
+    :param client_dir:  root directory in client archive
+    :param client_config: will be saved as content of config.txt
+    :param zip_location: where to put distributive on the server (directory path shall exist!)
+    :return:
+    '''
     # client source dir
     source_dir = '../client'
     # prefix of directories/files to add to archive
     includes = '''
-config.txt
 bestminer-client.py
 distr_win
 epython
@@ -58,7 +60,16 @@ version.txt
                 if do_add:
                     rel = os.path.join(client_dir, rel)
                     myzip.write(fn, arcname=rel)
-    print("... done")
+        # Now let's save config file for client
+        if client_config:
+            strings = []
+            for k,v in client_config.items():
+                strings.append("{}={}".format(k,v))
+            config_txt = "\r\n".join(strings)
+
+            rel = os.path.join(client_dir, "config.txt")
+            myzip.writestr(rel, config_txt)
+        print("... done")
 
 if __name__ == '__main__':
     client_zip_windows()

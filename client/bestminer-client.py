@@ -561,7 +561,7 @@ def call_server_api(path, data={}, server_address=None):
     vars = {
         'rig_id': rig_id,
         'email': config_ini['email'],
-        'api_key': config_ini['api_key'],
+        'secret': config_ini['secret'],
         'os': get_my_os(),
     }
     if not server_address:

@@ -63,8 +63,8 @@ def config_list():
 
 @login_required
 def config_list_json():
-    configs = ConfigurationGroup.objects()
-    #    list = Todo.objects.paginate(page=page_num, per_page=3)
+    user = flask_login.current_user.user
+    configs = ConfigurationGroup.objects(user=user)
     data = []
     for config in configs:
         data.append({

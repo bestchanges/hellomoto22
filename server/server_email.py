@@ -13,12 +13,24 @@ def send_welcome_email(flask_mail, user, password, login_url):
     )
     flask_mail.send(msg)
 
-    '''
-        send_email("[microblog] %s is now following you!" % follower.nickname,
-            ADMINS[0],
-            [followed.email],
-            render_template("follower_email.txt",
-                user = followed, follower = follower),
-            render_template("follower_email.html",
-                user = followed, follower = follower))
-    '''
+def send_subscribe_email(flask_mail, email):
+    msg = Message(
+        subject="Registration at BestMiner (beta)",
+        recipients = [email],
+        cc =['bestminer@egorbs.ru'],
+        bcc=['egor.fedorov@gmail.com'],
+        body=render_template("email/subscribe_to_beta_email.txt", email=email)
+    )
+    flask_mail.send(msg)
+
+
+def send_feedback_message(flask_mail, email, name, message):
+    msg = Message(
+        subject = "Feedback message from {}".format(name),
+        recipients = ['bestminer@egorbs.ru'],
+        cc =[email],
+        bcc = ['egor.fedorov@gmail.com'],
+        body = message
+    )
+    flask_mail.send(msg)
+

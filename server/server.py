@@ -93,7 +93,7 @@ def register():
         server_email.send_welcome_email(flask_mail, user, user_password, request.host_url + 'login')
 
         flask.flash('Account registered. Email with password sent to your address.')
-        return login()
+        return flask.redirect(flask.url_for('login'))
     return flask.render_template('register.html', form=form)
 
 
@@ -153,6 +153,43 @@ def download_win():
     zip_file = client_zip_windows_for_user(user, request.host)
     return flask.redirect(request.host_url + zip_file)
 
+@app.route("/subscribe-to-beta", methods=['GET', 'POST'])
+def subscribe():
+    email = request.form.get('email')
+    valid = True
+    message = "Error"
+    if not email:
+        valid = False
+    if valid:
+        server_email.send_subscribe_email(flask_mail, email)
+        message = "OK"
+    return flask.jsonify({'message': message, 'valid': valid})
+
+@app.route("/send-feedback", methods=['GET', 'POST'])
+def feedback():
+    email = request.form.get('email')
+    name = request.form.get('name')
+    message = request.form.get('message')
+
+    valid = True
+    result = {
+        'emailMessage': '',
+        'nameMessage': '',
+        'messageMessage': '',
+    }
+    if not email:
+        result['emailMessage'] = 'required'
+        valid = False
+    elif not name:
+        result['nameMessage'] = 'required'
+        valid = False
+    elif not message:
+        result['messageMessage'] = 'required'
+        valid = False
+    if valid:
+        server_email.send_feedback_message(flask_mail, email, name, message)
+
+    return flask.jsonify(result)
 
 db.init_app(app)
 

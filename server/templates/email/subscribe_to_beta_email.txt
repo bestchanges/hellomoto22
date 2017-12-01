@@ -1,0 +1,6 @@
+
+This is confirmation of your request to subscribe to BestMiner beta service.
+As soon as beta service will be operational you receive information to this email:
+
+Your email: {{ email }}
+

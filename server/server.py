@@ -165,6 +165,11 @@ def subscribe():
         message = "OK"
     return flask.jsonify({'message': message, 'valid': valid})
 
+@app.route("/", methods=['GET', 'POST'])
+def index():
+    return flask.redirect('static/promo/coming-soon.html')
+
+
 @app.route("/send-feedback", methods=['GET', 'POST'])
 def feedback():
     email = request.form.get('email')
@@ -199,8 +204,8 @@ app.add_url_rule('/client/stat_and_task', view_func=views.recieve_stat_and_retur
 app.add_url_rule('/client/stat', view_func=views.receive_stat, methods=["GET", "POST", "PUT"])
 app.add_url_rule('/client/task', view_func=views.send_task, methods=["GET", "POST", "PUT"])
 
-app.add_url_rule('/promo', view_func=views.index)
-app.add_url_rule('/', view_func=views.index)
+#app.add_url_rule('/promo', view_func=views.index)
+#app.add_url_rule('/', view_func=views.index)
 app.add_url_rule('/download', view_func=views.download)
 app.add_url_rule('/download_win', view_func=download_win)
 app.add_url_rule('/rigs', view_func=views.rig_list)

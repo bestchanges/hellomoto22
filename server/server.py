@@ -16,7 +16,6 @@ import server_email
 import views
 import flask
 import auth
-from bestminer.default_settings import Config
 
 from logging_server import LoggingServer
 from make_client_zip import client_zip_windows
@@ -24,7 +23,7 @@ from models import *
 from profit_manager import pm
 
 app = flask.Flask(__name__)
-app.config.from_object('bestminer.default_settings.Config')
+app.config.from_object('bestminer.default_settings')
 app.config.from_envvar('BESTMINER_SETTINGS')
 
 logging.basicConfig(

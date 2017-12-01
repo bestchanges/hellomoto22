@@ -15,6 +15,8 @@ dir="/home/biznesoft/hellomoto22/server"
 cmd="python server.py"
 user=""
 
+BESTMINER_SETTINGS=settings.py
+
 name=`basename $0`
 pid_file="$name.pid"
 stdout_log="$name.log"

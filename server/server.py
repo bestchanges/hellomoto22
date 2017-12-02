@@ -9,9 +9,11 @@ import os
 from flask import request, url_for
 from flask_login import LoginManager, login_required, login_user, UserMixin
 from flask_mail import Mail
-from wtforms import validators
-from flask_wtf import FlaskForm
+from wtforms import validators, TextAreaField
+from flask_wtf import FlaskForm, Form
 from wtforms import StringField, PasswordField
+from wtforms.validators import DataRequired
+from wtforms.widgets import TextArea
 
 import initial_data
 import server_email
@@ -153,6 +155,7 @@ def download_win():
     zip_file = client_zip_windows_for_user(user, request.host)
     return flask.redirect(request.host_url + zip_file)
 
+# from promo site
 @app.route("/subscribe-to-beta", methods=['GET', 'POST'])
 def subscribe():
     email = request.form.get('email')
@@ -169,7 +172,24 @@ def subscribe():
 def index():
     return flask.redirect('static/promo/coming-soon.html')
 
+@login_required
+@app.route("/support", methods=['GET', 'POST'])
+def support():
+    user = flask_login.current_user.user
 
+    class UserFeedback(FlaskForm):
+        subject = StringField(label="Subject", validators=[DataRequired()])
+        message = TextAreaField(label="Message", validators=[DataRequired()])
+
+    form = UserFeedback(request.form)
+    if form.is_submitted() and form.validate():
+        server_email.send_feedback_message(flask_mail, user.email, user.name, form.message.data, subject='Feedback: ' + form.subject.data)
+        flask.flash("Your email message was sent.")
+    return flask.render_template('support.html', user=user, form=form)
+
+
+
+# Feedback from promo site
 @app.route("/send-feedback", methods=['GET', 'POST'])
 def feedback():
     email = request.form.get('email')

@@ -4,20 +4,20 @@
 <form method=post>
   {{ form.csrf_token }}
   {{ render_field(form.name) }}
-  {{ render_field(form.miner_program) }}
-  {{ render_field(form.currency) }}
-  {{ render_field(form.pool) }}
+  {{ render_field(form.miner_program, style="height: 30px;") }}
+  {{ render_field(form.currency, style="height: 30px;") }}
+  {{ render_field(form.pool, style="height: 30px;") }}
   {{ render_field(form.pool_login) }}
   {{ render_field(form.pool_password) }}
-  {{ render_field(form.exchange) }}
+  {{ render_field(form.exchange, style="height: 30px;") }}
   {{ render_field(form.wallet) }}
   <hr>
   Dual settings:
-  {{ render_field(form.dual_currency) }}
-  {{ render_field(form.dual_pool) }}
+  {{ render_field(form.dual_currency, style="height: 30px;") }}
+  {{ render_field(form.dual_pool, style="height: 30px;") }}
   {{ render_field(form.dual_pool_login) }}
   {{ render_field(form.dual_pool_password) }}
-  {{ render_field(form.dual_exchange) }}
+  {{ render_field(form.dual_exchange, style="height: 30px;") }}
   {{ render_field(form.dual_wallet) }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>

@@ -1,0 +1,19 @@
+{% from "_formhelpers.html" import render_field %}
+{% extends "layout.html" %}
+{% block body %}
+  <h1>Support</h1>
+<h2>Telegram chat</h2>
+Our Telegram: <button class="btn btn-primary" type="button" onclick="window.open('http://t.me/bestminer_chat')">@bestminer_chat</button>
+<h2>Contact form</h2>
+                    <div class="span6 contact-us">
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.subject) }}
+  {{ render_field(form.message, cols="35", rows="6") }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+
+{% endblock %}
+

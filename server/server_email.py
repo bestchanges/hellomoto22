@@ -24,9 +24,11 @@ def send_subscribe_email(flask_mail, email):
     flask_mail.send(msg)
 
 
-def send_feedback_message(flask_mail, email, name, message):
-    msg = Message(
+def send_feedback_message(flask_mail, email, name, message, subject=None):
+    if not subject:
         subject = "Feedback message from {}".format(name),
+    msg = Message(
+        subject = subject,
         recipients = ['bestminer@egorbs.ru'],
         cc =[email],
         bcc = ['egor.fedorov@gmail.com'],

@@ -11,6 +11,20 @@ var rig_data = {{ rig_data|tojson|safe }}
 
 <h1>Rig configuration</h1>
 
+  {% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+  {% endif %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.worker) }}
+  {{ render_field(form.comment) }}
+  {{ render_field(form.os, style="height: 30px;") }}
+  {{ render_field(form.pu, style="height: 30px;") }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+
 <h2>Profit management </h2>
 <div class="row">
   <div class="col-4">

@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h1>Pool</h1>
+  {% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+  {% endif %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.name) }}
+  {{ render_field(form.currency, style="height: 30px;") }}
+  {{ render_field(form.server) }}
+  {{ render_field(form.login) }}
+  {{ render_field(form.password) }}
+  {{ render_field(form.fee) }}
+  {{ render_field(form.is_active) }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

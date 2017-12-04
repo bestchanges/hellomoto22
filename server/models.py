@@ -6,15 +6,22 @@ from flask_mongoengine import MongoEngine
 db = MongoEngine()
 
 # we do net restric algorithms anymore
-#ALGORITHMS = (
+# ALGORITHMS = (
 #    'Ethash', 'Equihash', 'SHA256', 'Scrypt', 'Blake', 'X11', 'Pascal', 'LBRY', 'X11Gost', 'CryptoNight', 'NeoScrypt')
 
 # TODO: rename to PoolClass
 POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine')
-OS_TYPE = ['Windows', 'Linux']
-GPU_RX_470 = 'amd_rx_470' # possible template is 'amd_rx_470_4g_samsung'
+OS_TYPE = (
+    ('Windows', 'Windows'),
+    ('Linux', 'Linux')
+)
+GPU_RX_470 = 'amd_rx_470'  # possible template is 'amd_rx_470_4g_samsung'
 GPU_RX = 'amd_rx'
-PU_TYPE = ['amd', 'nvidia', 'asic']
+PU_TYPE = (
+    ('amd', 'amd'),
+    ('nvidia', 'nvidia'),
+)
+
 
 class Todo(db.Document):
     title = db.StringField(max_length=60)
@@ -26,7 +33,7 @@ class Todo(db.Document):
 class Currency(db.Document):
     code = db.StringField(max_length=20, unique=True)
     difficulty = db.DecimalField()
-    algo = db.StringField(max_length=50) # actually should be named 'algorithm' TODO: rename
+    algo = db.StringField(max_length=50)  # actually should be named 'algorithm' TODO: rename
     block_time = db.FloatField()  # seconds
     block_reward = db.DecimalField()
     nethash = db.DecimalField()
@@ -41,15 +48,20 @@ class User(db.Document):
     api_key = db.StringField(unique=True, min_length=20, max_length=20)
     password = db.StringField(min_length=8)
     client_secret = db.StringField(required=True)
-    target_currency = db.StringField(required=True) # code of currency user want to see income
+    target_currency = db.StringField(required=True)  # code of currency user want to see income
+
     def is_authenticated(self):
         return True
+
     def is_active(self):
         return True
+
     def is_anonymous(self):
         return False
+
     def get_id(self):
         return self.email
+
     def __unicode__(self):
         return self.name
 
@@ -80,10 +92,11 @@ class Pool(db.Document):
 
 class MinerProgram(db.Document):
     name = db.StringField(max_length=200)  # human readable miner name
-    code = db.StringField(max_length=100, unique=True)  # TODO: no need anymore.
-    family = db.StringField(max_length=50)  # family has the same output handlers TODO: switch to miner_class + logger_name
-    miner_class = db.StringField() # class name of this miner program
-    logger_name = db.StringField() # logger from the client side using for this
+    code = db.StringField(max_length=100, unique=True)
+    family = db.StringField(
+        max_length=50)  # family has the same output handlers TODO: switch to miner_class + logger_name
+    miner_class = db.StringField()  # class name of this miner program
+    logger_name = db.StringField()  # logger from the client side using for this
     command_line = db.StringField(max_length=500)
     dir = db.StringField(max_length=200)
     win_exe = db.StringField(max_length=100)
@@ -91,7 +104,8 @@ class MinerProgram(db.Document):
     linux_bin = db.StringField(max_length=100)
     version = db.StringField()
     env = db.DictField(default={})
-    algos = db.ListField(db.StringField(), required=True) # supported algos (not only currencies but also duals like 'Ethash+pascal')
+    algos = db.ListField(db.StringField(),
+                         required=True)  # supported algos (not only currencies but also duals like 'Ethash+pascal')
     supported_os = db.ListField(db.StringField(choices=OS_TYPE), required=True)
     supported_pu = db.ListField(db.StringField(choices=PU_TYPE), required=True)
 
@@ -102,10 +116,25 @@ class MinerProgram(db.Document):
 class Exchange(db.Document):
     name = db.StringField(max_length=50, unique=True)
     website = db.StringField(max_length=200)
-    handler = db.StringField(max_length=200) # subclass of Exchange
+    handler = db.StringField(max_length=200)  # subclass of Exchange
 
     def __unicode__(self):
         return self.name
+
+
+class PoolAccount(db.Document):
+    name = db.StringField(max_length=200)
+    user = db.ReferenceField(User, required=True)
+    currency = db.ReferenceField(Currency, required=True, verbose_name="Currency",
+                                 radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
+    fee = db.FloatField(required=True, default=0)  # fee rate. For 1% == 0.01
+    server = db.StringField(required=True, max_length=200)  # server:port
+    login = db.StringField(required=True, max_length=200, help_text="Login for pool connection")
+    password = db.StringField(max_length=100)
+    is_active = db.BooleanField(default=True)
+
+    def __unicode__(self):
+        return "PoolAccount: {}, login=".format(self.server, self.pool_login)
 
 
 class ConfigurationGroup(db.Document):
@@ -117,7 +146,8 @@ class ConfigurationGroup(db.Document):
     algo = db.StringField(required=True)
     command_line = db.StringField()
     env = db.DictField(default={})
-    currency = db.ReferenceField(Currency, required=True, verbose_name="Coin", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
+    currency = db.ReferenceField(Currency, required=True, verbose_name="Coin",
+                                 radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     pool = db.ReferenceField(Pool, required=True, verbose_name="Pool")
     pool_login = db.StringField(required=True, max_length=200)
     pool_password = db.StringField(max_length=50)
@@ -160,7 +190,6 @@ class ConfigurationGroup(db.Document):
         return the_string
 
 
-
 class ExchangeRate(db.Document):
     exchange = db.ReferenceField(Exchange, unique_with=["from_currency", "to_currency"])
     from_currency = db.ReferenceField(Currency)
@@ -177,13 +206,12 @@ class ExchangeRateHistory(db.Document):
     when = db.DateTimeField()
 
 
-
-
 class Rig(db.Document):
     uuid = db.UUIDField(required=True, binary=False, unique=True)
     worker = db.StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
     configuration_group = db.ReferenceField(ConfigurationGroup, required=True)
-    os = db.StringField(choises=OS_TYPE, required=True)
+    os = db.StringField(choices=OS_TYPE, required=True)
+    pu = db.StringField(choices=PU_TYPE, required=True)
     user = db.ReferenceField(User)
     comment = db.StringField(max_length=100)
     system_gpu_list = db.ListField(db.StringField(), default=[])
@@ -191,11 +219,10 @@ class Rig(db.Document):
     cards_temp = db.ListField(db.IntField(), default=list)
     cards_fan = db.ListField(db.IntField(), default=list)
     hashrate = db.DictField(default={})
-    target_hashrate = db.DictField(default={}) # { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 }, 'Ethash': { 'Ethash': 25 }
+    target_hashrate = db.DictField(
+        default={})  # { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 }, 'Ethash': { 'Ethash': 25 }
     is_online = db.BooleanField(default=False)
     last_online_at = db.DateTimeField()
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)
-
-

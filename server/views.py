@@ -6,6 +6,8 @@ from uuid import UUID
 
 import flask_login
 from flask_login import login_required
+from wtforms import validators, SelectField
+from wtforms.widgets import Select
 
 import models
 import task_manager
@@ -25,35 +27,13 @@ from flask_mongoengine.wtf.orm import ModelConverter, converts
 import logging_server
 from finik.crypto_data import CryptoDataProvider
 from finik.cryptonator import Cryptonator
-from models import User, Rig, MinerProgram, Pool, Currency, ConfigurationGroup, Todo
+from models import User, Rig, PoolAccount, MinerProgram, Currency, ConfigurationGroup, Todo
 
 # DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
 DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
 
 crypto_data = CryptoDataProvider("coins1.json")
 cryptonator = Cryptonator()
-
-
-def todo():
-    # As a list to test debug toolbar
-    Todo.objects().delete()  # Removes
-    Todo(title="Simple todo A", text="12345678910").save()  # Insert
-    Todo(title="Simple todo B", text="12345678910").save()  # Insert
-    Todo.objects(title__contains="B").update(set__text="Hello world")  # Update
-    todos = list(Todo.objects[:10])
-    todos = Todo.objects.all()
-    return flask.render_template('todo.html', todos=todos)
-
-
-def pagination():
-    Todo.objects().delete()
-    for i in range(10):
-        Todo(title='Simple todo {}'.format(i), text="12345678910").save()  # Insert
-
-    page_num = int(flask.request.args.get('page') or 1)
-    todos_page = Todo.objects.paginate(page=page_num, per_page=3)
-
-    return flask.render_template('pagination.html', todos_page=todos_page)
 
 
 @login_required
@@ -113,6 +93,57 @@ def config_edit(id=''):
     else:
         form = formtype(obj=config)
         return flask.render_template('config.html', form=form)
+
+
+@login_required
+def poolaccount_list():
+    return render_template('poolaccounts.html')
+
+
+@login_required
+def poolaccount_list_json():
+    user = flask_login.current_user.user
+    objects = PoolAccount.objects(user=user)
+    data = []
+    for object in objects:
+        data.append({
+            'id': str(object.id),
+            'name': object.name,
+            'currency': object.currency.code,
+            'login': object.login,
+            'server': object.server,
+            'active': object.is_active,
+        })
+    return flask.jsonify({'data': data})
+
+
+@login_required
+def poolaccount_edit(id=''):
+    user = flask_login.current_user.user
+
+    field_args = {
+        'pool': {'allow_blank': True},
+        'fee': { 'validators': [validators.NumberRange(min=0, max=5)]}
+    }
+    formtype = model_form(PoolAccount, exclude=['user'], field_args=field_args)
+
+    if id:
+        obj = PoolAccount.objects.get_or_404(id=id)
+    else:
+        obj = PoolAccount()
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if (form.validate()):
+            form.populate_obj(obj)
+            obj.user = user
+            obj.save()
+            return redirect('poolaccounts')
+        else:
+            return flask.render_template('poolaccount.html', form=form)
+    else:
+        form = formtype(obj=obj)
+        return flask.render_template('poolaccount.html', form=form)
 
 
 def get_uptime(rig_state):
@@ -460,10 +491,27 @@ def rig_info(uuid=None):
             'id': str(config.id),
             'current': rig.configuration_group.id == config.id,
         })
-    data = {
-        'uuid': uuid,
+
+    all_algos = {}
+    miners = MinerProgram.objects(supported_pu=rig.pu, supported_os=rig.os)
+    for miner in miners:
+        for algo in miner.algos:
+            # we have 'Ethash+blake' - now get target hashrate for it
+            all_algos[algo] = True
+    # for algo,target_hashrate in rig.target_hashrate.items():
+
+    field_args = {
     }
-    return flask.render_template('rig.html', rig_data=rig, configs=select_config)
+    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu'], field_args=field_args)
+    form = formtype(obj=rig)
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if (form.validate()):
+            form.populate_obj(rig)
+            rig.save()
+
+    return flask.render_template('rig.html', rig_data=rig, configs=select_config, form=form)
 
 
 @login_required

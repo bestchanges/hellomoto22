@@ -5,30 +5,29 @@ from _sha256 import sha256
 from urllib.parse import urlparse, urljoin
 
 import flask_login
-import os
 from flask import request, url_for
 from flask_login import LoginManager, login_required, login_user, UserMixin
 from flask_mail import Mail
 from wtforms import validators, TextAreaField
-from flask_wtf import FlaskForm, Form
+from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired
-from wtforms.widgets import TextArea
 
 import initial_data
+import rig_manager
 import server_email
 import views
 import flask
-import auth
 
 from logging_server import LoggingServer
-from make_client_zip import _client_zip_windows, client_zip_windows_for_user, client_zip_windows_for_update
+from make_client_zip import client_zip_windows_for_user
 from models import *
-from profit_manager import pm
+from profit_manager import profit_manager
+from task_manager import TaskManager
 
 app = flask.Flask(__name__)
 app.config.from_object('bestminer.default_settings')
-app.config.from_envvar('BESTMINER_SETTINGS')
+app.config.from_object('settings')
 
 logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
@@ -38,8 +37,10 @@ webserver_logger = logging.getLogger("werkzeug")
 # TODO: add store logs to rotating file
 webserver_logger.propagate = False
 
-
-#        format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')  # %(client_id)-15s
+l = logging.getLogger('benchmark_manager')
+h = logging.handlers.TimedRotatingFileHandler("log/benchmark_server.log", backupCount=7, when='midnight', encoding='utf-8')
+h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
+l.addHandler(h)
 
 
 class LoginUser(UserMixin):
@@ -244,6 +245,7 @@ app.add_url_rule('/configs.json', view_func=views.config_list_json)
 app.add_url_rule('/config/', view_func=views.config_edit, defaults={'id': None}, methods=["GET", "POST"])
 app.add_url_rule('/config/<id>', view_func=views.config_edit, methods=["GET", "POST"])
 
+task_manager = TaskManager()
 
 def main():
     # Start logging server to get output from the clients
@@ -256,13 +258,15 @@ def main():
 
     login_manager.init_app(app)
 
+    profit_manager.start()
+    rig_manager.distribute_all_rigs()
+
     # recreate client zip
     # commented as soon as run separately in update.sh
     # client_zip_windows_for_update()
 
     app.run(use_reloader=False, use_debugger=True, host="0.0.0.0", port=5000)
 
-    pm.start()
 
 
 if __name__ == "__main__":

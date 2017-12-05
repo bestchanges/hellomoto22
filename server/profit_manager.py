@@ -137,12 +137,12 @@ class ProfitManager(Thread):
             time.sleep(300)
 
 
-pm = ProfitManager()
+profit_manager = ProfitManager()
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     #data = pm.load_data_from_whattomine()
     data = json.load(open('coins.json'))
-    pm.update_currency_data_from_whattomine(data)
+    profit_manager.update_currency_data_from_whattomine(data)
     rig = Rig.objects.get(worker="worker002")
-    pm.evaluate_rig(rig)
+    profit_manager.evaluate_rig(rig)

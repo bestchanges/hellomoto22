@@ -20,9 +20,11 @@ from models import Rig
 CLIENT_LOGGER_ROOT = "client_logger"
 
 my_logger = logging.getLogger(__name__)
-h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", when='midnight', encoding='utf-8')
+l = logging.getLogger('logging_server')
+h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", backupCount=7, when='midnight', encoding='utf-8')
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
-my_logger.addHandler(h)
+l.addHandler(h)
+
 
 
 class LimitedList(list):
@@ -194,8 +196,10 @@ class SaveClientLogHistory(logging.Handler):
                     os.makedirs(dirs)
                 client_log_file_logger = logging.getLogger("client_logger_{}".format(rig_uuid))
                 log_filename = "{}.log".format(rig_uuid)
-                log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
-                h = logging.StreamHandler(log_file)
+                h = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight', backupCount=7,
+                                                              encoding='utf-8')
+                #log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
+                #h = logging.StreamHandler(log_file)
                 h.setFormatter(logging.Formatter('%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s)'))
                 client_log_file_logger.addHandler(h)
                 client_log_file_logger.propagate = False
@@ -232,6 +236,7 @@ class ClientStatisticHandler(logging.Handler):
                 rig_state.save()
 
 
+# TODO: remove it. This function was moved to client side
 class ClaymoreHandler(logging.Handler):
     def __init__(self, level=logging.NOTSET):
         # local data for gather multiline records

@@ -296,7 +296,13 @@ def run_miner(miner_config):
     env = miner_config["env"]
     full_env = {**os.environ, **env}
 
-    if miner_config['send_output']:
+    # запустить майнер хэндлер по типу семейства
+    miner_handler_method = globals()[miner_config['miner_family'] + '_handler']
+    my_logger.debug("Going to start handler: {}".format(miner_handler_method))
+    miner_handler = threading.Thread(target=miner_handler_method)
+    miner_handler.start()
+
+    if miner_config['read_output']:
         # we've got some problem using stdout=PIPE because of system buffer of stdout (about 8k).
         # thus we cannot read stdout in realtime, which is quite useless.
         # Workaround is to parse miner's log (at least claymore and ewbf write logs)
@@ -307,11 +313,6 @@ def run_miner(miner_config):
     else:
         miner_process = subprocess.Popen(args, shell=True, stdout=None, stderr=None, bufsize=0,
                                          env=full_env, cwd=miner_dir, universal_newlines=True)
-    # запустить майнер хэндлер по типу семейства
-    miner_handler_method = globals()[miner_config['miner_family'] + '_handler']
-    my_logger.debug("Going to start handler: {}".format(miner_handler_method))
-    miner_handler = threading.Thread(target=miner_handler_method)
-    miner_handler.start()
 
     my_logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
 
@@ -446,6 +447,14 @@ def claymore_handle_line(line):
         compute_units_fan = fans
     return True
 
+
+class MinerHandler():
+    '''
+    The responcibily of this class is
+    1. run miner
+    2. keep miner running
+    3. gather statistic's (from stdout or logs) - store to stats
+    '''
 
 def claymore_handler():
     global config

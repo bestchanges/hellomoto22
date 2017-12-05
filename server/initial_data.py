@@ -14,7 +14,7 @@ DEFAULT_MINER_ENV = {
 
 def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
-    profit_manager.pm.update_currency_data_from_whattomine(json.load(open('coins1.json', 'r')))
+    profit_manager.profit_manager.update_currency_data_from_whattomine(json.load(open('coins1.json', 'r')))
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
 
@@ -30,7 +30,7 @@ def initial_data():
         set__linux_bin = 'ethdcrminer64',
         set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT%.%WORKER% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%.%DUAL_WORKER% -ftime 10 -dcri 26 -asm 1',
         set__env = DEFAULT_MINER_ENV,
-        set__algos = ['Ethash+Blake',],
+        set__algos = ['Ethash+Blake (14r)',],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu = ['nvidia', 'amd'],
     )
@@ -77,7 +77,7 @@ def test_data():
         set__linux_bin = 'python',
         set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
         set__env=DEFAULT_MINER_ENV,
-        set__algos=['Ethash+Blake', 'Ethash'],
+        set__algos=['Ethash+Blake (14r)', 'Ethash'],
         set__supported_os=['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
     )

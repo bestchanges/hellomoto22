@@ -1,35 +1,31 @@
 import datetime
 import json
 import logging
+import math
+import os
 import re
+from random import randint
 from uuid import UUID
 
-import flask_login
-from flask_login import login_required
-from wtforms import validators, SelectField
-from wtforms.widgets import Select
-
-import models
-import task_manager
-from globals import assert_expr
-import math
-from logging import Logger
-from random import random, randint
-
-import os
-from flask import request, Blueprint, render_template, redirect
-
 import flask
+import flask_login
+from flask import request, render_template, redirect
+from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 from flask_mongoengine.wtf.fields import ModelSelectField
 from flask_mongoengine.wtf.orm import ModelConverter, converts
+from wtforms import validators
 
 import logging_server
+import models
+import task_manager
 from finik.crypto_data import CryptoDataProvider
 from finik.cryptonator import Cryptonator
-from models import User, Rig, PoolAccount, MinerProgram, Currency, ConfigurationGroup, Todo
-
+from globals import assert_expr
+from models import User, Rig, PoolAccount, MinerProgram, ConfigurationGroup
 # DEFAULT_CONFIGURATION_GROUP = "ETH(poloniex)"
+from task_manager import get_miner_config_for_configuration
+
 DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
 
 crypto_data = CryptoDataProvider("coins1.json")
@@ -123,7 +119,7 @@ def poolaccount_edit(id=''):
 
     field_args = {
         'pool': {'allow_blank': True},
-        'fee': { 'validators': [validators.NumberRange(min=0, max=5)]}
+        'fee': {'validators': [validators.NumberRange(min=0, max=5)]}
     }
     formtype = model_form(PoolAccount, exclude=['user'], field_args=field_args)
 
@@ -258,13 +254,6 @@ def rig_list():
     return flask.render_template("rigs.html")
 
 
-def get_miner_version(dir):
-    # let's get miner version from viersion.txt of the client
-    miner_version_filename = os.path.join('../client/miners', dir, 'version.txt')
-    file = open(miner_version_filename, 'r', encoding='ascii')
-    return file.readline().strip()
-
-
 def get_client_version():
     '''
     returns client version stored in ../client/version.txt
@@ -275,34 +264,8 @@ def get_client_version():
     file = open(version_filename, 'r', encoding='ascii')
     return file.readline().strip()
 
-def get_miner_config_for_configuration(conf, rig):
-    os = rig.os
-    if not os in conf.miner_program.supported_os:
-        raise Exception("rig '%s' os %s not supported in miner %s" % (rig.name, os, conf.miner_program))
-    if os == "Linux":
-        bin = conf.miner_program.linux_bin
-        dir = conf.miner_program.dir_linux
-    elif os == "Windows":
-        bin = conf.miner_program.win_exe
-        dir = conf.miner_program.dir
-    else:
-        raise Exception("usupported os %s" % os)
-    # TODO: check if miner supports OS of rig
-    # TODO: check if miner supports PU of rig
-    conf = {
-        "config_name": conf.name,
-        "miner": conf.miner_program.name,
-        "miner_family": conf.miner_program.family,
-        "miner_directory": dir,
-        "miner_exe": bin,
-        "miner_command_line": conf.expand_command_line(rig=rig),
-        "miner_version": get_miner_version(dir),
-        "env": conf.env,
-        "send_output": False,
-    }
-    return conf
 
-
+# TODO: rename to register_rig
 def client_config1():
     """
     Get config from client. Validate and update it.
@@ -331,6 +294,8 @@ def client_config1():
         rig.user = user
         rig.worker = 'worker%03d' % (nrigs + 1)
         rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
+        rig.manager = 'ManualRigManager'
+        rig.log_to_file = True
         rig.save()
     else:
         # register existing rig
@@ -370,7 +335,7 @@ def test_get_random_config(rig):
     return ConfigurationGroup.objects.get(name=name_new_config)
 
 
-def set_target_hashrate_from_current(rig):
+def set_target_hashrate_from_current(rig, miner_code):
     '''
     Update this rig target hashrate. If current hashrate for given algo exceedes the target hashrate then update target
     Rig object not saved.
@@ -381,6 +346,8 @@ def set_target_hashrate_from_current(rig):
     current_hashrate = rig.hashrate
     if not algo in rig.target_hashrate:
         rig.target_hashrate[algo] = {}
+    if not miner_code in rig.target_hashrate[algo]:
+        rig.target_hashrate[algo][miner_code] = {}
     for algorithm in algo.split('+'):
         if algorithm in rig.target_hashrate[algo]:
             target_value = rig.target_hashrate[algo][algorithm]
@@ -388,18 +355,21 @@ def set_target_hashrate_from_current(rig):
             target_value = 0
         if algorithm in current_hashrate and current_hashrate[algorithm] > target_value:
             # update value
-            rig.target_hashrate[algo][algorithm] = current_hashrate[algorithm]
+            # TODO: better use setter Rig.set_target_hashrate_for_algo_and_miner_code
+            rig.target_hashrate[algo][miner_code][algorithm] = current_hashrate[algorithm]
     return False
+
 
 def recieve_stat_and_return_task():
     receive_stat()
     return send_task()
 
+
 def send_task():
     rig_uuid = request.args.get('rig_id')
     rig = Rig.objects.get(uuid=rig_uuid)
     # TODO: authorize uuid
-    task = task_manager.task_manager.pop_task(rig.uuid)
+    task = task_manager.pop_task(rig.uuid)
     tasks = []
     if task:
         tasks.append({
@@ -407,19 +377,6 @@ def send_task():
             "data": task['data'],
         })
     return json.dumps(tasks)
-
-
-def add_switch_miner_task(rig):
-    """
-    Add to task manager command for rig to switch miner to current configuration_group.
-    :param rig:
-    :return:
-    """
-    task_manager.task_manager.add_task(
-        "switch_miner",
-        {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)},
-        rig.uuid
-    )
 
 
 def receive_stat():
@@ -466,17 +423,17 @@ def receive_stat():
     rig.cards_temp = stat['pu_temperatire']
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
-    set_target_hashrate_from_current(rig)
+    set_target_hashrate_from_current(rig, stat['miner']['miner_code'])
     rig.is_online = stat['miner']['is_run']
     if rig.is_online:
         rig.last_online_at = datetime.datetime.now
     rig.save()
     # If server has newer client version - then add client update task
     if stat['client_version'] != get_client_version():
-        task_manager.task_manager.add_task(task_name="self_update", data={}, client=rig.uuid)
+        task_manager.task_manager.add_task(task_name="self_update", data={}, rig_uuid=rig.uuid)
     # if configuration grup from client different when send task to change miner
     if stat['miner']['config']['config_name'] != rig.configuration_group.name:
-        add_switch_miner_task(rig)
+        task_manager.task_manager.add_switch_miner_task(rig)
     return flask.jsonify('OK')
 
 
@@ -492,12 +449,20 @@ def rig_info(uuid=None):
             'current': rig.configuration_group.id == config.id,
         })
 
-    all_algos = {}
+    all_algos = []
     miners = MinerProgram.objects(supported_pu=rig.pu, supported_os=rig.os)
     for miner in miners:
+        # if applicable
+        if not rig.os in miner.supported_os:
+            continue
+        if not rig.pu in miner.supported_pu:
+            continue
         for algo in miner.algos:
             # we have 'Ethash+blake' - now get target hashrate for it
-            all_algos[algo] = True
+            target_hasrate = {}
+            if rig.target_hashrate and algo in rig.target_hashrate and miner.code in rig.target_hashrate[algo]:
+                target_hasrate = rig.target_hashrate[algo][miner.code]
+            all_algos.append({'algo': algo, 'miner': miner, 'target_hashrate': target_hasrate})
     # for algo,target_hashrate in rig.target_hashrate.items():
 
     field_args = {
@@ -511,7 +476,7 @@ def rig_info(uuid=None):
             form.populate_obj(rig)
             rig.save()
 
-    return flask.render_template('rig.html', rig_data=rig, configs=select_config, form=form)
+    return flask.render_template('rig.html', rig_data=rig, configs=select_config, form=form, algos=all_algos)
 
 
 @login_required
@@ -531,7 +496,7 @@ def rig_set_config(uuid):
     config = ConfigurationGroup.objects.get(id=config_id)
     rig.configuration_group = config
     rig.save()
-    add_switch_miner_task(rig)
+    task_manager.task_manager.add_switch_miner_task(rig)
     return rig_info(uuid)
 
 

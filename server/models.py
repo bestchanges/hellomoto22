@@ -22,6 +22,12 @@ PU_TYPE = (
     ('nvidia', 'nvidia'),
 )
 
+# that's cause circular dependency
+# MANAGERS = (
+#     (rig_manager.AUTOPROFIT, rig_manager.AUTOPROFIT)
+#     ,(rig_manager.BENCHMARK, rig_manager.BENCHMARK)
+#     ,(rig_manager.MANUAL, rig_manager.MANUAL)
+# )
 
 class Todo(db.Document):
     title = db.StringField(max_length=60)
@@ -104,6 +110,8 @@ class MinerProgram(db.Document):
     linux_bin = db.StringField(max_length=100)
     version = db.StringField()
     env = db.DictField(default={})
+    # TODO: use String instead of List (because each algo has separate command line)
+    # TODO: OR introduce Map 'algo' -> 'command'
     algos = db.ListField(db.StringField(),
                          required=True)  # supported algos (not only currencies but also duals like 'Ethash+pascal')
     supported_os = db.ListField(db.StringField(choices=OS_TYPE), required=True)
@@ -210,9 +218,10 @@ class Rig(db.Document):
     uuid = db.UUIDField(required=True, binary=False, unique=True)
     worker = db.StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
     configuration_group = db.ReferenceField(ConfigurationGroup, required=True)
-    os = db.StringField(choices=OS_TYPE, required=True)
-    pu = db.StringField(choices=PU_TYPE, required=True)
+    os = db.StringField(choices=OS_TYPE)
+    pu = db.StringField(choices=PU_TYPE)
     user = db.ReferenceField(User)
+    manager = db.StringField() # required=True, default='AutoProfitRigManager', choices=MANAGERS,
     comment = db.StringField(max_length=100)
     system_gpu_list = db.ListField(db.StringField(), default=[])
     rebooted = db.DateTimeField()
@@ -220,9 +229,21 @@ class Rig(db.Document):
     cards_fan = db.ListField(db.IntField(), default=list)
     hashrate = db.DictField(default={})
     target_hashrate = db.DictField(
-        default={})  # { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 }, 'Ethash': { 'Ethash': 25 }
+        default={})  # miner_code: { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 },}, miner_code: { 'Ethash': { 'Ethash': 25 }
     is_online = db.BooleanField(default=False)
     last_online_at = db.DateTimeField()
+    log_to_file = db.BooleanField(defaul=False) # TODO: implement filter in logging_server. Now logs all
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)
+
+    def __eq__(self, other):
+        return self.uuid.__eq__(other.uuid)
+
+    def get_target_hashrate_for_algo_and_miner_code(self, algo, miner_code):
+        if self.target_hashrate and algo in self.target_hashrate and miner_code in self.target_hashrate[algo]:
+            return self.target_hashrate[algo][miner_code]
+
+    def set_target_hashrate_for_algo_and_miner_code(self, algo, miner_code, hashrate):
+        self.target_hashrate[algo][miner_code] = hashrate
+

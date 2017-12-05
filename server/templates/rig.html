@@ -24,6 +24,28 @@ var rig_data = {{ rig_data|tojson|safe }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 
+<h2>Hashrate</h2>
+
+<table>
+  <tr>
+    <th>Algorithm</th>
+    <th>Miner</th>
+    <th>Hashrate</th>
+  </tr>
+{% for data in algos %}
+  <tr>
+    <td>{{ data['algo'] }}</td>
+    <td>{{ data['miner'].name }}</td>
+{% if not data['target_hashrate'] %}
+    <td>Run benchmark!</td>
+{% else %}
+  {% for algorithm, value in data['target_hashrate'].items() %}
+      <td>{{  algorithm }} {{ value }} </td>
+  {% endfor %}
+{% endif %}
+  </tr>
+{% endfor %}
+</table>
 
 <h2>Profit management </h2>
 <div class="row">

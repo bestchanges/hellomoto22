@@ -4,11 +4,10 @@ from threading import Thread
 from urllib.request import Request, urlopen
 import time
 
+from bestminer.models import Currency, Rig
 from exchange.exchange import PoloniexExchange, BitfinexExchange
-from models import Currency, Rig
 
 logger = logging.getLogger(__name__)
-
 
 def calc_mining_profit(currency, user_hashrate, period=86400):
     '''
@@ -136,13 +135,14 @@ class ProfitManager(Thread):
             self.update_currency_data_from_whattomine(self.load_data_from_whattomine())
             time.sleep(300)
 
-
-profit_manager = ProfitManager()
-
-if __name__ == '__main__':
+def main():
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     #data = pm.load_data_from_whattomine()
     data = json.load(open('coins.json'))
+    profit_manager = ProfitManager()
     profit_manager.update_currency_data_from_whattomine(data)
     rig = Rig.objects.get(worker="worker002")
     profit_manager.evaluate_rig(rig)
+
+if __name__ == '__main__':
+    main()

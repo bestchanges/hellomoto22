@@ -72,7 +72,7 @@ $( "#dialog-confirm" ).dialog({
 
      $('#datalist tbody').on( 'click', 'button.edit', function () {
         var data = table.row( $(this).parents('tr') ).data();
-        window.location.href = '/rig/' + data['uuid'] + '/info'
+        window.location.href = '/user/rig/' + data['uuid'] + '/info'
     } );
 
     $('#datalist tbody').on( 'click', 'button.o', function () {

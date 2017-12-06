@@ -1,8 +1,5 @@
 from flask import render_template
-from flask import Flask
-from flask_mail import Mail, Message
-
-from models import User
+from flask_mail import Message
 
 
 def send_welcome_email(flask_mail, user, password, login_url):

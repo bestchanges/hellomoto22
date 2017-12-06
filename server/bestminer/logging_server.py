@@ -1,30 +1,20 @@
-import datetime
 import json
-import pickle
 import logging
 import logging.handlers
-import re
-import threading
-
 import os
-
-import globals
+import pickle
+import re
 import socketserver
 import struct
+import threading
 from threading import Thread
 
-import models
-from models import Rig
-
 # name of logger that is root for client loggers (need to make stop propogate processing to the main root logger)
+from bestminer.models import *
+
 CLIENT_LOGGER_ROOT = "client_logger"
 
 my_logger = logging.getLogger(__name__)
-l = logging.getLogger('logging_server')
-h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", backupCount=7, when='midnight', encoding='utf-8')
-h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
-l.addHandler(h)
-
 
 
 class LimitedList(list):
@@ -52,7 +42,7 @@ class LimitedList(list):
 
 LIMIT_LOG_ENTRIES_TO_KEEP = 30
 # uuid -> LimitedList
-rigs_memery_log = {}
+rigs_memory_log = {}
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
@@ -181,7 +171,7 @@ class SaveClientLogHistory(logging.Handler):
         self.uuid_file_logs[uuid] = None
 
     def handle(self, record):
-        global rigs_memery_log
+        global rigs_memory_log
         rig_uuid = str(record.rig_id)
 
         # temporaly logs all clients
@@ -209,11 +199,11 @@ class SaveClientLogHistory(logging.Handler):
             client_log_file_logger.handle(record)
 
         # in-memory log
-        if rig_uuid in rigs_memery_log.keys():
-            list = rigs_memery_log[rig_uuid]
+        if rig_uuid in rigs_memory_log.keys():
+            list = rigs_memory_log[rig_uuid]
         else:
             list = LimitedList(limit=LIMIT_LOG_ENTRIES_TO_KEEP)
-            rigs_memery_log[rig_uuid] = list
+            rigs_memory_log[rig_uuid] = list
         list.append(record.msg)
 
 
@@ -272,9 +262,9 @@ class ClaymoreHandler(logging.Handler):
                 gpu_num = int(gpu_num)
                 if family == 'Radeon RX':
                     if model == '470/570':
-                        card = models.GPU_RX_470
+                        card = GPU_RX_470
                     else:
-                        card = models.GPU_RX
+                        card = GPU_RX
                 else:
                     my_logger.error('Cannot recognize AMD family %s' % family)
                 if card:

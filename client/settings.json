@@ -6,7 +6,7 @@
     "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Test ZEC",
+    "config_name": "Test ETH+DCR",
     "env": {
       "GPU_FORCE_64BIT_PTR": "0",
       "GPU_MAX_ALLOC_PERCENT": "100",
@@ -14,13 +14,14 @@
       "GPU_SINGLE_ALLOC_PERCENT": "100",
       "GPU_USE_SYNC_OBJECTS": "1"
     },
-    "miner": "Pseudo EWBF Miner",
-    "miner_command_line": "-u miner_emu.py --file ZEC.txt --dst_file miner.log --delay 0.5 ",
+    "miner": "Pseudo Claymore Miner",
+    "miner_code": "pseudo_claymore_miner",
+    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --dst_file log_noappend.txt --delay 0.3 ",
     "miner_directory": "miner_emu",
     "miner_exe": "python",
-    "miner_family": "ewbf",
+    "miner_family": "claymore",
     "miner_version": "1.0",
-    "send_output": false
+    "read_output": false
   },
   "rig_id": "047476e2-86bd-5040-aa4c-e44675caa2b4",
   "server": "localhost:5000",

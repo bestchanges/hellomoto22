@@ -1,4 +1,5 @@
 bestminer-server.sh.log
 bestminer-server.sh.pid
+settings.py
 __pycache__/
 **/*.pyc

@@ -3,16 +3,15 @@ import threading
 from datetime import datetime
 from time import sleep
 
+from bestminer import task_manager
+from bestminer.models import *
+
 MANUAL = 'ManualRigManager'
 AUTOPROFIT = 'AutoProfitRigManager'
 BENCHMARK = 'BenchmarkRigManager'
 
 
-from models import Rig, ConfigurationGroup, MinerProgram
-from task_manager import task_manager
-
 logger = logging.getLogger(__name__)
-
 
 class RigManager():
     def accept_rig(self, rig):
@@ -139,8 +138,6 @@ def distribute_all_rigs():
         manager_name = rig.manager
         manager = rig_manager_by_name(manager_name)
         manager.accept_rig(rig)
-
-import server
 
 rig_managers = {}
 

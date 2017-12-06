@@ -89,7 +89,7 @@ var rig_data = {{ rig_data|tojson|safe }}
 <script type="text/javascript" >
 function get_log() {
   $.ajax({
-  url: "/rig/" + rig_data.uuid + "/log",
+  url: "/user/rig/" + rig_data.uuid + "/log",
   success: function(result) {
    $("#log_area").html(result);
   }

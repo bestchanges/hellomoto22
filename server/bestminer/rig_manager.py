@@ -46,6 +46,7 @@ class BenchmarkRigManager(RigManager):
         self.minimum_wait_sec = minimum_wait_sec
         self.maximum_wait_sec = maximum_wait_sec
         self.sleep_time = sleep_time
+        # TODO: move to method def start()
         self.thread = threading.Thread(target=self.run, name='Benchmark manager')
         self.thread.start()
 
@@ -103,8 +104,7 @@ class BenchmarkRigManager(RigManager):
                     logger.info("It took {} to benchmark {} on {}".format(runned_time, configuration_group, rig))
                     del self.running_tasks[rig_uuid]
                     self.start_next_task(rig_uuid) # start next task if exist
-            # ok. now sleep for 10 seconds
-            logger.debug("Sleep for next iteration")
+            # ok. now sleep for next iteration
             sleep(self.sleep_time)
 
 

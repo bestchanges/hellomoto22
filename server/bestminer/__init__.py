@@ -1,12 +1,9 @@
 import logging.handlers
 
-logging.basicConfig(
-    format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s', level=logging.DEBUG)
 
 l = logging.getLogger("bestminer")
-l.setLevel(logging.INFO)
+l.setLevel(logging.DEBUG)
 
 l = logging.getLogger("werkzeug")
 h = logging.handlers.TimedRotatingFileHandler("log/web_server.log", backupCount=7, when='midnight',
@@ -35,6 +32,7 @@ h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", backupCo
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
 l.addHandler(h)
 
+from bestminer.monitoring import MonitoringManager
 import flask
 from flask_login import LoginManager, UserMixin
 
@@ -45,7 +43,7 @@ from bestminer.logging_server import LoggingServer
 
 from flask import Flask
 from flask_mail import Mail
-from flask_mongoengine import MongoEngine
+from flask_mongoengine import MongoEngine, json
 
 from bestminer.rig_manager import rig_managers
 from bestminer.profit import ProfitManager
@@ -85,17 +83,25 @@ login_manager.login_view = '/auth/login'
 
 task_manager = TaskManager()
 
-crypto_data = CryptoDataProvider("coins1.json")
+profit_manager = ProfitManager(
+    sleep_time=app.config.get('BESTMINER_UPDATE_WTM_DELAY', 500),
+    save_wtm_to_file='coins.json'
+)
+if app.config.get('BESTMINER_UPDATE_WTM', False):
+    profit_manager.start()
+else:
+    profit_manager.update_currency_data_from_whattomine(json.load(open('coins.json')))
+
+crypto_data = CryptoDataProvider("coins.json")
 cryptonator = Cryptonator()
-
-
-profit_manager = ProfitManager()
-profit_manager.start()
 
 rig_manager.distribute_all_rigs()
 
 logging_server_o = LoggingServer()
 logging_server_o.start()
+
+monitoring = MonitoringManager()
+monitoring.start()
 
 # REGISTER ALL VIEWS
 

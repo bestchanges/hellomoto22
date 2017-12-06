@@ -18,3 +18,6 @@ MAIL_USE_SSL = True
 MAIL_USERNAME = 'set_in_settings'
 MAIL_PASSWORD = 'password?'
 MAIL_DEFAULT_SENDER = 'same_as_username'
+
+BESTMINER_UPDATE_WTM_DELAY = 600
+BESTMINER_UPDATE_WTM = False

@@ -1,13 +1,17 @@
 import json
 import logging
+import threading
 from threading import Thread
 from urllib.request import Request, urlopen
 import time
+
+import sys
 
 from bestminer.models import Currency, Rig
 from exchange.exchange import PoloniexExchange, BitfinexExchange
 
 logger = logging.getLogger(__name__)
+
 
 def calc_mining_profit(currency, user_hashrate, period=86400):
     '''
@@ -42,7 +46,15 @@ def calc_mining_profit(currency, user_hashrate, period=86400):
     user_reward = net_reward * user_ratio
     return user_reward
 
-class ProfitManager(Thread):
+
+class ProfitManager():
+    def __init__(self, sleep_time=300, save_wtm_to_file=None):
+        self.sleep_time = sleep_time
+        self.save_wtm_to_file = save_wtm_to_file
+
+    def start(self):
+        self.thread = threading.Thread(target=self.run, name='Profit manager')
+        self.thread.start()
 
     def evaluate_rig(self, rig):
         exchanges = [
@@ -66,30 +78,33 @@ class ProfitManager(Thread):
                         # try to convert on exchanges
                         profit_btc = 0
                         exchange_code = None
-                        best_exchange = { 'e': None, 'rate': 0}
+                        best_exchange = {'e': None, 'rate': 0}
                         for exchange in exchanges:
                             try:
                                 rate = exchange.exchange_rate(currency.code, 'BTC')
                                 if rate:
                                     if rate > best_exchange['rate']:
-                                        best_exchange = { 'e': exchange.code, 'rate': rate }
+                                        best_exchange = {'e': exchange.code, 'rate': rate}
                             except Exception as e:
                                 logger.warning("error converting {} in {}: {}".format(currency, exchange, e))
                                 continue
                         profit_btc = best_exchange['rate'] * profit
                         if profit_btc > max_profit_currency['max']:
-                            max_profit_currency = {'a': algorithm, 'c': currency.code, 'max': profit_btc, 'e': best_exchange}
+                            max_profit_currency = {'a': algorithm, 'c': currency.code, 'max': profit_btc,
+                                                   'e': best_exchange}
                         logger.info("{} = {} ({} BTC)".format(currency.code, profit, profit_btc))
                     except Exception as e:
                         logger.error(e)
                         raise e
                 bests.append(max_profit_currency)
-                logger.warning("Algorithm {} Best currency {} = {} BTC (at {})".format(algorithm, max_profit_currency['c'], max_profit_currency['max'], max_profit_currency['e']))
+                logger.warning(
+                    "Algorithm {} Best currency {} = {} BTC (at {})".format(algorithm, max_profit_currency['c'],
+                                                                            max_profit_currency['max'],
+                                                                            max_profit_currency['e']))
                 algo_profit_btc = algo_profit_btc + max_profit_currency['max']
             logger.error("Algo {} = {} BTC".format(algo, algo_profit_btc))
-            best_algos[algo] = { 'profit': algo_profit_btc, 'c': bests }
+            best_algos[algo] = {'profit': algo_profit_btc, 'c': bests}
         print(json.dumps(best_algos, indent=2, sort_keys=True))
-
 
     def load_data_from_whattomine(self):
         logger.info("Loading currencies data from WhatToMine")
@@ -100,10 +115,6 @@ class ProfitManager(Thread):
             a = urlopen(q)
             response = a.read().decode('utf-8')
             result = json.loads(response)
-            # save latest data to file
-            if len(result) > 0:
-                fout = open('coins.json', 'w')
-                json.dump(result, fout, indent=2, sort_keys=True)
             return result
         except Exception as e:
             logging.error("Error loading currencies: {} ".format(e))
@@ -127,22 +138,38 @@ class ProfitManager(Thread):
             )
 
     def run(self):
-        # update once from file
-        self.update_currency_data_from_whattomine(json.load(open('coins.json')))
-
         # False = disable periodical load
-        while False:
-            self.update_currency_data_from_whattomine(self.load_data_from_whattomine())
-            time.sleep(300)
+        while True:
+            logger.info("Load data from what to mine")
+            try:
+                wtm_data = self.load_data_from_whattomine()
+            except:
+                e = sys.exc_info()[0]
+                logger.error("Exception load WTM data: {}".format(e))
+                continue
+            if self.save_wtm_to_file and wtm_data:
+                fout = open(self.save_wtm_to_file, 'w')
+                json.dump(wtm_data, fout, indent=2)
+                fout.close()
+            try:
+                if wtm_data:
+                    self.update_currency_data_from_whattomine(wtm_data)
+            except:
+                e = sys.exc_info()[0]
+                logger.error("Exception update_currency_data_from_whattomine: {}".format(e))
+            logger.info("Load data from what to mine after {} ".format(self.sleep_time))
+            time.sleep(self.sleep_time)
+
 
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-    #data = pm.load_data_from_whattomine()
+    # data = pm.load_data_from_whattomine()
     data = json.load(open('coins.json'))
     profit_manager = ProfitManager()
     profit_manager.update_currency_data_from_whattomine(data)
     rig = Rig.objects.get(worker="worker002")
     profit_manager.evaluate_rig(rig)
+
 
 if __name__ == '__main__':
     main()

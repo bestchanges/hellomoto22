@@ -7,7 +7,7 @@ from uuid import UUID
 import flask
 from flask import Blueprint, request
 
-from bestminer import models, task_manager
+from bestminer import task_manager, models
 from bestminer.models import Rig, ConfigurationGroup, User
 from bestminer.server_commons import assert_expr, get_client_version
 from bestminer.task_manager import get_miner_config_for_configuration
@@ -188,9 +188,9 @@ def receive_stat():
     rig.save()
     # If server has newer client version - then add client update task
     if stat['client_version'] != get_client_version():
-        task_manager.task_manager.add_task(task_name="self_update", data={}, rig_uuid=rig.uuid)
+        task_manager.add_task(task_name="self_update", data={}, rig_uuid=rig.uuid)
     # if configuration grup from client different when send task to change miner
     if stat['miner']['config']['config_name'] != rig.configuration_group.name:
-        task_manager.task_manager.add_switch_miner_task(rig)
+        task_manager.add_switch_miner_task(rig, rig.configuration_group)
     return flask.jsonify('OK')
 

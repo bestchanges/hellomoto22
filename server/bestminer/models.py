@@ -8,7 +8,7 @@ from mongoengine import StringField, Document, BooleanField, DateTimeField, Deci
 #    'Ethash', 'Equihash', 'SHA256', 'Scrypt', 'Blake', 'X11', 'Pascal', 'LBRY', 'X11Gost', 'CryptoNight', 'NeoScrypt')
 
 # TODO: no way. Switch to PoolManager
-POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine')
+POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine', 'suprnova')
 SUPPORTED_OS = ('Windows', 'Linux')
 OS_TYPE = (('Windows', 'Windows'), ('Linux', 'Linux'))
 
@@ -155,7 +155,7 @@ class ConfigurationGroup(Document):
     pool = ReferenceField(Pool, required=True, verbose_name="Pool")
     pool_login = StringField(required=True, max_length=200)
     pool_password = StringField(max_length=50)
-    exchange = ReferenceField(Exchange, required=True)
+    exchange = ReferenceField(Exchange)
     wallet = StringField(required=True, max_length=200)
     is_dual = BooleanField(default=False)
     dual_currency = ReferenceField(Currency)
@@ -168,7 +168,7 @@ class ConfigurationGroup(Document):
     def __unicode__(self):
         return self.name
 
-    def expand_command_line(self, rig):
+    def expand_command_line(self, rig=None):
         expand_vars = {}
         expand_vars["POOL_SERVER"] = self.pool.server_address()
         expand_vars["POOL_PORT"] = self.pool.server_port()
@@ -187,11 +187,16 @@ class ConfigurationGroup(Document):
             expand_vars["DUAL_POOL_ACCOUNT"] = ''
             expand_vars["DUAL_POOL_PASSWORD"] = ''
             expand_vars["DUAL_CURRENCY"] = ''
-        expand_vars["WORKER"] = rig.worker
-        the_string = self.command_line
+        if rig:
+            expand_vars["WORKER"] = rig.worker
+        else:
+            expand_vars["WORKER"] = 'worker'
+        command_line = self.command_line
+        if not command_line:
+            command_line = self.miner_program.command_line
         for var, value in expand_vars.items():
-            the_string = the_string.replace('%' + var + "%", value)
-        return the_string
+            command_line = command_line.replace('%' + var + "%", value)
+        return command_line
 
 
 class ExchangeRate(Document):

@@ -52,7 +52,7 @@ $( "#dialog-confirm" ).dialog({
  // https://datatables.net/examples/ajax/null_data_source.html
      $('#datalist tbody').on( 'click', 'button.edit', function () {
         var data = table.row( $(this).parents('tr') ).data();
-        window.location.href = '/config/' + data['id']
+        window.location.href = '/user/config/' + data['id']
     } );
 
 } );

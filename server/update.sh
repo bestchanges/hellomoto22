@@ -5,7 +5,7 @@
 git pull
 pip install -r requirements.txt
 ./bestminer-server.sh stop
-python make_client_zip.py
+python bestminer/distr.py
 ./bestminer-server.sh start
 sleep 3
 tail ./bestminer-server.sh.log

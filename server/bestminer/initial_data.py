@@ -188,6 +188,28 @@ def sample_data():
     	set__server = 'eu1.ethermine.org:4444',
     )
 
+    pool = Pool.objects(name="ZEN suprnova").modify(
+        upsert=True,
+    	set__pool_family = "suprnova",
+    	set__info = "",
+    	set__website = "https://zen.suprnova.cc",
+    	set__currency = Currency.objects.get(code="ZEN"),
+    	set__fee = 0.01,
+    	set__servers = ['zen.suprnova.cc:3618'],
+    	set__server = 'zen.suprnova.cc:3618',
+    )
+
+    pool = Pool.objects(name="BTG suprnova").modify(
+        upsert=True,
+    	set__pool_family = "suprnova",
+    	set__info = "",
+    	set__website = "https://btg.suprnova.cc",
+    	set__currency = Currency.objects.get(code="BTG"),
+    	set__fee = 0.01,
+    	set__servers = ['btg.suprnova.cc:8816'],
+    	set__server = 'btg.suprnova.cc:8816',
+    )
+
     pool = Pool.objects(name= "FlyPool").modify(
         upsert=True,
         set__pool_family = "ethermine",

@@ -5,7 +5,7 @@ import flask
 import math
 
 import flask_login
-from flask import request, render_template, Blueprint
+from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 from wtforms import validators
@@ -49,7 +49,7 @@ def config_list_json():
             'name': config.name,
             'currency': config.currency.code,
             'pool': config.pool.name,
-            'exchange': config.exchange.name,
+            'exchange': '<>',
             'wallet': config.wallet,
             'miner_programm': config.miner_program.name,
         })
@@ -66,10 +66,11 @@ def config_edit(id=''):
         'dual_currency': {'allow_blank': True},
         'exchange': {'allow_blank': True},
     }
-    formtype = model_form(ConfigurationGroup, field_args=field_args)
+    formtype = model_form(ConfigurationGroup, field_args=field_args, exclude=['user', 'algo'])
+    user = flask_login.current_user.user
 
     if id:
-        config = ConfigurationGroup.objects.get_or_404(id=id)
+        config = ConfigurationGroup.objects.get(id=id)
     else:
         config = ConfigurationGroup()
 
@@ -78,8 +79,10 @@ def config_edit(id=''):
         if form.validate():
             # do something
             form.populate_obj(config)
+            config.user = user
+            config.algo = config.miner_program.algos[0]
             config.save()
-            return flask.redirect('configs')
+            return flask.redirect(url_for('.config_list'))
         else:
             return flask.render_template('config.html', form=form)
     else:

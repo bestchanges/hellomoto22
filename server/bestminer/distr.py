@@ -9,10 +9,12 @@ def miners_zip():
     make zip for all miners located in client/miners
     :return:
     '''
+    # directory of this script location
+    script_path = os.path.dirname(__file__)
     # where to put distributive on the server
-    target_dir = 'static/miners/'
+    target_dir = os.path.join(script_path, 'static/miners/')
     # client source dir
-    source_dir = '../client/miners'
+    source_dir = os.path.join(script_path, '../../client/miners')
 
     logger.info("Prepare zip files for miners")
     for miner_dir in os.listdir(source_dir):
@@ -35,7 +37,8 @@ def client_zip_windows_for_update():
     Shall be run once new client version release
     :return: str of ZIP location on the server.
     '''
-    zip_location = 'static/client/BestMiner-Windows.zip'
+    script_path = os.path.dirname(__file__)
+    zip_location = os.path.join(script_path, 'static/client/BestMiner-Windows.zip')
     _client_zip_windows(
         client_config={'email': '', 'secret': ''},
         zip_location=zip_location,
@@ -50,11 +53,15 @@ def client_zip_windows_for_user(user, server):
     :return: str of ZIP location on the server. For download flask.redirect(request.host_url + zip_location)
     '''
     config = {'email': user.email, 'secret': user.client_secret, 'server': server}
-    zip_dir = 'static/client/gen/{}/'.format(user.id)
-    os.makedirs(zip_dir, exist_ok=True)
-    zip_file = zip_dir + '/BestMiner-Windows.zip'
-    _client_zip_windows(config, zip_file, 'BestMiner')
-    return zip_file
+    script_path = os.path.dirname(__file__)
+    zip_dir_on_server = 'static/client/gen/{}/'.format(user.id)
+    zip_filename = 'BestMiner-Windows.zip'
+    zip_file_on_server = os.path.join(zip_dir_on_server, zip_filename)
+    zip_dir_on_disk = os.path.join(script_path, zip_dir_on_server)
+    os.makedirs(zip_dir_on_disk, exist_ok=True)
+    zip_file_on_disk = os.path.join(zip_dir_on_disk, zip_filename)
+    _client_zip_windows(config, zip_file_on_disk, 'BestMiner')
+    return zip_file_on_server
 
 
 def _client_zip_windows(client_config={}, zip_location='static/client/BestMiner-Windows.zip', client_dir="."):
@@ -66,11 +73,11 @@ def _client_zip_windows(client_config={}, zip_location='static/client/BestMiner-
     :return:
     '''
     # client source dir
-    source_dir = '../client'
+    script_path = os.path.dirname(__file__)
+    source_dir = os.path.join(script_path, '../../client')
     # prefix of directories/files to add to archive
     includes = '''
 bestminer-client.py
-distr_win
 epython
 BestMiner.bat
 version.txt

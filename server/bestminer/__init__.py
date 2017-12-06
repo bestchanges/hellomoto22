@@ -102,7 +102,8 @@ logging_server_o.start()
 import bestminer.mod_auth.views
 import bestminer.mod_promosite.views
 import bestminer.mod_user.views
-import bestminer.api_client.views
+import bestminer.mod_admin.views
+import bestminer.api_client.api
 
 @app.route("/")
 def index():
@@ -111,7 +112,8 @@ def index():
 app.register_blueprint(bestminer.mod_auth.views.mod, url_prefix='/auth')
 app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')
 app.register_blueprint(bestminer.mod_user.views.mod, url_prefix='/user')
-app.register_blueprint(bestminer.api_client.views.mod, url_prefix='/client')
+app.register_blueprint(bestminer.mod_admin.views.mod, url_prefix='/admin')
+app.register_blueprint(bestminer.api_client.api.mod, url_prefix='/client')
 
 import bestminer.initial_data
 

@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
 {% from "_formhelpers.html" import render_field %}
+  {% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+  {% endif %}
 <form method=post>
   {{ form.csrf_token }}
   {{ render_field(form.name) }}

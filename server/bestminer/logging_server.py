@@ -186,7 +186,7 @@ class SaveClientLogHistory(logging.Handler):
                     os.makedirs(dirs)
                 client_log_file_logger = logging.getLogger("client_logger_{}".format(rig_uuid))
                 log_filename = "{}.log".format(rig_uuid)
-                h = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight', backupCount=7,
+                h = logging.handlers.TimedRotatingFileHandler(os.path.join(dirs, log_filename), when='midnight', backupCount=7,
                                                               encoding='utf-8')
                 #log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
                 #h = logging.StreamHandler(log_file)

@@ -1,28 +1,45 @@
 import logging.handlers
 
-from flask_login import LoginManager, UserMixin
-
-from bestminer.models import User
-
 logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s',
-    level=logging.DEBUG
+    level=logging.INFO
 )
-webserver_logger = logging.getLogger("werkzeug")
-# TODO: add store logs to rotating file
-webserver_logger.propagate = False
-l = logging.getLogger('benchmark_manager')
+
+l = logging.getLogger("bestminer")
+l.setLevel(logging.INFO)
+
+l = logging.getLogger("werkzeug")
+h = logging.handlers.TimedRotatingFileHandler("log/web_server.log", backupCount=7, when='midnight',
+                                              encoding='utf-8')
+h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
+l.propagate = False
+
+l = logging.getLogger('bestminer.rig_manager')
+l.setLevel(logging.DEBUG)
+h = logging.handlers.TimedRotatingFileHandler("log/rig_manager.log", backupCount=7, when='midnight',
+                                              encoding='utf-8')
+h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
+l.addHandler(h)
+
+l = logging.getLogger('bestminer.benchmark_manager')
+l.setLevel(logging.DEBUG)
 h = logging.handlers.TimedRotatingFileHandler("log/benchmark_server.log", backupCount=7, when='midnight',
                                               encoding='utf-8')
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
 l.addHandler(h)
-l = logging.getLogger('logging_server')
+
+l = logging.getLogger('bestminer.logging_server')
+l.setLevel(logging.DEBUG)
 h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", backupCount=7, when='midnight',
                                               encoding='utf-8')
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
 l.addHandler(h)
 
 import flask
+from flask_login import LoginManager, UserMixin
+
+from bestminer.models import User
+
 
 from bestminer.logging_server import LoggingServer
 

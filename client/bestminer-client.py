@@ -113,7 +113,10 @@ def get_reboot_time():
     '''
     :return: datetime object of moment of boot
     '''
-    return uptime.boottime()
+    boottime = uptime.boottime()
+    tz_offset = datetime.datetime.now() - datetime.datetime.utcnow()
+    utcboottime = boottime - tz_offset
+    return utcboottime
 
 
 def get_rig_id():

@@ -1,0 +1,5 @@
+[beta 0.1]
++rig dashboard
++client registration/login
++windows only
++rig dashboard

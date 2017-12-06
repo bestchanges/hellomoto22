@@ -1,0 +1,17 @@
+[beta0.1]
+-manual rig configuration
+-autoprofit mode
+
+[beta0.2]
+benchmark
+linux version
+
+[beta0.3]
+best profit mode
+payments in btc
+
+[beta0.4]
+gui client
+payments in ETH
+
+[1.0]

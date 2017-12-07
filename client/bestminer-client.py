@@ -304,6 +304,7 @@ def run_miner(miner_config):
     my_logger.debug("Going to start handler: {}".format(miner_handler_method))
     miner_handler = threading.Thread(target=miner_handler_method)
     miner_handler.start()
+    time.sleep(0.3)
 
     if miner_config['read_output']:
         # we've got some problem using stdout=PIPE because of system buffer of stdout (about 8k).
@@ -516,11 +517,15 @@ def ewbf_handle_line(line):
 
 def ewbf_handler():
     global config
-    # give time for miner to start
-    time.sleep(3)
     miner_config = config['miner_config']
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
     logger = logging.getLogger("miner")
+    # first delete old miner.log from miner dir
+    log_file = os.path.join(miner_dir, 'miner.log')
+    if os.path.isfile(log_file):
+        os.unlink(log_file)
+    # give time for miner to start
+    time.sleep(3)
     while True:
         fn = os.path.join(miner_dir, 'miner.log')
         fp = open(fn, 'r', encoding='866', newline='')

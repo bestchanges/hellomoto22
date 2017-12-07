@@ -3,6 +3,8 @@
       <script>
 $(document).ready(function () {
 
+var miner_program = null
+
 $('#miner_program').after("<div id='miner_program_info'></div>")
 
 function set_name() {
@@ -11,6 +13,11 @@ function set_name() {
   var name = c
   if (c2) {
     name = c + '+' + c2
+  }
+  if (miner_program) {
+    if (miner_program.supported_pu.length == 1) {
+      name = name + '(' + miner_program.supported_pu[0] + ')'
+    }
   }
   $('#name').val(name)
 }
@@ -27,6 +34,7 @@ $('#miner_program').on('change', function() {
   $.getJSON( url, function( data ) {
       $('#miner_program_info').text("Supported GPU: " + data.miner_program.supported_pu)
 
+      miner_program = data.miner_program
       var $el = $("#currency");
       $el.empty(); // remove old options
       $el.append("<option></option>");

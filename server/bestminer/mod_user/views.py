@@ -196,16 +196,20 @@ def rig_list_json():
         currency = rig.configuration_group.currency
         profit = 0
         if currency.algo in rig.hashrate:
-            profit = profit + get_profit(currency.code, rig.hashrate[currency.algo])
+            profit = get_profit(currency.code, rig.hashrate[currency.algo])
+        dual_profit = 0
         if rig.configuration_group.is_dual:
-            currency = rig.configuration_group.dual_currency
-            if currency.algo in rig.hashrate:
-                profit = profit + get_profit(currency.code, rig.hashrate[currency.algo])
+            dual_currency = rig.configuration_group.dual_currency
+            if dual_currency.algo in rig.hashrate:
+                dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
         try:
             # try to convert to user target currency
             target_currency = rig.user.target_currency
             exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
             profit_target_currency = profit * exchange_rate
+            if dual_profit:
+                exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
+                profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
             profit_string = "%s %s" % (round_to_n(profit_target_currency, 2), target_currency)
         except:
             if profit is None:

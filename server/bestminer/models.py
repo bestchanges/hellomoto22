@@ -192,6 +192,9 @@ class ConfigurationGroup(Document):
             command_line = self.miner_program.command_line
         for var, value in expand_vars.items():
             command_line = command_line.replace('%' + var + "%", value)
+        # do it twice because of %POOL_LOGIN% contains %WORKER%
+        for var, value in expand_vars.items():
+            command_line = command_line.replace('%' + var + "%", value)
         return command_line
 
 

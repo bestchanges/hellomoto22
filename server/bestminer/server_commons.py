@@ -45,3 +45,62 @@ def assert_expr(expr, msg=None):
         if not msg:
             msg = "Assert failed"
         raise Exception(msg)
+
+
+def server_address(server):
+    """
+    return server part of servername "servername:8888" => "servername"
+    :param server:
+    :return:
+    """
+    server, port = server.split(":")
+    return server
+
+
+def server_port(server):
+    """
+    return port part of servername "servername:8888" => "8888"
+    :param server:
+    :return:
+    """
+    server, port = server.split(":")
+    return port
+
+
+def expand_command_line(configuration_group, worker='worker'):
+    expand_vars = {}
+    if configuration_group.pool_server:
+        expand_vars["POOL_SERVER"] = server_address(configuration_group.pool_server)
+        expand_vars["POOL_PORT"] = server_port(configuration_group.pool_server)
+    else:
+        expand_vars["POOL_SERVER"] = server_address(configuration_group.pool.server)
+        expand_vars["POOL_PORT"] = server_port(configuration_group.pool.server)
+    expand_vars["POOL_ACCOUNT"] = configuration_group.pool_login
+    expand_vars["POOL_PASSWORD"] = configuration_group.pool_password
+    expand_vars["CURRENCY"] = configuration_group.currency.code
+    if configuration_group.is_dual:
+        if configuration_group.dual_pool_server:
+            expand_vars["POOL_SERVER"] = server_address(configuration_group.dual_pool_server)
+            expand_vars["POOL_PORT"] = server_port(configuration_group.dual_pool_server)
+        else:
+            expand_vars["POOL_SERVER"] = server_address(configuration_group.dual_pool.server)
+            expand_vars["POOL_PORT"] = server_port(configuration_group.dual_pool.server)
+        expand_vars["DUAL_POOL_ACCOUNT"] = configuration_group.dual_pool_login
+        expand_vars["DUAL_POOL_PASSWORD"] = configuration_group.dual_pool_password
+        expand_vars["DUAL_CURRENCY"] = configuration_group.dual_currency.code
+    else:
+        expand_vars["DUAL_POOL_SERVER"] = ''
+        expand_vars["DUAL_POOL_PORT"] = ''
+        expand_vars["DUAL_POOL_ACCOUNT"] = ''
+        expand_vars["DUAL_POOL_PASSWORD"] = ''
+        expand_vars["DUAL_CURRENCY"] = ''
+    expand_vars["WORKER"] = worker
+    command_line = configuration_group.command_line
+    if not command_line:
+        command_line = configuration_group.miner_program.command_line
+    for var, value in expand_vars.items():
+        command_line = command_line.replace('%' + var + "%", value)
+    # do it twice because of %POOL_LOGIN% contains %WORKER%
+    for var, value in expand_vars.items():
+        command_line = command_line.replace('%' + var + "%", value)
+    return command_line

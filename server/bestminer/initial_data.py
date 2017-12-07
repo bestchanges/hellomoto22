@@ -33,6 +33,7 @@ def initial_data():
         set__algos = ['Ethash+Blake (14r)',],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu = ['nvidia', 'amd'],
+        set__is_enabled=True,
     )
 
     miner_program = MinerProgram.objects(name='Claymore').modify(
@@ -48,6 +49,7 @@ def initial_data():
         set__algos=['Ethash', ],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
+        set__is_enabled=True,
     )
 
     miner_program = MinerProgram.objects(name='EWBF').modify(
@@ -63,6 +65,7 @@ def initial_data():
         set__algos=['Equihash', ],
         set__supported_os=['Windows', 'Linux'],
         set__supported_pu = ['nvidia', ],
+        set__is_enabled=True,
     )
 
 
@@ -80,6 +83,7 @@ def test_data():
         set__algos=['Ethash+Blake (14r)', 'Ethash'],
         set__supported_os=['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
+        set__is_enabled=True,
     )
 
     miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
@@ -95,6 +99,7 @@ def test_data():
         set__algos=['Equihash', ],
         set__supported_os=['Windows', 'Linux'],
         set__supported_pu=['nvidia', ],
+        set__is_enabled=True,
     )
 
     poloniex = Exchange.objects(name="Poloniex").modify(

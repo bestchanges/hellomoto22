@@ -25,12 +25,6 @@ PU_TYPE = (('amd', 'amd'),('nvidia', 'nvidia'))
 #     ,(rig_manager.MANUAL, rig_manager.MANUAL)
 # )
 
-class Todo(Document):
-    title = StringField(max_length=60)
-    text = StringField()
-    done = BooleanField(default=False)
-    pub_date = DateTimeField(default=datetime.datetime.now)
-
 
 class Currency(Document):
     code = StringField(max_length=20, unique=True)
@@ -69,7 +63,8 @@ class User(Document):
 
 
 class Pool(Document):
-    name = StringField(max_length=100, unique=True)
+    name = StringField(max_length=100, unique_with='user')
+    user = ReferenceField(User) # if exist then this is user's specific pool
     pool_family = StringField(max_length=30, choices=POOLS_FAMILY)
     info = StringField()
     website = URLField()
@@ -77,17 +72,10 @@ class Pool(Document):
     fee = FloatField(required=True, default=0, min_value=0, max_value=1)  # fee rate. For 1% == 0.01
     servers = ListField(StringField(max_length=100, regex='[\w\.\-]+:\d+'))
     server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
+    is_online = BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
-
-    def server_address(self):
-        server, port = self.server.split(":")
-        return server
-
-    def server_port(self):
-        server, port = self.server.split(":")
-        return port
 
 
 class MinerProgram(Document):
@@ -110,6 +98,7 @@ class MinerProgram(Document):
                          required=True)  # supported algos (not only currencies but also duals like 'Ethash+pascal')
     supported_os = ListField(StringField(choices=OS_TYPE), required=True)
     supported_pu = ListField(StringField(choices=PU_TYPE), required=True)
+    is_enabled = BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
@@ -138,7 +127,7 @@ class PoolAccount(Document):
 
 
 class ConfigurationGroup(Document):
-    name = StringField(max_length=100, required=True, verbose_name="Name")
+    name = StringField(max_length=100, required=True, verbose_name="Configuration Name")
     user = ReferenceField(User, required=True)
     miner_program = ReferenceField(MinerProgram, required=True, verbose_name="Miner")
     # algo: for single currency has taken from currency algo, for dual concatenate using '+'
@@ -149,13 +138,15 @@ class ConfigurationGroup(Document):
     currency = ReferenceField(Currency, required=True, verbose_name="Coin",
                                  radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     pool = ReferenceField(Pool, required=True, verbose_name="Pool")
-    pool_login = StringField(required=True, max_length=200)
-    pool_password = StringField(max_length=50)
+    pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+', verbose_name="Pool Startum")  # server:port
+    pool_login = StringField(required=True, max_length=200, verbose_name="Pool login")
+    pool_password = StringField(max_length=50, verbose_name="Pool password")
     exchange = ReferenceField(Exchange)
     wallet = StringField(required=True, max_length=200)
     is_dual = BooleanField(default=False)
-    dual_currency = ReferenceField(Currency)
+    dual_currency = ReferenceField(Currency, verbose_name="Coin (for dual)")
     dual_pool = ReferenceField(Pool)
+    dual_pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
     dual_pool_login = StringField(max_length=200)
     dual_pool_password = StringField(max_length=50)
     dual_exchange = ReferenceField(Exchange)
@@ -164,38 +155,6 @@ class ConfigurationGroup(Document):
     def __unicode__(self):
         return self.name
 
-    def expand_command_line(self, rig=None):
-        expand_vars = {}
-        expand_vars["POOL_SERVER"] = self.pool.server_address()
-        expand_vars["POOL_PORT"] = self.pool.server_port()
-        expand_vars["POOL_ACCOUNT"] = self.pool_login
-        expand_vars["POOL_PASSWORD"] = self.pool_password
-        expand_vars["CURRENCY"] = self.currency.code
-        if self.is_dual:
-            expand_vars["DUAL_POOL_SERVER"] = self.dual_pool.server_address()
-            expand_vars["DUAL_POOL_PORT"] = self.dual_pool.server_port()
-            expand_vars["DUAL_POOL_ACCOUNT"] = self.dual_pool_login
-            expand_vars["DUAL_POOL_PASSWORD"] = self.dual_pool_password
-            expand_vars["DUAL_CURRENCY"] = self.dual_currency.code
-        else:
-            expand_vars["DUAL_POOL_SERVER"] = ''
-            expand_vars["DUAL_POOL_PORT"] = ''
-            expand_vars["DUAL_POOL_ACCOUNT"] = ''
-            expand_vars["DUAL_POOL_PASSWORD"] = ''
-            expand_vars["DUAL_CURRENCY"] = ''
-        if rig:
-            expand_vars["WORKER"] = rig.worker
-        else:
-            expand_vars["WORKER"] = 'worker'
-        command_line = self.command_line
-        if not command_line:
-            command_line = self.miner_program.command_line
-        for var, value in expand_vars.items():
-            command_line = command_line.replace('%' + var + "%", value)
-        # do it twice because of %POOL_LOGIN% contains %WORKER%
-        for var, value in expand_vars.items():
-            command_line = command_line.replace('%' + var + "%", value)
-        return command_line
 
 
 class ExchangeRate(Document):

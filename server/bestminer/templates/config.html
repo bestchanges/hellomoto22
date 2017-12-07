@@ -1,4 +1,59 @@
 {% extends "layout.html" %}
+{% block head %}
+      <script>
+$(document).ready(function () {
+
+$('#miner_program').after("<div id='miner_program_info'></div>")
+
+function set_name() {
+  var c = $( "#currency option:selected" ).text()
+  var c2 = $( "#dual_currency option:selected" ).text()
+  var name = c
+  if (c2) {
+    name = c + '+' + c2
+  }
+  $('#name').val(name)
+}
+
+$('#currency').on('change', set_name)
+$('#dual_currency').on('change', set_name)
+
+$('#miner_program').on('change', function() {
+  // load miner_program (+available currencies)
+  // set options for currency
+  // if dual show dual area
+  // set options for dual currency
+  url = '/user/config_miner_program_data.json?id=' + this.value
+  $.getJSON( url, function( data ) {
+      $('#miner_program_info').text("Supported GPU: " + data.miner_program.supported_pu)
+
+      var $el = $("#currency");
+      $el.empty(); // remove old options
+      $el.append("<option></option>");
+      for (var i = 0; i < data.currencies.length; i++) {
+        $el.append($("<option></option>").attr("value", data.currencies[i]._id.$oid).text(data.currencies[i].code));
+          //alert(data.currencies[i].code);
+      }
+      if (data.is_dual) {
+          $('#dual_div').show()
+      } else {
+          $('#dual_div').hide()
+      }
+
+      var $el = $("#dual_currency");
+      $el.empty(); // remove old options
+      $el.append("<option></option>");
+      for (var i = 0; i < data.currencies_dual.length; i++) {
+        $el.append($("<option></option>").attr("value", data.currencies_dual[i]._id.$oid).text(data.currencies_dual[i].code));
+          //alert(data.currencies[i].code);
+      }
+  })
+
+})
+
+});
+      </script>
+{% endblock %}
 {% block body %}
 {% from "_formhelpers.html" import render_field %}
   {% if error %}
@@ -6,22 +61,21 @@
   {% endif %}
 <form method=post>
   {{ form.csrf_token }}
-  {{ render_field(form.name) }}
   {{ render_field(form.miner_program, style="height: 30px;") }}
   {{ render_field(form.currency, style="height: 30px;") }}
-  {{ render_field(form.pool, style="height: 30px;") }}
+  {{ render_field(form.pool_server) }}
   {{ render_field(form.pool_login) }}
   {{ render_field(form.pool_password) }}
-  {{ render_field(form.exchange, style="height: 30px;") }}
-  {{ render_field(form.wallet) }}
+  {{ render_field(form.name) }}
+<div id="dual_div">
   <hr>
   Dual settings:
   {{ render_field(form.dual_currency, style="height: 30px;") }}
-  {{ render_field(form.dual_pool, style="height: 30px;") }}
+  {{ render_field(form.dual_pool_server) }}
   {{ render_field(form.dual_pool_login) }}
   {{ render_field(form.dual_pool_password) }}
-  {{ render_field(form.dual_exchange, style="height: 30px;") }}
-  {{ render_field(form.dual_wallet) }}
+</div>
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
+
 {% endblock %}

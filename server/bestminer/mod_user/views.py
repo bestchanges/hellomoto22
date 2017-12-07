@@ -11,8 +11,9 @@ from flask_mongoengine.wtf import model_form
 from wtforms import validators
 
 from bestminer import crypto_data, cryptonator, logging_server_o, task_manager, logging_server
+from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
-from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram
+from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency
 from bestminer.server_commons import round_to_n
 
 mod = Blueprint('user', __name__, template_folder='templates')
@@ -49,11 +50,31 @@ def config_list_json():
             'name': config.name,
             'currency': config.currency.code,
             'pool': config.pool.name,
-            'exchange': '<>',
-            'wallet': config.wallet,
             'miner_programm': config.miner_program.name,
+            'supported_pu': config.miner_program.supported_pu,
         })
     return flask.jsonify({'data': data})
+
+
+@mod.route('/config_miner_program_data.json')
+@login_required
+def config_miner_data_json():
+    # TODO: filter queried data
+    miner_program_id = request.args.get('id')
+    miner_program = MinerProgram.objects.get(id=miner_program_id)
+    algos = miner_program.algos[0].split('+')
+    currencies = Currency.objects(algo=algos[0])
+    currencies_dual = []
+    is_dual = False
+    if len(algos) > 1:
+        is_dual = True
+        currencies_dual = Currency.objects(algo=algos[1])
+    return flask.jsonify({
+        'miner_program': miner_program,
+        'is_dual': is_dual,
+        'currencies': currencies,
+        'currencies_dual': currencies_dual,
+    })
 
 
 @mod.route('/config/', defaults={'id': None}, methods=["GET", "POST"])
@@ -61,13 +82,15 @@ def config_list_json():
 @login_required
 def config_edit(id=''):
     field_args = {
-        'dual_pool': {'allow_blank': True},
-        'dual_exchange': {'allow_blank': True},
-        'dual_currency': {'allow_blank': True},
-        'exchange': {'allow_blank': True},
+#        'dual_pool': {'allow_blank': True},
+#        'dual_currency': {'allow_blank': True},
     }
-    # TODO: move from exclude= to only=
-    formtype = model_form(ConfigurationGroup, field_args=field_args, exclude=['user', 'algo'])
+    formtype = model_form(ConfigurationGroup, field_args=field_args, only=
+    [
+        'name', 'miner_program',
+        'currency', 'pool_server', 'pool_login', 'pool_password',
+        'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password'
+    ])
     user = flask_login.current_user.user
 
     if id:
@@ -107,15 +130,39 @@ def poolaccount_list_json():
         data.append({
             'id': str(o.id),
             'name': o.name,
-            'currency': o.currency.code,
+            'currency': o.pool.currency.code,
             'login': o.login,
-            'server': o.server,
-            'active': o.is_active,
+            'server': o.pool.server,
+            'active': o.pool.is_online and o.is_active,
         })
     return flask.jsonify({'data': data})
 
 
-@mod.route('/poolaccount/', defaults={'id': None}, methods=["GET", "POST"])
+@mod.route('/poolaccount/', methods=["GET", "POST"])
+def poolaccount_add():
+    user = flask_login.current_user.user
+
+    field_args = {
+        'pool': {'allow_blank': True},
+    }
+    formtype = model_form(PoolAccount, only=['name', 'pool', 'login', 'password', 'is_active'], field_args=field_args)
+
+    obj = PoolAccount()
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if form.validate():
+            form.populate_obj(obj)
+            obj.user = user
+            obj.save()
+            return flask.redirect('poolaccounts')
+        else:
+            return flask.render_template('poolaccount_add.html', form=form)
+    else:
+        form = formtype(obj=obj)
+        return flask.render_template('poolaccount_add.html', form=form, currencies=list_supported_currencies())
+
+
 @mod.route('/poolaccount/<id>', methods=["GET", "POST"])
 @login_required
 def poolaccount_edit(id=''):
@@ -123,13 +170,11 @@ def poolaccount_edit(id=''):
 
     field_args = {
         'pool': {'allow_blank': True},
-        'fee': {'validators': [validators.NumberRange(min=0, max=5)]}
     }
-    # TODO: move from exclude= to only=
-    formtype = model_form(PoolAccount, exclude=['user'], field_args=field_args)
+    formtype = model_form(PoolAccount, only=['name', 'pool', 'login', 'password', 'is_active'], field_args=field_args)
 
     if id:
-        obj = PoolAccount.objects.get_or_404(id=id)
+        obj = PoolAccount.objects.get(id=id)
     else:
         obj = PoolAccount()
 
@@ -156,9 +201,11 @@ def get_uptime(rig_state):
     delta = datetime.datetime.now() - rig_state.rebooted
     days = delta.days
     hours = math.trunc(delta.seconds / 3600)
-    minutes = math.trunc(delta.seconds / 60)
-    if days > 0 or hours > 0:
+    minutes = math.trunc((delta.seconds - hours * 3600)/ 60)
+    if days > 0:
         s = "%dd %dh" % (days, hours)
+    elif hours > 0:
+        s = "%dh %dm" % (hours,minutes)
     else:
         s = "%dm" % minutes
     return s
@@ -224,7 +271,6 @@ def rig_list_json():
             'profit': profit_string,
             'uptime': get_uptime(rig_state),
             'miner': {
-                'currency': currency.code,
                 'configuration_id': str(rig.configuration_group.id),
                 'configuration_name': rig.configuration_group.name,
             },

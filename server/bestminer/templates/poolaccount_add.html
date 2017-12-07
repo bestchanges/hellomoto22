@@ -1,10 +1,23 @@
 {% extends "layout.html" %}
+{% from "_formhelpers.html" import render_field %}
 {% block body %}
-  <h1>Pool account</h1>
+  <h1>Add pool account</h1>
   {% if error %}
     <p class=error><strong>Error:</strong> {{ error }}
   {% endif %}
-{% from "_formhelpers.html" import render_field %}
+
+  <div class="form-group row">
+    <label class="col-sm-3">Select coin:</label>
+    <div class="col-sm-6">
+       <select id="currency" class_="form-control"  style="height: 30px;">
+{% for currency in currencies %}
+      <option value="{{ currency.code }}">{{  currency.code }}</option>
+{% endfor %}
+</select>
+    </div>
+  </div>
+
+
 <form method=post>
   {{ form.csrf_token }}
   {{ render_field(form.pool, style="height: 30px;") }}

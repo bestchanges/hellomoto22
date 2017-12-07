@@ -82,7 +82,7 @@ def get_system_id():
     '''
     system = platform.system()
     if system == 'Windows':
-        system_id = ''
+        components = []
         # >wmic cpu get ProcessorId
         # ProcessorId
         # 178BFBFF00100F53
@@ -94,7 +94,7 @@ def get_system_id():
                 # skip head
                 firstline = False
                 continue
-            system_id = system_id + ',' + line
+            components.append(line)
         # >wmic baseboard get serialnumber
         # SerialNumber
         # QB08727640
@@ -106,23 +106,27 @@ def get_system_id():
                 # skip head
                 firstline = False
                 continue
-            system_id = system_id + ',' + line
-            return system_id
+            components.append(line)
+        if components:
+            return ','.join(components)
     elif system == 'Linux':
         # PROC: sudo dmidecode -t 4 | grep ID | sed 's/.*ID://;s/ //g'
         # 76060100FFFBEBBF
-        system_id = ''
+        components = []
         proc = subprocess.run("sudo dmidecode --string baseboard-serial-number | sed 's/.*ID://;s/ //g'", shell=True, stdout=subprocess.PIPE)
         id = proc.stdout.decode().strip()
-        system_id = system_id + ',' + id
+        if id:
+            components.append(id)
         # MB: sudo dmidecode --string baseboard-serial-number | sed 's/.*ID://;s/ //g' | tr '[:upper:]' '[:lower:]'
         # czc8493tp3
         # MAC: ifconfig | grep eth0 | awk '{print $NF}' | sed 's/://g'
         # 002264bbfc3a
         proc = subprocess.run("sudo dmidecode --string baseboard-serial-number | sed 's/.*ID://;s/ //g'", shell=True, stdout=subprocess.PIPE)
         id = proc.stdout.decode().strip()
-        system_id = system_id + ',' + id
-        return system_id
+        if id:
+            components.append(id)
+        if components:
+            return ','.join(components)
     else:
         raise Exception("Unsupported platform %s" % platform)
     raise Exception("Cannot get system unique id")

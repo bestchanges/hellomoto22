@@ -71,14 +71,12 @@ class User(Document):
 class Pool(Document):
     name = StringField(max_length=100, unique=True)
     pool_family = StringField(max_length=30, choices=POOLS_FAMILY)
-    info = StringField(max_length=1000)
+    info = StringField()
     website = URLField()
-    currency = ReferenceField(Currency)
-    fee = FloatField()  # fee rate. For 1% == 0.01
-    servers = ListField(StringField())
-    server = StringField()  # server:port
-    login = StringField(max_length=200)
-    password = StringField(max_length=100)
+    currency = ReferenceField(Currency, required=True)
+    fee = FloatField(required=True, default=0, min_value=0, max_value=1)  # fee rate. For 1% == 0.01
+    servers = ListField(StringField(max_length=100, regex='[\w\.\-]+:\d+'))
+    server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
 
     def __unicode__(self):
         return self.name
@@ -129,10 +127,8 @@ class Exchange(Document):
 class PoolAccount(Document):
     name = StringField(max_length=200)
     user = ReferenceField(User, required=True)
-    currency = ReferenceField(Currency, required=True, verbose_name="Currency",
-                                 radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
-    fee = FloatField(required=True, default=0)  # fee rate. For 1% == 0.01
-    server = StringField(required=True, max_length=200)  # server:port
+    pool = ReferenceField(Pool, required=True)
+#    currency = ReferenceField(Currency, required=True, verbose_name="Currency", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     login = StringField(required=True, max_length=200, help_text="Login for pool connection")
     password = StringField(max_length=100)
     is_active = BooleanField(default=True)

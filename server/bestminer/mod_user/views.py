@@ -66,6 +66,7 @@ def config_edit(id=''):
         'dual_currency': {'allow_blank': True},
         'exchange': {'allow_blank': True},
     }
+    # TODO: move from exclude= to only=
     formtype = model_form(ConfigurationGroup, field_args=field_args, exclude=['user', 'algo'])
     user = flask_login.current_user.user
 
@@ -124,6 +125,7 @@ def poolaccount_edit(id=''):
         'pool': {'allow_blank': True},
         'fee': {'validators': [validators.NumberRange(min=0, max=5)]}
     }
+    # TODO: move from exclude= to only=
     formtype = model_form(PoolAccount, exclude=['user'], field_args=field_args)
 
     if id:

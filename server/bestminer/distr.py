@@ -79,6 +79,7 @@ def _client_zip_windows(client_config={}, zip_location='static/client/BestMiner-
     includes = '''
 bestminer-client.py
 epython
+ChangeLog.txt
 BestMiner.bat
 version.txt
 '''

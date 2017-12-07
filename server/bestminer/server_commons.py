@@ -80,11 +80,11 @@ def expand_command_line(configuration_group, worker='worker'):
     expand_vars["CURRENCY"] = configuration_group.currency.code
     if configuration_group.is_dual:
         if configuration_group.dual_pool_server:
-            expand_vars["POOL_SERVER"] = server_address(configuration_group.dual_pool_server)
-            expand_vars["POOL_PORT"] = server_port(configuration_group.dual_pool_server)
+            expand_vars["DUAL_POOL_SERVER"] = server_address(configuration_group.dual_pool_server)
+            expand_vars["DUAL_POOL_PORT"] = server_port(configuration_group.dual_pool_server)
         else:
-            expand_vars["POOL_SERVER"] = server_address(configuration_group.dual_pool.server)
-            expand_vars["POOL_PORT"] = server_port(configuration_group.dual_pool.server)
+            expand_vars["DUAL_POOL_SERVER"] = server_address(configuration_group.dual_pool.server)
+            expand_vars["DUAL_POOL_PORT"] = server_port(configuration_group.dual_pool.server)
         expand_vars["DUAL_POOL_ACCOUNT"] = configuration_group.dual_pool_login
         expand_vars["DUAL_POOL_PASSWORD"] = configuration_group.dual_pool_password
         expand_vars["DUAL_CURRENCY"] = configuration_group.dual_currency.code

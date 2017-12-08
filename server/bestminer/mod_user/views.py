@@ -365,7 +365,7 @@ def rig_log(uuid):
     return log
 
 
-@mod.route('/rig/<uuid>/set_config')
+@mod.route('/rig/<uuid>/set_config', methods=['GET', 'POST'])
 @login_required
 def rig_set_config(uuid):
     config_id = request.args.get('config')

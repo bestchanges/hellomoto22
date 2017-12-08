@@ -45,7 +45,7 @@ PROFIT_CURRENCIES = (
     ('RUR', 'RUR'),
     ('BTC', 'BTC'),
     ('ETH', 'ETH'),
-    ('ETH', 'ETH'),
+    ('ZEC', 'ZEC'),
 )
 
 

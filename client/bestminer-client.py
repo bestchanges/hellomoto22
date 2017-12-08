@@ -369,6 +369,7 @@ def read_miner_output():
 def hashrate_from_units(value, units):
     unit_measures = {
         "h/s": 1,
+        "H/s": 1,
         "Kh/s": 1e3,
         "Mh/s": 1e6,
         "Gh/s": 1e9,
@@ -455,6 +456,9 @@ def claymore_handle_line(line):
         elif code == "DCR":
             # take into consideration when mining single Blake
             algorithm = 'Blake (14r)'
+        elif code == "ZEC":
+            # take into consideration when mining single Blake
+            algorithm = 'Equihash'
         else:
             my_logger.error("Unexpected currency code={}".format(code))
             algorithm = None

@@ -32,7 +32,7 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT% -ftime 10 -dcri 26 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -psw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT% -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1',
         set__env = DEFAULT_MINER_ENV,
         set__algos = ['Ethash+Blake (14r)',],
         set__supported_os = ['Windows', 'Linux'],
@@ -48,11 +48,27 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -psw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
         set__env=DEFAULT_MINER_ENV,
         set__algos=['Ethash', ],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
+        set__is_enabled=True,
+    )
+
+    miner_program = MinerProgram.objects(name='Claymore Zcash AMD').modify(
+        upsert=True,
+        set__family = 'claymore',
+        set__code = 'claymore_zcash_amd',
+        set__dir = 'claymore_zcash_amd',
+        set__win_exe = 'ZecMiner64.exe',
+        set__dir_linux = 'claymore_zcash_amd_linux',
+        set__linux_bin = 'ethdcrminer64',
+        set__command_line = '-zpool %POOL_SERVER%:%POOL_PORT% -zwal %POOL_ACCOUNT% -zpsw %POOL_PASSWORD% -allpools 1 -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -ftime 30 -asm 1 -tstop 85 -i 7',
+        set__env=DEFAULT_MINER_ENV,
+        set__algos=['Equihash', ],
+        set__supported_os = ['Windows'], # TODO: add linux later
+        set__supported_pu=['amd'],
         set__is_enabled=True,
     )
 

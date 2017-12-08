@@ -1,3 +1,0 @@
-0.26
-
-1. change generation of system unique id. Now it includes both motherboard id AND cpu id. (some old motherboards returns empty id)

@@ -1,2 +1,15 @@
-version 0.1
+beta0.2
+* updates on editor of configs
+* unify user registration. introduce default config as user setting
+* create default configs on startup
+* prepare for installation on the production
+* logging configuration in separate file
+* client: change generation of system unique id. Now it includes both motherboard id AND cpu id. (some old motherboards returns empty id). This cause ALL rig uuid regenerate.
+* move .%WORKER% from miner configuration to pool.POOL_LOGIN. make expand vars twice for it.
+Introduced blueprints. Refactoring in application structure
+* add target hashrate info on rig page
+* client zip now has user settings
+
+
+beta0.1
 * add support page

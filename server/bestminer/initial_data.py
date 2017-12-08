@@ -196,6 +196,7 @@ def test_data_for_user(user):
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
     user.settings.default_configuration_group = cg
+    user.save()
 
 
     cg = ConfigurationGroup.objects(name="Test ETH").modify(
@@ -300,6 +301,7 @@ def create_initial_objects_for_user(user):
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
     user.settings.default_configuration_group = cg
+    user.save()
 
     mp_c = MinerProgram.objects.get(code="claymore")
     cg = ConfigurationGroup.objects(name="ETH").modify(

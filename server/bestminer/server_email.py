@@ -23,7 +23,7 @@ def send_subscribe_email(flask_mail, email):
 
 def send_feedback_message(flask_mail, email, name, message, subject=None):
     if not subject:
-        subject = "Feedback message from {}".format(name),
+        subject = "Feedback message from {}".format(name)
     msg = Message(
         subject = subject,
         recipients = ['bestminer@egorbs.ru'],

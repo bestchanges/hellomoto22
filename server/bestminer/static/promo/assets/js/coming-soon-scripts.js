@@ -64,7 +64,7 @@ jQuery(document).ready(function() {
         var postdata = $('form.subscribe').serialize();
         $.ajax({
             type: 'POST',
-            url: '/subscribe-to-beta',
+            url: '/promo/subscribe-to-beta',
             data: postdata,
             dataType: 'json',
             success: function(json) {
@@ -92,7 +92,7 @@ jQuery(document).ready(function() {
         var postdata = $('.contact-us form').serialize();
         $.ajax({
             type: 'POST',
-            url: '/send-feedback',
+            url: '/promo/send-feedback',
             data: postdata,
             dataType: 'json',
             success: function(json) {

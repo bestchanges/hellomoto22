@@ -11,5 +11,6 @@ Introduced blueprints. Refactoring in application structure
 * client zip now has user settings
 
 
+
 beta0.1
 * add support page

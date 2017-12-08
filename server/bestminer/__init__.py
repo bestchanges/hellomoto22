@@ -83,7 +83,7 @@ import bestminer.api_client.api
 
 @app.route("/")
 def index():
-    return flask.render_template('index.html')
+    return flask.request('/static/promo/coming-soon.html')
 
 app.register_blueprint(bestminer.mod_auth.views.mod, url_prefix='/auth')
 app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')

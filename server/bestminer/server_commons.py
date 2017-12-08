@@ -1,4 +1,6 @@
 import os
+import random
+import string
 
 
 def round_to_n(num, max_=2):
@@ -65,6 +67,11 @@ def server_port(server):
     """
     server, port = server.split(":")
     return port
+
+
+def gen_password(min_len=8, max_len=10, chars=string.ascii_lowercase + string.digits):
+    size = random.randint(min_len, max_len)
+    return ''.join(random.choice(chars) for x in range(size))
 
 
 def expand_command_line(configuration_group, worker='worker'):

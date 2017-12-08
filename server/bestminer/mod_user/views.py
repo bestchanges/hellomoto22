@@ -8,12 +8,13 @@ import flask_login
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
+from multidict import MultiDict
 from wtforms import validators
 
 from bestminer import crypto_data, cryptonator, logging_server_o, task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
-from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency
+from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
 from bestminer.server_commons import round_to_n
 
 mod = Blueprint('user', __name__, template_folder='templates')
@@ -32,6 +33,26 @@ def download_win():
     return flask.redirect(request.host_url + zip_file)
 
 
+@mod.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    user = flask_login.current_user.user
+    formtype = model_form(UserSettings)
+    obj = user.settings
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if form.validate():
+            # do something
+            form.populate_obj(obj)
+            obj.save()
+            flask.flash("Updated OK")
+            return flask.redirect(url_for('.settings'))
+    else:
+        form = formtype(obj=obj)
+    return render_template('settings.html', form=form)
+
+
 @mod.route("/configs")
 @login_required
 def config_list():
@@ -45,11 +66,13 @@ def config_list_json():
     configs = ConfigurationGroup.objects(user=user)
     data = []
     for config in configs:
+        currencies = [config.currency.code]
+        if config.is_dual:
+            currencies.append(config.dual_currency.code)
         data.append({
             'id': str(config.id),
             'name': config.name,
-            'currency': config.currency.code,
-            'pool': config.pool.name,
+            'currency': currencies,
             'miner_programm': config.miner_program.name,
             'supported_pu': config.miner_program.supported_pu,
         })
@@ -99,7 +122,8 @@ def config_edit(id=''):
         config = ConfigurationGroup()
 
     if request.method == 'POST':
-        form = formtype(request.form)
+        formdata = request.form.copy()
+        form = formtype(formdata)
         if form.validate():
             # do something
             form.populate_obj(config)
@@ -251,7 +275,7 @@ def rig_list_json():
                 dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
         try:
             # try to convert to user target currency
-            target_currency = rig.user.target_currency
+            target_currency = rig.user.settings.profit_currency
             exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
             profit_target_currency = profit * exchange_rate
             if dual_profit:

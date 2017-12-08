@@ -7,15 +7,12 @@ from uuid import UUID
 import flask
 from flask import Blueprint, request
 
-from bestminer import task_manager, models
+from bestminer import task_manager, models, app
 from bestminer.models import Rig, ConfigurationGroup, User
 from bestminer.server_commons import assert_expr, get_client_version
 from bestminer.task_manager import get_miner_config_for_configuration
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_CONFIGURATION_GROUP = "Test ETH+DCR"
-
 
 mod = Blueprint('client', __name__, template_folder='templates')
 
@@ -48,7 +45,8 @@ def register_rig():
         rig.uuid = rig_uuid
         rig.user = user
         rig.worker = 'worker%03d' % (nrigs + 1)
-        rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
+        if user.settings.default_configuration_group:
+            rig.configuration_group = user.settings.default_configuration_group
         rig.manager = 'ManualRigManager'
         rig.log_to_file = True
         rig.save()
@@ -59,8 +57,8 @@ def register_rig():
         rig.os = rig_os
         rig.save()
     # if miner config empty then set default miner config
-    if not "miner_config" in config or not config["miner_config"]:
-        rig.configuration_group = ConfigurationGroup.objects.get(name=DEFAULT_CONFIGURATION_GROUP)
+    if user.settings.default_configuration_group and (not "miner_config" in config or not config["miner_config"]):
+        rig.configuration_group = user.settings.default_configuration_group
         rig.save()
     conf = rig.configuration_group
     config["miner_config"] = get_miner_config_for_configuration(conf, rig)

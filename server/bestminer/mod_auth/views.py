@@ -11,15 +11,11 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms import validators
 
-from bestminer import server_email, flask_mail
+from bestminer import server_email, flask_mail, initial_data
+from bestminer.initial_data import create_user
 from bestminer.models import User
 
 mod = Blueprint('auth', __name__, template_folder='templates')
-
-
-def gen_password(min_len=8, max_len=10, chars=string.ascii_lowercase + string.digits):
-    size = random.randint(min_len, max_len)
-    return ''.join(random.choice(chars) for x in range(size))
 
 
 @mod.route('/register', methods=['GET', 'POST'])
@@ -34,21 +30,14 @@ def register():
         existing = User.objects(email=email)
         if existing:
             flask.flash('This email already registered')
-            return login()
+            return flask.redirect(flask.url_for('.login'))
 
-        user_password = gen_password(8, 10)
-        user = User()
-        user.email = email
-        user.password = sha256(user_password.encode('utf-8')).hexdigest()
-        user.client_secret = gen_password(6, 6)
-        user.api_key = gen_password(20, 20, chars=string.ascii_uppercase + string.digits)
-        user.target_currency = 'USD'
-        user.save()
+        user,user_password = create_user(email=email)
 
         server_email.send_welcome_email(flask_mail, user, user_password, request.host_url + 'login')
 
         flask.flash('Account registered. Email with password sent to your address.')
-        return flask.redirect(flask.url_for('login'))
+        return flask.redirect(flask.url_for('.login'))
     return flask.render_template('register.html', form=form)
 
 

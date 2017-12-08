@@ -1,7 +1,7 @@
 import datetime
 
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
-    ReferenceField, ListField, DictField, UUIDField, IntField
+    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField
 
 # we do net restric algorithms anymore
 # ALGORITHMS = (
@@ -12,10 +12,9 @@ POOLS_FAMILY = ('ethermine', 'flypool', 'openethpool', 'coinmine', 'suprnova')
 SUPPORTED_OS = ('Windows', 'Linux')
 OS_TYPE = (('Windows', 'Windows'), ('Linux', 'Linux'))
 
-
 GPU_RX_470 = 'amd_rx_470'  # possible template is 'amd_rx_470_4g_samsung'
 GPU_RX = 'amd_rx'
-PU_TYPE = (('amd', 'amd'),('nvidia', 'nvidia'))
+PU_TYPE = (('amd', 'amd'), ('nvidia', 'nvidia'))
 
 
 # that's cause circular dependency
@@ -33,9 +32,26 @@ class Currency(Document):
     block_time = FloatField()  # seconds
     block_reward = DecimalField()
     nethash = DecimalField()
+    updated_at = DateTimeField()
 
     def __unicode__(self):
         return self.code
+
+
+# make 2 tuple such ugly staff because of bug in model_form
+PROFIT_CURRENCIES = (
+    ('USD', 'USD'),
+    ('EUR', 'EUR'),
+    ('RUR', 'RUR'),
+    ('BTC', 'BTC'),
+    ('ETH', 'ETH'),
+    ('ETH', 'ETH'),
+)
+
+
+class UserSettings(EmbeddedDocument):
+    profit_currency = StringField(choices=PROFIT_CURRENCIES, default='RUR', required=True)
+    default_configuration_group = ReferenceField('ConfigurationGroup')
 
 
 class User(Document):
@@ -44,7 +60,8 @@ class User(Document):
     api_key = StringField(unique=True, min_length=20, max_length=20)
     password = StringField(min_length=8)
     client_secret = StringField(required=True)
-    target_currency = StringField(required=True)  # code of currency user want to see income
+    target_currency = StringField()  # deprecated. user settings.profit_currency instead
+    settings = EmbeddedDocumentField(UserSettings)
 
     def is_authenticated(self):
         return True
@@ -64,7 +81,7 @@ class User(Document):
 
 class Pool(Document):
     name = StringField(max_length=100, unique_with='user')
-    user = ReferenceField(User) # if exist then this is user's specific pool
+    user = ReferenceField(User)  # if exist then this is user's specific pool
     pool_family = StringField(max_length=30, choices=POOLS_FAMILY)
     info = StringField()
     website = URLField()
@@ -95,7 +112,7 @@ class MinerProgram(Document):
     # TODO: use String instead of List (because each algo has separate command line)
     # TODO: OR introduce Map 'algo' -> 'command'
     algos = ListField(StringField(),
-                         required=True)  # supported algos (not only currencies but also duals like 'Ethash+pascal')
+                      required=True)  # supported algos (not only currencies but also duals like 'Ethash+pascal')
     supported_os = ListField(StringField(choices=OS_TYPE), required=True)
     supported_pu = ListField(StringField(choices=PU_TYPE), required=True)
     is_enabled = BooleanField(default=True)
@@ -117,7 +134,7 @@ class PoolAccount(Document):
     name = StringField(max_length=200)
     user = ReferenceField(User, required=True)
     pool = ReferenceField(Pool, required=True)
-#    currency = ReferenceField(Currency, required=True, verbose_name="Currency", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
+    #    currency = ReferenceField(Currency, required=True, verbose_name="Currency", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     login = StringField(required=True, max_length=200, help_text="Login for pool connection")
     password = StringField(max_length=100)
     is_active = BooleanField(default=True)
@@ -136,25 +153,27 @@ class ConfigurationGroup(Document):
     command_line = StringField()
     env = DictField(default={})
     currency = ReferenceField(Currency, required=True, verbose_name="Coin",
-                                 radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
-    pool = ReferenceField(Pool, required=True, verbose_name="Pool")
-    pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+', verbose_name="Pool Startum")  # server:port
+                              radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
+    pool = ReferenceField(Pool, verbose_name="Pool")
+    pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+',
+                              verbose_name="Startum server")  # server:port
     pool_login = StringField(required=True, max_length=200, verbose_name="Pool login")
     pool_password = StringField(max_length=50, verbose_name="Pool password")
     exchange = ReferenceField(Exchange)
-    wallet = StringField(required=True, max_length=200)
+    wallet = StringField(max_length=200)
     is_dual = BooleanField(default=False)
-    dual_currency = ReferenceField(Currency, verbose_name="Coin (for dual)")
+    dual_currency = ReferenceField(Currency, verbose_name="Coin (dual)")
     dual_pool = ReferenceField(Pool)
-    dual_pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
-    dual_pool_login = StringField(max_length=200)
-    dual_pool_password = StringField(max_length=50)
+    # so you thins regexp (...|) looks ugly? Complain to wtforms+mongoengine which trace '' as string value for field (instead of None)
+    dual_pool_server = StringField(max_length=100, regex='([\w\.\-]+:\d+|)',
+                                   verbose_name="Startum server (dual)")  # server:port
+    dual_pool_login = StringField(max_length=200, verbose_name="Pool login")
+    dual_pool_password = StringField(max_length=50, verbose_name="Pool password")
     dual_exchange = ReferenceField(Exchange)
     dual_wallet = StringField(max_length=200)
 
     def __unicode__(self):
         return self.name
-
 
 
 class ExchangeRate(Document):
@@ -180,7 +199,7 @@ class Rig(Document):
     os = StringField(choices=OS_TYPE)
     pu = StringField(choices=PU_TYPE)
     user = ReferenceField(User)
-    manager = StringField() # required=True, default='AutoProfitRigManager', choices=MANAGERS,
+    manager = StringField()  # required=True, default='AutoProfitRigManager', choices=MANAGERS,
     comment = StringField(max_length=100)
     system_gpu_list = ListField(StringField(), default=[])
     rebooted = DateTimeField()
@@ -191,7 +210,7 @@ class Rig(Document):
         default={})  # miner_code: { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 },}, miner_code: { 'Ethash': { 'Ethash': 25 }
     is_online = BooleanField(default=False)
     last_online_at = DateTimeField()
-    log_to_file = BooleanField(defaul=False) # TODO: implement filter in logging_server. Now logs all
+    log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)
@@ -205,4 +224,3 @@ class Rig(Document):
 
     def set_target_hashrate_for_algo_and_miner_code(self, algo, miner_code, hashrate):
         self.target_hashrate[algo][miner_code] = hashrate
-

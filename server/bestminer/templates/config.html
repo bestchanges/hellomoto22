@@ -25,21 +25,29 @@ function set_name() {
 $('#currency').on('change', set_name)
 $('#dual_currency').on('change', set_name)
 
-$('#miner_program').on('change', function() {
+
+function update_for_miner(miner_id) {
   // load miner_program (+available currencies)
   // set options for currency
   // if dual show dual area
   // set options for dual currency
-  url = '/user/config_miner_program_data.json?id=' + this.value
+  url = '/user/config_miner_program_data.json?id=' + miner_id
   $.getJSON( url, function( data ) {
       $('#miner_program_info').text("Supported GPU: " + data.miner_program.supported_pu)
 
       miner_program = data.miner_program
       var $el = $("#currency");
+      var selected = $el.val()
       $el.empty(); // remove old options
-      $el.append("<option></option>");
+      // $el.append("<option></option>"); THIS NOT WORK
       for (var i = 0; i < data.currencies.length; i++) {
-        $el.append($("<option></option>").attr("value", data.currencies[i]._id.$oid).text(data.currencies[i].code));
+        val = data.currencies[i]._id.$oid
+        var option = $("<option></option>").attr("value", val).text(data.currencies[i].code)
+        if (val == selected) {
+            option.attr('selected','selected')
+            // option.setAttribute('selected','selected')
+        }
+        $el.append(option);
           //alert(data.currencies[i].code);
       }
       if (data.is_dual) {
@@ -49,14 +57,30 @@ $('#miner_program').on('change', function() {
       }
 
       var $el = $("#dual_currency");
+      selected = $el.val()
       $el.empty(); // remove old options
-      $el.append("<option></option>");
+      // $el.append("<option></option>");
       for (var i = 0; i < data.currencies_dual.length; i++) {
-        $el.append($("<option></option>").attr("value", data.currencies_dual[i]._id.$oid).text(data.currencies_dual[i].code));
+        val = data.currencies_dual[i]._id.$oid
+        var option = $("<option></option>").attr("value", val).text(data.currencies_dual[i].code)
+        if (val == selected) {
+            option.attr('selected','selected')
+            // option.setAttribute('selected','selected')
+        }
+        $el.append(option);
           //alert(data.currencies[i].code);
       }
   })
+}
 
+// update on first load
+var val = $('#miner_program').val()
+if (val) {
+    update_for_miner(val)
+}
+
+$('#miner_program').on('change', function() {
+    update_for_miner(this.value)
 })
 
 });

@@ -1,8 +1,13 @@
 import json
+import logging
+import string
 from _sha256 import sha256
 
-from bestminer import profit_manager
+from bestminer import profit_manager, app
 from bestminer.models import *
+from bestminer.server_commons import assert_expr, gen_password
+
+logger=logging.getLogger(__name__)
 
 DEFAULT_MINER_ENV = {
     'GPU_MAX_HEAP_SIZE': '100',
@@ -68,116 +73,9 @@ def initial_data():
         set__is_enabled=True,
     )
 
-
-def test_data():
-    miner_program = MinerProgram.objects(name='Pseudo Claymore Miner').modify(
-        upsert=True,
-        set__family = 'claymore',
-        set__code = 'pseudo_claymore_miner',
-        set__dir = 'miner_emu',
-        set__win_exe = 'python',
-        set__dir_linux = 'miner_emu',
-        set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Ethash+Blake (14r)', 'Ethash'],
-        set__supported_os=['Windows', 'Linux'],
-        set__supported_pu=['nvidia', 'amd'],
-        set__is_enabled=True,
-    )
-
-    miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
-        upsert=True,
-        set__family = 'ewbf',
-        set__code = 'pseudo_ewbf_miner',
-        set__dir = 'miner_emu',
-        set__win_exe = 'python',
-        set__dir_linux = 'miner_emu',
-        set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Equihash', ],
-        set__supported_os=['Windows', 'Linux'],
-        set__supported_pu=['nvidia', ],
-        set__is_enabled=True,
-    )
-
     poloniex = Exchange.objects(name="Poloniex").modify(
         upsert=True,
         set__name="Poloniex"
-    )
-
-    user = User.objects.get(email='egor.fedorov@gmail.com')
-    mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
-    eth = Currency.objects.get(code="ETH")
-    dcr = Currency.objects.get(code="DCR")
-    cg = ConfigurationGroup.objects(name="Test ETH+DCR").modify(
-        upsert=True,
-        set__user = user,
-    	set__currency = eth,
-    	set__miner_program = mp_pc,
-        set__algo = "+".join([eth.algo, dcr.algo]),
-        set__command_line=mp_pc.command_line,
-        set__env=mp_pc.env,
-        set__pool = Pool.objects.get(name="Ethermine"),
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__pool_password = "x",
-    	set__exchange = poloniex.id,
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = True,
-    	set__dual_currency = dcr,
-    	set__dual_pool = Pool.objects.get(name="Decred Coinmine"),
-    	set__dual_pool_login = "egoaga19",
-    	set__dual_pool_password = "x",
-    	set__dual_exchange = poloniex.id,
-    	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
-    )
-
-    cg = ConfigurationGroup.objects(name="Test ETH").modify(
-        upsert=True,
-        set__user=user,
-        set__currency = eth,
-        set__miner_program=mp_pc,
-        set__algo = eth.algo,
-        set__command_line=mp_pc.command_line,
-        set__env=mp_pc.env,
-        set__pool = Pool.objects.get(name="Ethermine"),
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
-    	set__pool_password = "x",
-    	set__exchange = poloniex.id,
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = False,
-    )
-
-    mp_pe = MinerProgram.objects.get(code="pseudo_ewbf_miner")
-    zec = Currency.objects.get(code="ZEC")
-    cg = ConfigurationGroup.objects(name="Test ZEC").modify(
-        upsert=True,
-        set__user = user,
-        set__miner_program = mp_pe,
-        set__algo= zec.algo,
-        set__command_line=mp_pe.command_line,
-        set__env=mp_pe.env,
-        set__currency = zec,
-    	set__pool = Pool.objects.get(name="FlyPool"),
-    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
-    	set__pool_password = "x",
-    	set__exchange = poloniex.id,
-    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
-    	set__is_dual = False,
-    )
-
-
-
-
-
-def sample_data():
-
-    user = User.objects(email='egor.fedorov@gmail.com').modify(
-        upsert=True,
-        name="Egor Fedorov",
-        password=sha256("123".encode('utf-8')).hexdigest(),
-        target_currency="RUR",
     )
 
 
@@ -238,35 +136,173 @@ def sample_data():
         set__server = 'dcr.coinmine.pl:2222',
     )
 
-    poloniex = Exchange.objects.get(name="Poloniex")
 
+
+
+def test_data_for_user(user):
+    miner_program = MinerProgram.objects(name='Pseudo Claymore Miner').modify(
+        upsert=True,
+        set__family = 'claymore',
+        set__code = 'pseudo_claymore_miner',
+        set__dir = 'miner_emu',
+        set__win_exe = 'python',
+        set__dir_linux = 'miner_emu',
+        set__linux_bin = 'python',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
+        set__env=DEFAULT_MINER_ENV,
+        set__algos=['Ethash+Blake (14r)', 'Ethash'],
+        set__supported_os=['Windows', 'Linux'],
+        set__supported_pu=['nvidia', 'amd'],
+        set__is_enabled=True,
+    )
+
+    miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
+        upsert=True,
+        set__family = 'ewbf',
+        set__code = 'pseudo_ewbf_miner',
+        set__dir = 'miner_emu',
+        set__win_exe = 'python',
+        set__dir_linux = 'miner_emu',
+        set__linux_bin = 'python',
+        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
+        set__env=DEFAULT_MINER_ENV,
+        set__algos=['Equihash', ],
+        set__supported_os=['Windows', 'Linux'],
+        set__supported_pu=['nvidia', ],
+        set__is_enabled=True,
+    )
+
+
+    mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
+    eth = Currency.objects.get(code="ETH")
+    dcr = Currency.objects.get(code="DCR")
+    cg = ConfigurationGroup.objects(name="Test ETH+DCR").modify(
+        upsert=True,
+        set__user = user,
+    	set__currency = eth,
+    	set__miner_program = mp_pc,
+        set__algo = "+".join([eth.algo, dcr.algo]),
+        set__command_line=mp_pc.command_line,
+        set__env=mp_pc.env,
+        set__pool_server = 'eu1.ethermine.org:4444',
+    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
+    	set__pool_password = "x",
+    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
+    	set__is_dual = True,
+    	set__dual_currency = dcr,
+        set__dual_pool_server='dcr.coinmine.pl:2222',
+    	set__dual_pool_login = "egoaga19",
+    	set__dual_pool_password = "x",
+    	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
+    )
+    user.settings.default_configuration_group = cg
+
+
+    cg = ConfigurationGroup.objects(name="Test ETH").modify(
+        upsert=True,
+        set__user=user,
+        set__currency = eth,
+        set__miner_program=mp_pc,
+        set__algo = eth.algo,
+        set__command_line=mp_pc.command_line,
+        set__env=mp_pc.env,
+        set__pool_server = 'eu1.ethermine.org:4444',
+    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
+    	set__pool_password = "x",
+    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
+    	set__is_dual = False,
+    )
+
+    mp_pe = MinerProgram.objects.get(code="pseudo_ewbf_miner")
+    zec = Currency.objects.get(code="ZEC")
+    cg = ConfigurationGroup.objects(name="Test ZEC").modify(
+        upsert=True,
+        set__user = user,
+        set__miner_program = mp_pe,
+        set__algo= zec.algo,
+        set__command_line=mp_pe.command_line,
+        set__env=mp_pe.env,
+        set__currency = zec,
+        set__pool_server = 'eu1-zcash.flypool.org:3333',
+    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
+    	set__pool_password = "x",
+    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
+    	set__is_dual = False,
+    )
+
+
+
+
+
+def sample_data():
+    email = 'egor.fedorov@gmail.com'
+    if not User.objects(email=email):
+        user, password = create_user(email, password='123')
+        logger.debug("Created sample user {} with password {}".format(user, password))
+
+
+def create_user(email, name=None, password=None, settings=None):
+    """
+
+    :param email:
+    :param name:
+    :param password:
+    :param settings: instance of UserSettings model
+    :return: tuple user,user_password
+    """
+    assert_expr(email, "email required")
+    if not name:
+        name = 'user ' + email
+
+    if not password:
+        password = gen_password(8, 10)
+    user = User()
+    user.email = email
+    user.name = name
+    user.password = sha256(password.encode('utf-8')).hexdigest()
+    user.client_secret = gen_password(6, 6)
+    user.api_key = gen_password(20, 20, chars=string.ascii_uppercase + string.digits)
+    if not settings:
+        settings = UserSettings()
+    user.settings = settings
+    user.save()
+    create_initial_objects_for_user(user)
+    return user, password
+
+
+def create_initial_objects_for_user(user):
+    """
+    Create default configuration_groups for given user.
+    Set the first one as default user config group
+    :param user:
+    :return:
+    """
     mp_cd = MinerProgram.objects.get(code="claymore_dual")
     eth = Currency.objects.get(code="ETH")
     dcr = Currency.objects.get(code="DCR")
     zec = Currency.objects.get(code="ZEC")
-    cg = ConfigurationGroup.objects(name="ETH+DCR(poloniex)").modify(
+    cg = ConfigurationGroup.objects(name="ETH+DCR").modify(
         upsert=True,
         set__user = user,
         set__command_line = mp_cd.command_line,
         set__currency = eth,
     	set__miner_program = mp_cd,
         set__algo = "+".join([eth.algo, dcr.algo]),
-        set__pool = Pool.objects.get(name="Ethermine"),
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
+        set__pool_server='eu1.ethermine.org:4444',
+        set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
     	set__pool_password = "x",
-    	set__exchange = poloniex,
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = True,
     	set__dual_currency = dcr,
-    	set__dual_pool = Pool.objects.get(name="Decred Coinmine"),
+    	set__dual_pool_server = 'dcr.coinmine.pl:2222',
     	set__dual_pool_login = "egoaga19.%WORKER%",
     	set__dual_pool_password = "x",
-    	set__dual_exchange = poloniex,
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
+    user.settings.default_configuration_group = cg
 
     mp_c = MinerProgram.objects.get(code="claymore")
-    cg = ConfigurationGroup.objects(name="ETH(poloniex)").modify(
+    cg = ConfigurationGroup.objects(name="ETH").modify(
         upsert=True,
         set__user=user,
         set__miner_program=mp_c,
@@ -274,16 +310,15 @@ def sample_data():
         set__command_line = mp_c.command_line,
         set__env = mp_c.env,
         set__currency = eth,
-    	set__pool = Pool.objects.get(name="Ethermine"),
+    	set__pool_server = 'eu1.ethermine.org:4444',
     	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
     	set__pool_password = "x",
-    	set__exchange = Exchange.objects.get(name="Poloniex"),
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = False,
     )
 
     mp_e = MinerProgram.objects.get(code="ewbf")
-    cg = ConfigurationGroup.objects(name="ZEC(poloniex)").modify(
+    cg = ConfigurationGroup.objects(name="ZEC(nvidia)").modify(
         upsert=True,
         set__user=user,
         set__miner_program=mp_e,
@@ -291,10 +326,12 @@ def sample_data():
         set__command_line = mp_e.command_line,
         set__env = mp_e.env,
         set__currency = zec,
-    	set__pool = Pool.objects.get(name="FlyPool"),
+    	set__pool_server = 'eu1-zcash.flypool.org:3333',
     	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
     	set__pool_password = "x",
-    	set__exchange = Exchange.objects.get(name="Poloniex"),
     	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
     	set__is_dual = False,
     )
+
+    if app.config.get("TESTING"):
+        test_data_for_user(user)

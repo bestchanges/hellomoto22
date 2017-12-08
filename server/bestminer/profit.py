@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import threading
@@ -125,6 +126,7 @@ class ProfitManager():
         :return:
         '''
         logger.info("Update currency data {} items.".format(len(wtm['coins'].items())))
+        now = datetime.datetime.now()
         for currency, data in wtm['coins'].items():
             Currency.objects(
                 code=data['tag'],
@@ -134,6 +136,7 @@ class ProfitManager():
                 block_time=data["block_time"],
                 difficulty=data["difficulty"],
                 nethash=data["nethash"],
+                updated_at=now,
                 upsert=True
             )
 

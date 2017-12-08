@@ -1,17 +1,14 @@
 import datetime
 import logging
-
-import flask
 import math
 
+import flask
 import flask_login
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
-from multidict import MultiDict
-from wtforms import validators
 
-from bestminer import crypto_data, cryptonator, logging_server_o, task_manager, logging_server
+from bestminer import crypto_data, cryptonator, task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings

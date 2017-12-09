@@ -34,6 +34,8 @@ class Currency(Document):
     block_reward = FloatField()
     nethash = LongField()
     updated_at = DateTimeField()
+    listed_in = ListField(StringField(), default=[]) # exchange_code from exchanges
+    exchange_rates_btc = DictField(default={}) # exchange_code : data {'volume_24h': xx, 'rate': xx, 'updated': ... }
 
     def __unicode__(self):
         return self.code

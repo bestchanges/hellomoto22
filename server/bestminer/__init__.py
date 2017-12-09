@@ -1,4 +1,6 @@
 # shell be first before any logger created
+import threading
+
 import bestminer.logging_config
 
 import json
@@ -21,7 +23,7 @@ crypto_data = CryptoDataProvider("coins.json")
 
 from bestminer.rig_manager import rig_managers
 from bestminer.profit import ProfitManager
-from bestminer import server_email, rig_manager
+from bestminer import server_email, rig_manager, exchanges
 from bestminer.task_manager import TaskManager
 
 app = Flask(__name__)
@@ -71,6 +73,16 @@ logging_server_o.start()
 
 monitoring = MonitoringManager()
 monitoring.start()
+
+# Start exchanges update
+if app.config.get('BESTMINER_EXCHANGES_UPDATE_ONCE_AT_START'):
+    # update in background
+    updater = threading.Thread(target=exchanges.update_all_exchanges, name="update exchanges once")
+    updater.start()
+
+if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
+    # update in background
+    exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
 
 # REGISTER ALL VIEWS
 

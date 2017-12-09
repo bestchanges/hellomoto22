@@ -1,4 +1,5 @@
 # coding=utf-8
+from pprint import pprint
 
 import ccxt
 
@@ -20,6 +21,9 @@ print(huobi.id, huobi.load_markets())
 
 print(hitbtc.fetch_order_book(hitbtc.symbols[0]))
 print(bitmex.fetch_ticker('BTC/USD'))
+pprint(poloniex.fetch_ticker('ETH/BTC'))
+exit()
+print(exmo.fetch_ticker('ETH/BTC'))
 print(huobi.fetch_trades('LTC/CNY'))
 
 print(exmo.fetch_balance())

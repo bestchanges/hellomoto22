@@ -182,7 +182,7 @@ def receive_stat():
     rig.hashrate = stat["hashrate"]["current"]
     set_target_hashrate_from_current(rig, stat['miner']['config']['miner_code'])
     rig.is_online = True
-    if not rig.pu and stat['pu_types']:
+    if not rig.pu and 'pu_types' in stat and stat['pu_types']:
         # do not overwrite pu if set explicitly
         # Note: now rig supports only ONE PU family
         rig.pu = stat['pu_types'][0]

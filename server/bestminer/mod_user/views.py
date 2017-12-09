@@ -112,7 +112,7 @@ def config_edit(id=''):
         'name', 'miner_program',
         'currency', 'pool_server', 'pool_login', 'pool_password',
         'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password',
-        'is_active',
+        'is_active', 'command_line',
     ])
     user = flask_login.current_user.user
 

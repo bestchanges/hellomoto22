@@ -36,6 +36,9 @@ function update_for_miner(miner_id) {
       $('#miner_program_info').text("Supported GPU: " + data.miner_program.supported_pu)
 
       miner_program = data.miner_program
+
+      $("#command_line").val(miner_program.command_line)
+
       var $el = $("#currency");
       var selected = $el.val()
       $el.empty(); // remove old options
@@ -99,7 +102,8 @@ $('#miner_program').on('change', function() {
   {{ render_field(form.pool_login) }}
   {{ render_field(form.pool_password) }}
   {{ render_field(form.name) }}
-  {{ render_field(form.is_active) }}
+  {{ render_field(form.command_line, style="height: 80px;") }}
+  {{ render_field(form.is_active, style="height: 20px;") }}
 <div id="dual_div">
   <hr>
   Dual settings:

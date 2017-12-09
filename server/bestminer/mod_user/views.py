@@ -14,7 +14,7 @@ from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
 from bestminer.profit import calc_mining_profit
 from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig, \
-    get_profit, get_exchange_rate, get_exchange_rate_to_btc, compact_hashrate
+    get_exchange_rate, get_exchange_rate_to_btc, compact_hashrate
 
 mod = Blueprint('user', __name__, template_folder='templates')
 

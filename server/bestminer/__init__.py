@@ -1,6 +1,8 @@
 # shell be first before any logger created
 import threading
 
+import os
+
 import bestminer.logging_config
 
 import json
@@ -17,18 +19,27 @@ from flask import Flask
 from flask_mail import Mail
 from flask_mongoengine import MongoEngine
 
-from finik.crypto_data import CryptoDataProvider
-# TODO: NAT GOD... currently required for import rig_managers
-crypto_data = CryptoDataProvider("coins.json")
-
 from bestminer.rig_manager import rig_managers
 from bestminer.profit import ProfitManager
 from bestminer import server_email, rig_manager, exchanges
 from bestminer.task_manager import TaskManager
 
 app = Flask(__name__)
-app.config.from_object('settings_default')  # common default settings
-app.config.from_object('settings')  # server's specific settings
+
+# one of: production,testing,development
+
+
+
+running_platform = os.getenv("BESTMINER_PLATFORM")
+
+if running_platform:
+    # load default platform specific settings
+    app.config.from_object('settings_default.{}'.format(running_platform))
+else:
+    app.config.from_object('settings_default.base')
+
+if os.path.isfile('settings.py'):
+    app.config.from_object('settings')  # server's specific settings
 
 db = MongoEngine()
 db.init_app(app)
@@ -64,7 +75,7 @@ profit_manager = ProfitManager(
 if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()
 else:
-    profit_manager.update_currency_data_from_whattomine(json.load(open('coins.json')))
+    profit_manager.update_currency_data_from_whattomine(json.load(open('coins1.json')))
 
 rig_manager.distribute_all_rigs()
 

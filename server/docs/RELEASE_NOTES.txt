@@ -1,3 +1,7 @@
+[beta 0.2.2]
+UPDATE .bashrc add ENV:
+  BESTMINER_PLATFORM=production
+
 [beta 0.2]
 + profit board for client
 + exchange rates gather from several exchanges

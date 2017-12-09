@@ -3,7 +3,6 @@ import os
 import random
 import string
 
-from bestminer import crypto_data
 from bestminer.models import ConfigurationGroup, Currency
 from bestminer.profit import calc_mining_profit
 from finik.cryptonator import Cryptonator
@@ -173,21 +172,6 @@ def calculate_profit_converted(rig, target_currency):
         logger.error("Error calculate_current_profit to {} for rig={}".format(target_currency, rig))
         return None
 
-
-def get_profit(currency_code, hashrate):
-    """
-    return daily profit for given currency and hashrate
-    !!!! deprecated use calc_mining_profit()
-    :param currency_code: 'ETH' 'Nicehash-Ethash'
-    :param hashrate: 141000000 (as hashers in second)
-    :return:
-    """
-    try:
-        profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
-        return profit
-    except Exception as e:
-        logging.error("Exception get_profit: %s" % e)
-        raise e
 
 # TODO: move as query to ConfigurationGroup ?
 def list_configurations_applicable_to_rig(rig):

@@ -19,6 +19,7 @@ DEFAULT_MINER_ENV = {
 def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
     profit_manager.update_currency_data_from_whattomine(json.load(open('coins1.json', 'r')))
+
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
 
@@ -335,6 +336,7 @@ def create_initial_objects_for_user(user):
     user.settings.default_configuration_group = cg
     user.save()
 
+    # ZEC
     mp_e = MinerProgram.objects.get(code="ewbf")
     cg = ConfigurationGroup.objects(name="ZEC(nvidia)").modify(
         upsert=True,
@@ -348,6 +350,56 @@ def create_initial_objects_for_user(user):
     	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
     	set__pool_password = "x",
     	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
+    	set__is_dual = False,
+    )
+
+    mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
+    cg = ConfigurationGroup.objects(name="ZEC(amd)").modify(
+        upsert=True,
+        set__user=user,
+        set__miner_program=mp_e,
+        set__algo = "+".join([zec.algo]),
+        set__command_line = mp_e.command_line,
+        set__env = mp_e.env,
+        set__currency = zec,
+    	set__pool_server = 'eu1-zcash.flypool.org:3333',
+    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
+    	set__pool_password = "x",
+    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
+    	set__is_dual = False,
+    )
+
+    # BTG
+    btg = Currency.objects.get(code="BTG")
+    mp_e = MinerProgram.objects.get(code="ewbf")
+    cg = ConfigurationGroup.objects(name="BTG(nvidia)").modify(
+        upsert=True,
+        set__user=user,
+        set__miner_program=mp_e,
+        set__algo = "+".join([btg.algo]),
+        set__command_line = mp_e.command_line,
+        set__env = mp_e.env,
+        set__currency = btg,
+    	set__pool_server = 'btg.suprnova.cc:8816',
+    	set__pool_login = "egoaga19.%WORKER%",
+    	set__pool_password = "x",
+    	set__wallet = "",
+    	set__is_dual = False,
+    )
+
+    mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
+    cg = ConfigurationGroup.objects(name="BTG(amd)").modify(
+        upsert=True,
+        set__user=user,
+        set__miner_program=mp_e,
+        set__algo="+".join([btg.algo]),
+        set__command_line=mp_e.command_line,
+        set__env=mp_e.env,
+        set__currency=btg,
+        set__pool_server='btg.suprnova.cc:8816',
+        set__pool_login="egoaga19.%WORKER%",
+        set__pool_password = "x",
+    	set__wallet = "",
     	set__is_dual = False,
     )
 

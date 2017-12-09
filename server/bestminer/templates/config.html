@@ -39,7 +39,7 @@ function update_for_miner(miner_id) {
       var $el = $("#currency");
       var selected = $el.val()
       $el.empty(); // remove old options
-      // $el.append("<option></option>"); THIS NOT WORK
+      $el.append("<option></option>");
       for (var i = 0; i < data.currencies.length; i++) {
         val = data.currencies[i]._id.$oid
         var option = $("<option></option>").attr("value", val).text(data.currencies[i].code)
@@ -99,6 +99,7 @@ $('#miner_program').on('change', function() {
   {{ render_field(form.pool_login) }}
   {{ render_field(form.pool_password) }}
   {{ render_field(form.name) }}
+  {{ render_field(form.is_active) }}
 <div id="dual_div">
   <hr>
   Dual settings:

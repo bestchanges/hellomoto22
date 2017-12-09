@@ -9,7 +9,7 @@ from flask import Blueprint, request
 
 from bestminer import task_manager, models, app
 from bestminer.models import Rig, ConfigurationGroup, User
-from bestminer.server_commons import assert_expr, get_client_version
+from bestminer.server_commons import assert_expr, get_client_version, calculate_profit_converted, round_to_n
 from bestminer.task_manager import get_miner_config_for_configuration
 
 logger = logging.getLogger(__name__)
@@ -151,6 +151,7 @@ def receive_stat():
     },
     "is_run": true,
   },
+  "pu_types": ['amd']
   "miner_stdout": [],
   "processing_units": [
     "nvidia_gtx_1060_3gb",
@@ -180,9 +181,13 @@ def receive_stat():
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
     set_target_hashrate_from_current(rig, stat['miner']['config']['miner_code'])
-    rig.is_online = stat['miner']['is_run']
-    if rig.is_online:
-        rig.last_online_at = datetime.datetime.now
+    rig.is_online = True
+    if not rig.pu and stat['pu_types']:
+        # do not overwrite pu if set explicitly
+        # Note: now rig supports only ONE PU family
+        rig.pu = stat['pu_types'][0]
+    rig.last_online_at = datetime.datetime.now
+    rig.is_miner_run = stat['miner']['is_run']
     rig.save()
     # If server has newer client version - then add client update task
     if stat['client_version'] != get_client_version():
@@ -190,5 +195,15 @@ def receive_stat():
     # if configuration grup from client different when send task to change miner
     if stat['miner']['config']['config_name'] != rig.configuration_group.name:
         task_manager.add_switch_miner_task(rig, rig.configuration_group)
-    return flask.jsonify('OK')
+    conf = rig.configuration_group
+    profit_currency = rig.user.settings.profit_currency
+    profit = calculate_profit_converted(rig, profit_currency)
+    responce = {
+        'worker': rig.worker,
+        'mining': conf.name,
+        'profit': '{} {}'.format(round_to_n(profit), profit_currency),
+        'current hashrate': rig.hashrate,
+        'target  hashrate': rig.target_hashrate,
+    }
+    return flask.jsonify(responce)
 

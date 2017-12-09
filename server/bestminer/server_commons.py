@@ -1,6 +1,15 @@
+import logging
 import os
 import random
 import string
+
+from bestminer import crypto_data
+from bestminer.models import ConfigurationGroup, Currency
+from bestminer.profit import calc_mining_profit
+from finik.cryptonator import Cryptonator
+
+logger = logging.getLogger(__name__)
+cryptonator = Cryptonator()
 
 
 def round_to_n(num, max_=2):
@@ -9,7 +18,16 @@ def round_to_n(num, max_=2):
     But if int part > 0 then just N digits after comma (360.00)
     с точностью не более n "значащих цифр", после запятой.
     '''
-    left, right = str(num).split('.')
+    if not num:
+        return num
+    vals = "{:.12f}".format(num).split('.')
+    left = vals[0]
+    if len(vals) > 1:
+        right = vals[1]
+    else:
+        right = ""
+    if len(left) > max_:
+        return str(left) # if int part longer when max_ return only it
     if left != "0":
         nums = []
         for n in right:
@@ -111,3 +129,121 @@ def expand_command_line(configuration_group, worker='worker'):
     for var, value in expand_vars.items():
         command_line = command_line.replace('%' + var + "%", value)
     return command_line
+
+
+def get_exchange_rate(from_, to):
+    try:
+        if to == 'BTC':
+            found = Currency.objects(code=from_)
+            if found:
+                currency = found[0]
+                return currency.get_median_exchange_rate()
+        return cryptonator.get_exchange_rate(from_, to)
+    except:
+        return None
+
+
+def get_exchange_rate_to_btc(currency):
+    return currency.get_median_exchange_rate()
+
+def calculate_profit_converted(rig, target_currency):
+    """
+    calculate current profit for given rig. Convert profit to given currency.
+    :param rig:
+    :param target_currency: currency code which convert to: 'USD', 'RUR', 'BTC'
+    :return: value of profit in given currency or None in case if cannot convert
+    """
+    currency = rig.configuration_group.currency
+    profit = 0
+    if currency.algo in rig.hashrate:
+        profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
+    dual_profit = 0
+    if rig.configuration_group.is_dual:
+        dual_currency = rig.configuration_group.dual_currency
+        if dual_currency.algo in rig.hashrate:
+            dual_profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
+    try:
+        exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
+        profit_target_currency = profit * exchange_rate
+        if dual_profit:
+            exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
+            profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
+        return profit_target_currency
+    except:
+        logger.error("Error calculate_current_profit to {} for rig={}".format(target_currency, rig))
+        return None
+
+
+def get_profit(currency_code, hashrate):
+    """
+    return daily profit for given currency and hashrate
+    !!!! deprecated use calc_mining_profit()
+    :param currency_code: 'ETH' 'Nicehash-Ethash'
+    :param hashrate: 141000000 (as hashers in second)
+    :return:
+    """
+    try:
+        profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
+        return profit
+    except Exception as e:
+        logging.error("Exception get_profit: %s" % e)
+        raise e
+
+# TODO: move as query to ConfigurationGroup ?
+def list_configurations_applicable_to_rig(rig):
+    configs = ConfigurationGroup.objects(user=rig.user, )
+    select_config = []
+    for config in configs:
+        if rig.pu not in config.miner_program.supported_pu:
+            continue
+        if rig.os not in config.miner_program.supported_os:
+            continue
+        select_config.append(config)
+    return select_config
+
+
+def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=False):
+    """
+    Convetr value if hashrate to compact form: 123000000 -> 123 Mh/s
+    :param hashrate:
+    :param algorithm:
+    :param compact_for: 'rig' or 'net' - there are different compact rules for them
+    :param return_string:
+    :return: tuple of value and units. If return_as_string return rounded string presentation
+    """
+    compact_maps = {
+        'rig': {
+            "CryptoNight": '',
+            "Equihash": '',
+            "Lyra2REv2": 'k',
+            "NeoScrypt": 'k',
+            "Blake (14r)": 'G',
+            '__default__': 'M',
+        },
+        'net': {
+            "CryptoNight": 'M',
+            "Equihash": 'M',
+            "Lyra2REv2": 'T',
+            "NeoScrypt": 'G',
+            "Blake (14r)": 'T',
+            '__default__': 'G',
+        },
+    }
+    algo_map = compact_maps[compact_for]
+    mult_map = {
+        '': 1,
+        'k': 1e3,
+        'M': 1e6,
+        'G': 1e9,
+        'T': 1e12,
+        'P': 1e15,
+    }
+    if algorithm in algo_map:
+        letter = algo_map[algorithm]
+    else:
+        letter = algo_map['__default__']
+    value = hashrate / mult_map[letter]
+    units = "{}h/s".format(letter)
+    if return_as_string:
+        return "{} {}".format(round_to_n(value), units)
+    return value, units

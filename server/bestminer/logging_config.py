@@ -18,6 +18,9 @@ h = logging.handlers.TimedRotatingFileHandler("log/rig_manager.log", backupCount
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
 l.addHandler(h)
 
+l = logging.getLogger('bestminer.exchanges')
+l.setLevel(logging.INFO)
+
 l = logging.getLogger('bestminer.benchmark_manager')
 l.setLevel(logging.DEBUG)
 h = logging.handlers.TimedRotatingFileHandler("log/benchmark_server.log", backupCount=7, when='midnight',

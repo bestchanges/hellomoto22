@@ -1,7 +1,9 @@
 import datetime
+from statistics import median
 
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
-    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField
+    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, \
+    queryset_manager, LongField
 
 # we do net restric algorithms anymore
 # ALGORITHMS = (
@@ -27,12 +29,23 @@ PU_TYPE = (('amd', 'amd'), ('nvidia', 'nvidia'))
 
 class Currency(Document):
     code = StringField(max_length=20, unique=True)
-    difficulty = DecimalField()
+    difficulty = FloatField()
     algo = StringField(max_length=50)  # actually should be named 'algorithm' TODO: rename
     block_time = FloatField()  # seconds
-    block_reward = DecimalField()
-    nethash = DecimalField()
+    block_reward = FloatField()
+    nethash = LongField()
     updated_at = DateTimeField()
+    listed_in = ListField(StringField(), default=[]) # exchange_code from exchanges
+    exchange_rates_btc = DictField(default={}) # exchange_code : data {'volume_24h': xx, 'rate': xx, 'updated': ... }
+
+    def get_median_exchange_rate(self):
+        rates = []
+        # TODO: check if rate not staled
+        for exchange_rate_btc in self.exchange_rates_btc.values():
+            rates.append(exchange_rate_btc['rate'])
+        if not rates:
+            return None
+        return median(rates)
 
     def __unicode__(self):
         return self.code
@@ -117,6 +130,10 @@ class MinerProgram(Document):
     supported_pu = ListField(StringField(choices=PU_TYPE), required=True)
     is_enabled = BooleanField(default=True)
 
+    @queryset_manager
+    def enabled(doc_cls, queryset):
+        return queryset.filter(is_enabled=True)
+
     def __unicode__(self):
         return self.name
 
@@ -171,6 +188,11 @@ class ConfigurationGroup(Document):
     dual_pool_password = StringField(max_length=50, verbose_name="Pool password")
     dual_exchange = ReferenceField(Exchange)
     dual_wallet = StringField(max_length=200)
+    is_active = BooleanField(default=True)
+
+    @queryset_manager
+    def active(doc_cls, queryset):
+        return queryset.filter(is_active=True)
 
     def __unicode__(self):
         return self.name
@@ -210,6 +232,7 @@ class Rig(Document):
         default={})  # miner_code: { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 },}, miner_code: { 'Ethash': { 'Ethash': 25 }
     is_online = BooleanField(default=False)
     last_online_at = DateTimeField()
+    is_miner_run = BooleanField(default=False)
     log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
 
     def __unicode__(self):

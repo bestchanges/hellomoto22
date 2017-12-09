@@ -1,3 +1,11 @@
+[beta 0.2]
++ profit board for client
++ exchange rates gather from several exchanges
++ set default configuration group for new client to ETH
++ add claymore AMD Zcash miner
++ better format of hashrate in rig list
++ list only available configs in rig info
+
 [beta 0.1]
 +rig dashboard
 +client registration/login

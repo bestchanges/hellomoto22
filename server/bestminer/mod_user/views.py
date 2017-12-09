@@ -1,18 +1,20 @@
 import datetime
-import logging
 import math
 
 import flask
 import flask_login
+from copy import deepcopy
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 
-from bestminer import crypto_data, cryptonator, task_manager, logging_server
+from bestminer import task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.server_commons import round_to_n
+from bestminer.profit import calc_mining_profit
+from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig, \
+    get_profit, get_exchange_rate, get_exchange_rate_to_btc, compact_hashrate
 
 mod = Blueprint('user', __name__, template_folder='templates')
 
@@ -102,14 +104,15 @@ def config_miner_data_json():
 @login_required
 def config_edit(id=''):
     field_args = {
-#        'dual_pool': {'allow_blank': True},
-#        'dual_currency': {'allow_blank': True},
+        'miner_program': {'allow_blank': True},
+        'currency': {'allow_blank': True},
     }
     formtype = model_form(ConfigurationGroup, field_args=field_args, only=
     [
         'name', 'miner_program',
         'currency', 'pool_server', 'pool_login', 'pool_password',
-        'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password'
+        'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password',
+        'is_active',
     ])
     user = flask_login.current_user.user
 
@@ -232,71 +235,38 @@ def get_uptime(rig_state):
     return s
 
 
-def get_profit(currency_code, hashrate):
-    """
-    return daily profit for given currency and hashrate
-    :param currency_code: 'ETH' 'Nicehash-Ethash'
-    :param hashrate: 141000000 (as hashers in second)
-    :return:
-    """
-    try:
-        profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
-        return profit
-    except Exception as e:
-        logging.error("Exception get_profit: %s" % e)
-        raise e
-
-
 @mod.route('/rigs.json')
 @login_required
-def rig_list_json():
+def rigs_json():
     user = flask_login.current_user.user
-    rigs_state = Rig.objects(user=user)
+    rigs = Rig.objects(user=user)
     data = []
-    for rig_state in rigs_state:
-        rig = rig_state
-        algo = rig.configuration_group.algo
+    for rig in rigs:
         hashrate = []
+        algo = rig.configuration_group.algo
         if rig.hashrate:
             for algorithm in algo.split("+"):
                 if algorithm in rig.hashrate:
-                    hashrate.append({'value': rig.hashrate[algorithm] / 1e6, 'units': 'Mh/s'})
-        currency = rig.configuration_group.currency
-        profit = 0
-        if currency.algo in rig.hashrate:
-            profit = get_profit(currency.code, rig.hashrate[currency.algo])
-        dual_profit = 0
-        if rig.configuration_group.is_dual:
-            dual_currency = rig.configuration_group.dual_currency
-            if dual_currency.algo in rig.hashrate:
-                dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
-        try:
-            # try to convert to user target currency
-            target_currency = rig.user.settings.profit_currency
-            exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
-            profit_target_currency = profit * exchange_rate
-            if dual_profit:
-                exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
-                profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
-            profit_string = "%s %s" % (round_to_n(profit_target_currency, 2), target_currency)
-        except:
-            if profit is None:
-                profit_string = "? %s" % (currency.code)
-            else:
-                profit_string = "%s %s" % (round_to_n(profit, 2), currency.code)
+                    hashrate.append(compact_hashrate(rig.hashrate[algorithm], algorithm, return_as_string=True))
+        profit_currency = rig.user.settings.profit_currency
+        profit = calculate_profit_converted(rig, profit_currency)
         data.append({
             'name': rig.worker,
+            'online': {
+                'is_online': rig.is_online,
+                'uptime': get_uptime(rig),
+            },
             'uuid': rig.uuid,
-            'rebooted': rig_state.rebooted,
+            'rebooted': rig.rebooted,
             'hashrate': hashrate,
-            'profit': profit_string,
-            'uptime': get_uptime(rig_state),
+            'profit': '{} {}'.format(round_to_n(profit), profit_currency),
             'miner': {
+                'is_run': rig.is_miner_run,
                 'configuration_id': str(rig.configuration_group.id),
                 'configuration_name': rig.configuration_group.name,
             },
-            'temp': rig_state.cards_temp,
-            'fan': rig_state.cards_fan,
+            'temp': rig.cards_temp,
+            'fan': rig.cards_fan,
             'comment': rig.comment,
             'info': 'longlong description',
         })
@@ -305,17 +275,111 @@ def rig_list_json():
 
 @mod.route('/rigs')
 @login_required
-def rig_list():
+def rigs():
     return flask.render_template("rigs.html")
+
+
+@mod.route('/rig/<uuid>/profit_data.json', methods=["GET", "POST"])
+@login_required
+def rig_profit_data_json(uuid=None):
+    user = flask_login.current_user.user
+    result = []
+    rig = Rig.objects.get(uuid=uuid)
+    algos = {}
+    # get all supported algos from all miners
+    for miner in MinerProgram.enabled(supported_pu=rig.pu, supported_os=rig.os):
+        for algo in miner.algos:
+            algos[algo] = 1
+    for algo in algos:
+        algorithms = algo.split('+')
+        algorithm = algorithms[0]
+        for currency in Currency.objects(algo=algorithm):
+            row1 = {
+                "currency": [],
+                "hashrate": [],
+                "net_hashrate": [],
+                "reward": [],
+                "rate": [],
+                "profit_btc": [],
+                "profit": None,
+            }
+            row1['currency'].append(currency.code)
+            best_miner_code = None
+            target_hashrate = {}
+            if algo in rig.target_hashrate and True: # FORGOT SOMETHING!!!
+                # we will find best miner for this algo
+                max_hashrate = 0
+                for miner_code, hashrate in rig.target_hashrate[algo].items():
+                    # choosing by max hashrate on first algorithm (i.e. Ethash)
+                    if algorithm in hashrate and hashrate[algorithm] > max_hashrate:
+                        target_hashrate = hashrate
+                        max_hashrate = hashrate[algorithm]
+                        best_miner_code = miner_code
+            if target_hashrate:
+                h = target_hashrate[algorithms[0]]
+                row1['hashrate'].append(compact_hashrate(h, algorithms[0], return_as_string=True))
+            else:
+                row1['hashrate'].append('Need benchmark')
+            row1['net_hashrate'].append(
+                compact_hashrate(currency.nethash, algorithms[0], compact_for='net', return_as_string=True))
+            try:
+                profit_first_currency = calc_mining_profit(currency, target_hashrate[currency.algo])
+            except:
+                profit_first_currency = None
+            row1['reward'].append(round_to_n(profit_first_currency))
+            rate = get_exchange_rate_to_btc(currency)
+            row1['rate'].append(round_to_n(rate))
+            if rate and profit_first_currency:
+                profit_btc = rate * profit_first_currency
+            else:
+                profit_btc = None
+            row1['profit_btc'].append(round_to_n(profit_btc))
+            rate = get_exchange_rate('BTC', user.settings.profit_currency)
+            if rate and profit_btc:
+                profit_first_currency = rate * profit_btc
+            else:
+                profit_first_currency = None
+            if len(algorithms) == 2: # dual
+                for currency in Currency.objects(algo=algorithms[1]):
+                    row2 = deepcopy(row1)
+                    row2['currency'].append(currency.code)
+                    if target_hashrate:
+                        h = target_hashrate[algorithms[1]]
+                        row2['hashrate'].append(compact_hashrate(h, algorithms[1], return_as_string=True))
+                    else:
+                        row2['hashrate'].append('?')
+                    row2['net_hashrate'].append(compact_hashrate(currency.nethash, algorithms[1], compact_for='net', return_as_string=True))
+                    try:
+                        profit = calc_mining_profit(currency, target_hashrate[currency.algo])
+                    except:
+                        profit = None
+                    row2['reward'].append(round_to_n(profit))
+                    rate = get_exchange_rate_to_btc(currency)
+                    row2['rate'].append(round_to_n(rate))
+                    if rate and profit:
+                        profit_btc = rate * profit
+                    else:
+                        profit_btc = None
+                    row2['profit_btc'].append(round_to_n(profit_btc))
+                    rate = get_exchange_rate('BTC', user.settings.profit_currency)
+                    if rate and profit_btc and profit_first_currency:
+                        profit_total = rate * profit_btc + profit_first_currency
+                    else:
+                        profit_total = None
+                    row2['profit'] = round_to_n(profit_total)
+                    result.append(row2)
+            else:
+                row1['profit'] = round_to_n(profit_first_currency)
+                result.append(row1)
+    return flask.jsonify({'data': result})
 
 
 @mod.route('/rig/<uuid>/info', methods=["GET", "POST"])
 @login_required
 def rig_info(uuid=None):
     rig = Rig.objects.get(uuid=uuid)
-    configs = ConfigurationGroup.objects(user=rig.user)
     select_config = []
-    for config in configs:
+    for config in list_configurations_applicable_to_rig(rig):
         select_config.append({
             'name': config.name,
             'id': str(config.id),

@@ -14,7 +14,6 @@ DEFAULT_MINER_ENV = {
     'GPU_USE_SYNC_OBJECTS': '1',
     'GPU_MAX_ALLOC_PERCENT': '100',
     'GPU_SINGLE_ALLOC_PERCENT': '100',
-    'GPU_FORCE_64BIT_PTR': '0',
 }
 
 def initial_data():
@@ -33,7 +32,7 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT% -ftime 10 -dcri 26 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -psw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT% -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1',
         set__env = DEFAULT_MINER_ENV,
         set__algos = ['Ethash+Blake (14r)',],
         set__supported_os = ['Windows', 'Linux'],
@@ -49,11 +48,27 @@ def initial_data():
         set__win_exe = 'EthDcrMiner64.exe',
         set__dir_linux = 'claymore10_linux',
         set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
+        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -psw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
         set__env=DEFAULT_MINER_ENV,
         set__algos=['Ethash', ],
         set__supported_os = ['Windows', 'Linux'],
         set__supported_pu=['nvidia', 'amd'],
+        set__is_enabled=True,
+    )
+
+    miner_program = MinerProgram.objects(name='Claymore Zcash AMD').modify(
+        upsert=True,
+        set__family = 'claymore',
+        set__code = 'claymore_zcash_amd',
+        set__dir = 'claymore_zcash_amd',
+        set__win_exe = 'ZecMiner64.exe',
+        set__dir_linux = 'claymore_zcash_amd_linux',
+        set__linux_bin = 'ethdcrminer64',
+        set__command_line = '-zpool %POOL_SERVER%:%POOL_PORT% -zwal %POOL_ACCOUNT% -zpsw %POOL_PASSWORD% -allpools 1 -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -ftime 30 -asm 1 -tstop 85 -i 7',
+        set__env=DEFAULT_MINER_ENV,
+        set__algos=['Equihash', ],
+        set__supported_os = ['Windows'], # TODO: add linux later
+        set__supported_pu=['amd'],
         set__is_enabled=True,
     )
 
@@ -196,6 +211,7 @@ def test_data_for_user(user):
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
     user.settings.default_configuration_group = cg
+    user.save()
 
 
     cg = ConfigurationGroup.objects(name="Test ETH").modify(
@@ -299,7 +315,6 @@ def create_initial_objects_for_user(user):
     	set__dual_pool_password = "x",
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
-    user.settings.default_configuration_group = cg
 
     mp_c = MinerProgram.objects.get(code="claymore")
     cg = ConfigurationGroup.objects(name="ETH").modify(
@@ -316,6 +331,9 @@ def create_initial_objects_for_user(user):
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = False,
     )
+
+    user.settings.default_configuration_group = cg
+    user.save()
 
     mp_e = MinerProgram.objects.get(code="ewbf")
     cg = ConfigurationGroup.objects(name="ZEC(nvidia)").modify(

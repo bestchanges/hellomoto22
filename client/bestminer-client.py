@@ -4,6 +4,7 @@ import json
 import logging
 import os, subprocess
 import platform
+import pprint
 import re
 import shlex
 import threading
@@ -47,7 +48,7 @@ class LimitedList(list):
 
 
 stdout_history = LimitedList(30)
-
+server_logger_handler = None # will be created after log file received
 
 def load_config_ini():
     result = {}
@@ -70,10 +71,12 @@ target_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
 compute_units_info = []  #
 compute_units_fan = []
 compute_units_temp = []
+pu_types = []
 
-my_logger = logging.getLogger('')
-my_logger.setLevel(logging.DEBUG)
-logging.basicConfig(format='%(asctime)s|%(name)-10s|%(levelname)-4s: %(message)s')
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+logging.basicConfig(format='%(name)-10s|%(levelname)-4s: %(message)s')
 
 
 def get_system_id():
@@ -190,22 +193,21 @@ def register_on_server():
     try:
         # send current config to the server for update and review
         newconfig = call_server_api("client/rig_config", data=config, server_address=server_address)
-        print(newconfig)
-        if newconfig['client_version'] != get_client_version():
-            logging.info("New version available! Going to install version {}".format(newconfig['client_version']))
-            self_update()
         if newconfig['rig_id']:
             # Save config from server as new
             config = newconfig
             save_config()
-            return config
+        if newconfig['client_version'] != get_client_version():
+            logging.info("New version available! Going to install version {}".format(newconfig['client_version']))
+            self_update()
+        return config
     except requests.exceptions.ConnectionError as e:
         logging.error("Cannot connect to server %s" % e)
         return None
 
 
 def server_log(msg, level=logging.INFO, data={}):
-    my_logger.log(level, msg)
+    root_logger.log(level, msg)
     pass
 
 
@@ -229,7 +231,7 @@ def kill_process(miner_process):
         proc.kill()
     process.kill()
     time.sleep(2)
-    my_logger.debug("Process has stopped. Process run: {}".format(is_run(miner_process)))
+    root_logger.debug("Process has stopped. Process run: {}".format(is_run(miner_process)))
 
 
 def is_run(process):
@@ -265,12 +267,12 @@ def self_update():
     my_os = get_my_os()
     zip_filename = "BestMiner-{}.zip".format(my_os)
     url = "http://{}/static/client/{}".format(config['server'], zip_filename)
-    my_logger.info("Downloading latest program from {}".format(url))
+    root_logger.info("Downloading latest program from {}".format(url))
     request.urlretrieve(url, zip_filename)
     with ZipFile(zip_filename, 'r') as myzip:
         myzip.extractall(update_dir)
     os.remove(zip_filename)
-    my_logger.info("Download complete. Going to install program.")
+    root_logger.info("Download complete. Going to install program.")
     global miner_process
     kill_process(miner_process)
     os._exit(200)
@@ -307,14 +309,14 @@ def run_miner(miner_config):
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
     if not os.path.exists(miner_dir) or get_miner_version(miner_dir) != miner_config['miner_version']:
         url = "http://%s/static/miners/%s.zip" % (config['server'], miner_config["miner_directory"])
-        my_logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
+        root_logger.info("Downloading miner '%s' (ver %s) from %s" % (miner_config['miner'], miner_config['miner_version'], url))
         zip_file = 'miners/%s.zip' % (miner_config["miner_directory"])
         if not os.path.exists('miners'): os.mkdir('miners')
         request.urlretrieve(url, zip_file)
         with ZipFile(zip_file, 'r') as myzip:
             myzip.extractall('miners')
         os.remove(zip_file)
-        my_logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
+        root_logger.info("Successfully download miner. Current version: %s " % get_miner_version(miner_dir))
     miner_exe = miner_config["miner_exe"]
     args = shlex.split(miner_config["miner_command_line"])
     args.insert(0, miner_exe)
@@ -324,7 +326,7 @@ def run_miner(miner_config):
 
     # запустить майнер хэндлер по типу семейства
     miner_handler_method = globals()[miner_config['miner_family'] + '_handler']
-    my_logger.debug("Going to start handler: {}".format(miner_handler_method))
+    root_logger.debug("Going to start handler: {}".format(miner_handler_method))
     miner_handler = threading.Thread(target=miner_handler_method)
     miner_handler.start()
     time.sleep(0.3)
@@ -341,7 +343,7 @@ def run_miner(miner_config):
         miner_process = subprocess.Popen(args, shell=True, stdout=None, stderr=None, bufsize=0,
                                          env=full_env, cwd=miner_dir, universal_newlines=True)
 
-    my_logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
+    root_logger.info("Runned miner %s PID %s" % (miner_exe, miner_process.pid))
 
 
 def restart_miner():
@@ -369,6 +371,7 @@ def read_miner_output():
 def hashrate_from_units(value, units):
     unit_measures = {
         "h/s": 1,
+        "H/s": 1,
         "Kh/s": 1e3,
         "Mh/s": 1e6,
         "Gh/s": 1e9,
@@ -390,6 +393,20 @@ def claymore_handle_line(line):
 
     global stdout_history
     stdout_history.append(line.strip())
+
+
+    # NVIDIA Cards available: 3
+    # AMD Cards available: 8
+    m = re.findall('(AMD|NVIDIA) Cards available:', line)
+    if len(m) > 0:
+        family = m[0]
+        if family == 'AMD':
+            if 'amd' not in pu_types:
+                pu_types.append('amd')
+        elif family == 'NVIDIA':
+            if 'nvidia' not in pu_types:
+                pu_types.append('nvidia')
+
 
     # GPU #0: Ellesmere, 4096 MB available, 32 compute units
     # GPU #0 recognized as Radeon RX 470/570
@@ -416,7 +433,7 @@ def claymore_handle_line(line):
             else:
                 card = 'amd_rx'
         else:
-            my_logger.error('Cannot recognize AMD family %s' % family)
+            root_logger.error('Cannot recognize AMD family %s' % family)
         if gpu_num == 0:
             compute_units_info.clear()
         if card:
@@ -437,7 +454,7 @@ def claymore_handle_line(line):
         if family == 'GeForce GTX':
             card ='nvidia_gtx_{}_{}gb'.format(model, memory)
         else:
-            my_logger.error('Cannot recognize NVIDIA family %s' % family)
+            root_logger.error('Cannot recognize NVIDIA family %s' % family)
         if gpu_num == 0:
             compute_units_info.clear()
         if card:
@@ -455,8 +472,11 @@ def claymore_handle_line(line):
         elif code == "DCR":
             # take into consideration when mining single Blake
             algorithm = 'Blake (14r)'
+        elif code == "ZEC":
+            # take into consideration when mining single Blake
+            algorithm = 'Equihash'
         else:
-            my_logger.error("Unexpected currency code={}".format(code))
+            root_logger.error("Unexpected currency code={}".format(code))
             algorithm = None
         if algorithm:
             current_hashrate[algorithm] = hashrate_from_units(val, units)
@@ -489,7 +509,11 @@ def claymore_handler():
     time.sleep(6)
     miner_config = config['miner_config']
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
+    # reconfigure logging. Send miner log to server but not send to the STDOUT. Miner itself print to STDOUT.
     logger = logging.getLogger("miner")
+    if (server_logger_handler):
+        logger.addHandler(server_logger_handler)
+    logger.propagate = False
     while True:
         fn = os.path.join(miner_dir, 'log_noappend.txt')
         fp = open(fn, 'r', encoding='866', newline='')
@@ -510,7 +534,7 @@ def claymore_handler():
                     # wait for new line
                     time.sleep(1)
                 else:
-                    my_logger.debug("STOP claymore_miner handler thread")
+                    root_logger.debug("STOP claymore_miner handler thread")
                     return
 
 def ewbf_handle_line(line):
@@ -542,11 +566,15 @@ def ewbf_handler():
     global config
     miner_config = config['miner_config']
     miner_dir = os.path.join('miners', miner_config["miner_directory"])
-    logger = logging.getLogger("miner")
     # first delete old miner.log from miner dir
     log_file = os.path.join(miner_dir, 'miner.log')
     if os.path.isfile(log_file):
         os.unlink(log_file)
+    # reconfigure logging. Send miner log to server but not send to the STDOUT. Miner itself print to STDOUT.
+    logger = logging.getLogger("miner")
+    if (server_logger_handler):
+        logger.addHandler(server_logger_handler)
+    logger.propagate = False
     # give time for miner to start
     time.sleep(3)
     while True:
@@ -569,7 +597,7 @@ def ewbf_handler():
                     # wait for new line
                     time.sleep(1)
                 else:
-                    my_logger.debug("STOP ewbf_miner handler thread")
+                    root_logger.debug("STOP ewbf_miner handler thread")
                     return
 
 
@@ -595,6 +623,7 @@ def get_state_info():
         'pu_fanspeed': compute_units_fan,
         'pu_temperatire': compute_units_temp,
         "processing_units": compute_units_info,
+        "pu_types": pu_types,
         "miner_stdout": miner_stdout,
         "reboot_timestamp": calendar.timegm(get_reboot_time().utctimetuple()),
         'client_version': get_client_version()
@@ -617,7 +646,7 @@ def call_server_api(path, data={}, server_address=None):
     if not server_address:
         server_address = config["server"]
     url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
-    my_logger.debug("Request server API: {}".format(url))
+    root_logger.debug("Request server API: {}".format(url))
     #    'application/json'
     response = requests.put(url=url, json=data)
     error_code = response.status_code
@@ -663,10 +692,6 @@ class StatisticManager(threading.Thread):
         self.logger = logging.getLogger("statistic_manager")
         super().__init__(group, target, name, args, kwargs, daemon=daemon)
 
-    def send_stat(self):
-        state_info = get_state_info()
-        result = call_server_api("client/stat", state_info)
-
     def run(self):
         request_interval = config["statistic_manager"]["request_interval_sec"]
         if request_interval is None or request_interval == 0:
@@ -675,8 +700,16 @@ class StatisticManager(threading.Thread):
         time.sleep(request_interval)
         while True:
             try:
-                self.logger.info("send stat to server")
-                self.send_stat()
+                state_info = get_state_info()
+                self.logger.info("Send stat to server")
+                result = call_server_api("client/stat", state_info)
+                if result:
+                    status_strs = []
+                    for prop in ['profit', 'worker', 'mining', ]:
+                        if prop in result:
+                            status_strs.append("{}: {}".format(prop, result[prop]))
+                    print('#  ' + ', '.join(status_strs))
+                # pprint.pprint(result)
             except Exception as e:
                 self.logger.error("Exception sending stat: %s" % e)
                 pass
@@ -690,8 +723,8 @@ if __name__ == "__main__":
         logging.error("Cannot load config from server. Exiting")
         exit()
     logging.info("Running as worker '%s'" % config['worker'])
-    socketHandler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
-    my_logger.addHandler(socketHandler)
+    server_logger_handler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
+    root_logger.addHandler(server_logger_handler)
 
     restart_miner()
 

@@ -1,4 +1,6 @@
 # shell be first before any logger created
+import threading
+
 import bestminer.logging_config
 
 import json
@@ -15,12 +17,14 @@ from flask import Flask
 from flask_mail import Mail
 from flask_mongoengine import MongoEngine
 
+from finik.crypto_data import CryptoDataProvider
+# TODO: NAT GOD... currently required for import rig_managers
+crypto_data = CryptoDataProvider("coins.json")
+
 from bestminer.rig_manager import rig_managers
 from bestminer.profit import ProfitManager
-from bestminer import server_email, rig_manager
+from bestminer import server_email, rig_manager, exchanges
 from bestminer.task_manager import TaskManager
-from finik.crypto_data import CryptoDataProvider
-from finik.cryptonator import Cryptonator
 
 app = Flask(__name__)
 app.config.from_object('settings_default')  # common default settings
@@ -62,9 +66,6 @@ if app.config.get('BESTMINER_UPDATE_WTM', False):
 else:
     profit_manager.update_currency_data_from_whattomine(json.load(open('coins.json')))
 
-crypto_data = CryptoDataProvider("coins.json")
-cryptonator = Cryptonator()
-
 rig_manager.distribute_all_rigs()
 
 logging_server_o = LoggingServer()
@@ -72,6 +73,16 @@ logging_server_o.start()
 
 monitoring = MonitoringManager()
 monitoring.start()
+
+# Start exchanges update
+if app.config.get('BESTMINER_EXCHANGES_UPDATE_ONCE_AT_START'):
+    # update in background
+    updater = threading.Thread(target=exchanges.update_all_exchanges, name="update exchanges once")
+    updater.start()
+
+if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
+    # update in background
+    exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
 
 # REGISTER ALL VIEWS
 

@@ -1,7 +1,7 @@
 import datetime
 
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
-    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField
+    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, queryset_manager
 
 # we do net restric algorithms anymore
 # ALGORITHMS = (
@@ -171,6 +171,11 @@ class ConfigurationGroup(Document):
     dual_pool_password = StringField(max_length=50, verbose_name="Pool password")
     dual_exchange = ReferenceField(Exchange)
     dual_wallet = StringField(max_length=200)
+    is_active = BooleanField(default=True)
+
+    @queryset_manager
+    def active(doc_cls, queryset):
+        return queryset.filter(is_active=True)
 
     def __unicode__(self):
         return self.name

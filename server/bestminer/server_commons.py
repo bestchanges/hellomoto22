@@ -4,6 +4,7 @@ import random
 import string
 
 from bestminer import crypto_data
+from bestminer.models import ConfigurationGroup
 from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
@@ -166,3 +167,15 @@ def get_profit(currency_code, hashrate):
     except Exception as e:
         logging.error("Exception get_profit: %s" % e)
         raise e
+
+# TODO: move as query to ConfigurationGroup ?
+def list_configurations_applicable_to_rig(rig):
+    configs = ConfigurationGroup.objects(user=rig.user, )
+    select_config = []
+    for config in configs:
+        if rig.pu not in config.miner_program.supported_pu:
+            continue
+        if rig.os not in config.miner_program.supported_os:
+            continue
+        select_config.append(config)
+    return select_config

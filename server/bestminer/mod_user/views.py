@@ -11,7 +11,7 @@ from bestminer import task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.server_commons import calculate_profit_converted, round_to_n
+from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig
 
 mod = Blueprint('user', __name__, template_folder='templates')
 
@@ -108,7 +108,8 @@ def config_edit(id=''):
     [
         'name', 'miner_program',
         'currency', 'pool_server', 'pool_login', 'pool_password',
-        'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password'
+        'dual_currency', 'dual_pool_server', 'dual_pool_login', 'dual_pool_password',
+        'is_active',
     ])
     user = flask_login.current_user.user
 
@@ -275,9 +276,8 @@ def rig_list():
 @login_required
 def rig_info(uuid=None):
     rig = Rig.objects.get(uuid=uuid)
-    configs = ConfigurationGroup.objects(user=rig.user)
     select_config = []
-    for config in configs:
+    for config in list_configurations_applicable_to_rig(rig):
         select_config.append({
             'name': config.name,
             'id': str(config.id),

@@ -21,14 +21,27 @@ $(function(){
 <ul id="navTabs" class="nav nav-tabs">
   <li><a data-toggle="tab" href="#panel_info">Info</a></li>
   <li><a data-toggle="tab" href="#panel_hashrate">Benchmark</a></li>
-  <li><a data-toggle="tab" href="#panel_profit">Profit</a></li>
+  <li><a data-toggle="tab" href="#panel_profit">Profit table</a></li>
   <li><a data-toggle="tab" href="#panel_screen">Screen</a></li>
+  <li><a data-toggle="tab" href="#panel_edit">Settings</a></li>
 </ul>
 
 <div class="tab-content">
   <div id="panel_info" class="tab-pane fade in active">
 
-<h1>Rig configuration</h1>
+        <div>
+            <h2>Set what to mine</h2>
+    <form action="set_config" action="GET">
+    <select id="config" name="config">
+    {% for config in configs %}
+        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
+    {% endfor %}
+    </select>
+      <input type="submit" value="Set">
+    </form>
+
+  </div>
+
 
 <h2>Profit management </h2>
 <div class="row">
@@ -53,36 +66,8 @@ $(function(){
   $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
   e.target // newly activated tab
   e.relatedTarget // previous active tab
-  alert('Changed1')
 })
 </script>
-
-
-
-
-<form method=post>
-  {{ form.csrf_token }}
-  {{ render_field(form.worker) }}
-  {{ render_field(form.comment) }}
-  {{ render_field(form.os, style="height: 30px;") }}
-  {{ render_field(form.pu, style="height: 30px;") }}
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-
-        <div>
-  Set miner configuration:
-    <form action="set_config" action="GET">
-    <select id="config" name="config">
-    {% for config in configs %}
-        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
-    {% endfor %}
-    </select>
-      <input type="submit" value="Set">
-    </form>
-
-  </div>
-
-
 
   </div><!-- END OF PANEL -->
   <div id="panel_hashrate" class="tab-pane fade">
@@ -176,6 +161,23 @@ $(document).ready(function() {
 <pre id="log_area">
 {{ log }}
 </pre>
+
+  </div><!-- END OF PANEL -->
+
+  <div id="panel_edit" class="tab-pane fade">
+
+
+
+      <h2>Edit rig properties</h2>
+
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.worker) }}
+  {{ render_field(form.comment) }}
+  {{ render_field(form.os, style="height: 30px;") }}
+  {{ render_field(form.pu, style="height: 30px;") }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
 
   </div><!-- END OF PANEL -->
 </div>

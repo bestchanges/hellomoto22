@@ -104,8 +104,8 @@ def config_miner_data_json():
 @login_required
 def config_edit(id=''):
     field_args = {
-#        'dual_pool': {'allow_blank': True},
-#        'dual_currency': {'allow_blank': True},
+        'miner_program': {'allow_blank': True},
+        'currency': {'allow_blank': True},
     }
     formtype = model_form(ConfigurationGroup, field_args=field_args, only=
     [
@@ -362,7 +362,7 @@ def rig_profit_data_json(uuid=None):
                         profit_btc = None
                     row2['profit_btc'].append(round_to_n(profit_btc))
                     rate = get_exchange_rate('BTC', user.settings.profit_currency)
-                    if rate and profit_first_currency and profit_first_currency:
+                    if rate and profit_btc and profit_first_currency:
                         profit_total = rate * profit_btc + profit_first_currency
                     else:
                         profit_total = None

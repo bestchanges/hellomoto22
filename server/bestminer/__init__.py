@@ -70,7 +70,7 @@ task_manager = TaskManager()
 
 profit_manager = ProfitManager(
     sleep_time=app.config.get('BESTMINER_UPDATE_WTM_DELAY', 500),
-    save_wtm_to_file='coins.json'
+#    save_wtm_to_file='coins.json'
 )
 if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()

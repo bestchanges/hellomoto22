@@ -180,9 +180,9 @@ def receive_stat():
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
     set_target_hashrate_from_current(rig, stat['miner']['config']['miner_code'])
-    rig.is_online = stat['miner']['is_run']
-    if rig.is_online:
-        rig.last_online_at = datetime.datetime.now
+    rig.is_online = True
+    rig.last_online_at = datetime.datetime.now
+    rig.is_miner_run = stat['miner']['is_run']
     rig.save()
     # If server has newer client version - then add client update task
     if stat['client_version'] != get_client_version():

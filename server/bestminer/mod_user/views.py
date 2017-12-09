@@ -249,12 +249,16 @@ def rig_list_json():
         profit = calculate_profit_converted(rig, profit_currency)
         data.append({
             'name': rig.worker,
+            'online': {
+                'is_online': rig.is_online,
+                'uptime': get_uptime(rig),
+            },
             'uuid': rig.uuid,
             'rebooted': rig.rebooted,
             'hashrate': hashrate,
             'profit': '{} {}'.format(round_to_n(profit), profit_currency),
-            'uptime': get_uptime(rig),
             'miner': {
+                'is_run': rig.is_miner_run,
                 'configuration_id': str(rig.configuration_group.id),
                 'configuration_name': rig.configuration_group.name,
             },

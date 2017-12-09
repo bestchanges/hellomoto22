@@ -215,6 +215,7 @@ class Rig(Document):
         default={})  # miner_code: { 'Ethash+Blake': { 'Ethash': 23, 'Blake': 4456 },}, miner_code: { 'Ethash': { 'Ethash': 25 }
     is_online = BooleanField(default=False)
     last_online_at = DateTimeField()
+    is_miner_run = BooleanField(default=False)
     log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
 
     def __unicode__(self):

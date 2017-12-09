@@ -13,7 +13,24 @@ $(document).ready(function() {
         },
         "columns": [
             { "data": "name" },
-            { "data": "uptime" },
+            { "data": "online",
+                render: function ( data, type, row ) {
+                    if (data.is_online) {
+                        return 'ON ' + data.uptime
+                    } else {
+                        return 'OFF'
+                    }
+                }
+            },
+            { "data": "miner",
+                render: function ( data, type, row ) {
+                    if (data.is_run) {
+                        return data.configuration_name
+                    } else {
+                        return '(stopped) ' + data.configuration_name
+                    }
+                }
+            },
             { "data": "profit" },
             { "data": "hashrate" ,
                 render: function ( data, type, row ) {
@@ -24,12 +41,6 @@ $(document).ready(function() {
                     return result;
                 }
             },
-            { "data": "miner",
-                render: function ( data, type, row ) {
-                    return data.configuration_name
-                }
-            },
-            { "data": "temp" },
             {
                 "targets": -1,
                 "data": null,
@@ -91,11 +102,10 @@ $( "#dialog-confirm" ).dialog({
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Uptime</th>
+                <th>Status</th>
+                <th>Mining</th>
                 <th>Profit</th>
                 <th>Hashrate</th>
-                <th>Mining</th>
-                <th>Temperature</th>
                 <th>Action</th>
             </tr>
         </thead>

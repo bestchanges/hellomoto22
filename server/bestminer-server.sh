@@ -21,6 +21,7 @@ export BESTMINER_SETTINGS
 name=`basename $0`
 pid_file="$name.pid"
 stdout_log="$name.log"
+stderr_log="$name.err"
 
 get_pid() {
     cat "$pid_file"
@@ -38,7 +39,7 @@ case "$1" in
         echo "Starting $name"
         cd "$dir"
         if [ -z "$user" ]; then
-            $cmd > "$stdout_log" 2>&1 &
+            $cmd > "$stdout_log" 2>"$stderr_log" &
         else
             sudo -u "$user" $cmd > "$stdout_log" 2>&1 &
         fi

@@ -71,6 +71,8 @@ target_hashrate = {}  # 'Algo' => { hashrate: 123.56, when: 131424322}
 compute_units_info = []  #
 compute_units_fan = []
 compute_units_temp = []
+pu_types = []
+
 
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
@@ -392,6 +394,20 @@ def claymore_handle_line(line):
     global stdout_history
     stdout_history.append(line.strip())
 
+
+    # NVIDIA Cards available: 3
+    # AMD Cards available: 8
+    m = re.findall('(AMD|NVIDIA) Cards available:', line)
+    if len(m) > 0:
+        family = m[0]
+        if family == 'AMD':
+            if 'amd' not in pu_types:
+                pu_types.append('amd')
+        elif family == 'NVIDIA':
+            if 'nvidia' not in pu_types:
+                pu_types.append('nvidia')
+
+
     # GPU #0: Ellesmere, 4096 MB available, 32 compute units
     # GPU #0 recognized as Radeon RX 470/570
     '''
@@ -607,6 +623,7 @@ def get_state_info():
         'pu_fanspeed': compute_units_fan,
         'pu_temperatire': compute_units_temp,
         "processing_units": compute_units_info,
+        "pu_types": pu_types,
         "miner_stdout": miner_stdout,
         "reboot_timestamp": calendar.timegm(get_reboot_time().utctimetuple()),
         'client_version': get_client_version()

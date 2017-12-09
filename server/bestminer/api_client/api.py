@@ -151,6 +151,7 @@ def receive_stat():
     },
     "is_run": true,
   },
+  "pu_types": ['amd']
   "miner_stdout": [],
   "processing_units": [
     "nvidia_gtx_1060_3gb",
@@ -181,6 +182,10 @@ def receive_stat():
     rig.hashrate = stat["hashrate"]["current"]
     set_target_hashrate_from_current(rig, stat['miner']['config']['miner_code'])
     rig.is_online = True
+    if not rig.pu and stat['pu_types']:
+        # do not overwrite pu if set explicitly
+        # Note: now rig supports only ONE PU family
+        rig.pu = stat['pu_types'][0]
     rig.last_online_at = datetime.datetime.now
     rig.is_miner_run = stat['miner']['is_run']
     rig.save()

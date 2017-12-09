@@ -247,7 +247,7 @@ def rigs_json():
         if rig.hashrate:
             for algorithm in algo.split("+"):
                 if algorithm in rig.hashrate:
-                    hashrate.append({'value': round_to_n(rig.hashrate[algorithm] / 1e6, max_=3), 'units': 'Mh/s'})
+                    hashrate.append(compact_hashrate(rig.hashrate[algorithm], algorithm, return_as_string=True))
         profit_currency = rig.user.settings.profit_currency
         profit = calculate_profit_converted(rig, profit_currency)
         data.append({

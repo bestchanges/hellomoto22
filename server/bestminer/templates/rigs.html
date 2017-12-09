@@ -32,15 +32,7 @@ $(document).ready(function() {
                 }
             },
             { "data": "profit" },
-            { "data": "hashrate" ,
-                render: function ( data, type, row ) {
-                    result = '';
-                    for (var i = 0; i < data.length; i++) {
-                        result = result + data[i].value + ' ' + data[i].units + ' ';
-                    }
-                    return result;
-                }
-            },
+            { "data": "hashrate" },
             {
                 "targets": -1,
                 "data": null,

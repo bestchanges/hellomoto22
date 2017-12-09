@@ -1,5 +1,5 @@
 {
-  "client_version": "0.26",
+  "client_version": "0.28",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
@@ -24,7 +24,7 @@
     "read_output": false
   },
   "rig_id": "6b433e41-4267-5220-8419-0b0808cfe4b2",
-  "server": "localhost:5001",
+  "server": "localhost:5000",
   "statistic_manager": {
     "request_interval_sec": 30
   },

@@ -1,5 +1,4 @@
 import datetime
-import logging
 import math
 
 import flask
@@ -8,11 +7,11 @@ from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 
-from bestminer import crypto_data, cryptonator, task_manager, logging_server
+from bestminer import task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.server_commons import round_to_n
+from bestminer.server_commons import calculate_profit_converted, round_to_n
 
 mod = Blueprint('user', __name__, template_folder='templates')
 
@@ -232,71 +231,34 @@ def get_uptime(rig_state):
     return s
 
 
-def get_profit(currency_code, hashrate):
-    """
-    return daily profit for given currency and hashrate
-    :param currency_code: 'ETH' 'Nicehash-Ethash'
-    :param hashrate: 141000000 (as hashers in second)
-    :return:
-    """
-    try:
-        profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
-        return profit
-    except Exception as e:
-        logging.error("Exception get_profit: %s" % e)
-        raise e
-
-
 @mod.route('/rigs.json')
 @login_required
 def rig_list_json():
     user = flask_login.current_user.user
-    rigs_state = Rig.objects(user=user)
+    rigs = Rig.objects(user=user)
     data = []
-    for rig_state in rigs_state:
-        rig = rig_state
-        algo = rig.configuration_group.algo
+    for rig in rigs:
         hashrate = []
+        algo = rig.configuration_group.algo
         if rig.hashrate:
             for algorithm in algo.split("+"):
                 if algorithm in rig.hashrate:
-                    hashrate.append({'value': rig.hashrate[algorithm] / 1e6, 'units': 'Mh/s'})
-        currency = rig.configuration_group.currency
-        profit = 0
-        if currency.algo in rig.hashrate:
-            profit = get_profit(currency.code, rig.hashrate[currency.algo])
-        dual_profit = 0
-        if rig.configuration_group.is_dual:
-            dual_currency = rig.configuration_group.dual_currency
-            if dual_currency.algo in rig.hashrate:
-                dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
-        try:
-            # try to convert to user target currency
-            target_currency = rig.user.settings.profit_currency
-            exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
-            profit_target_currency = profit * exchange_rate
-            if dual_profit:
-                exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
-                profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
-            profit_string = "%s %s" % (round_to_n(profit_target_currency, 2), target_currency)
-        except:
-            if profit is None:
-                profit_string = "? %s" % (currency.code)
-            else:
-                profit_string = "%s %s" % (round_to_n(profit, 2), currency.code)
+                    hashrate.append({'value': round_to_n(rig.hashrate[algorithm] / 1e6, max_=3), 'units': 'Mh/s'})
+        profit_currency = rig.user.settings.profit_currency
+        profit = calculate_profit_converted(rig, profit_currency)
         data.append({
             'name': rig.worker,
             'uuid': rig.uuid,
-            'rebooted': rig_state.rebooted,
+            'rebooted': rig.rebooted,
             'hashrate': hashrate,
-            'profit': profit_string,
-            'uptime': get_uptime(rig_state),
+            'profit': '{} {}'.format(round_to_n(profit), profit_currency),
+            'uptime': get_uptime(rig),
             'miner': {
                 'configuration_id': str(rig.configuration_group.id),
                 'configuration_name': rig.configuration_group.name,
             },
-            'temp': rig_state.cards_temp,
-            'fan': rig_state.cards_fan,
+            'temp': rig.cards_temp,
+            'fan': rig.cards_fan,
             'comment': rig.comment,
             'info': 'longlong description',
         })

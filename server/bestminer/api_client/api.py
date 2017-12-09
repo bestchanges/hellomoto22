@@ -9,7 +9,7 @@ from flask import Blueprint, request
 
 from bestminer import task_manager, models, app
 from bestminer.models import Rig, ConfigurationGroup, User
-from bestminer.server_commons import assert_expr, get_client_version
+from bestminer.server_commons import assert_expr, get_client_version, calculate_profit_converted, round_to_n
 from bestminer.task_manager import get_miner_config_for_configuration
 
 logger = logging.getLogger(__name__)
@@ -190,5 +190,15 @@ def receive_stat():
     # if configuration grup from client different when send task to change miner
     if stat['miner']['config']['config_name'] != rig.configuration_group.name:
         task_manager.add_switch_miner_task(rig, rig.configuration_group)
-    return flask.jsonify('OK')
+    conf = rig.configuration_group
+    profit_currency = rig.user.settings.profit_currency
+    profit = calculate_profit_converted(rig, profit_currency)
+    responce = {
+        'worker': rig.worker,
+        'mining': conf.name,
+        'profit': '{} {}'.format(round_to_n(profit), profit_currency),
+        'current hashrate': rig.hashrate,
+        'target  hashrate': rig.target_hashrate,
+    }
+    return flask.jsonify(responce)
 

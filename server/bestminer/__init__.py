@@ -15,12 +15,14 @@ from flask import Flask
 from flask_mail import Mail
 from flask_mongoengine import MongoEngine
 
+from finik.crypto_data import CryptoDataProvider
+# TODO: NAT GOD... currently required for import rig_managers
+crypto_data = CryptoDataProvider("coins.json")
+
 from bestminer.rig_manager import rig_managers
 from bestminer.profit import ProfitManager
 from bestminer import server_email, rig_manager
 from bestminer.task_manager import TaskManager
-from finik.crypto_data import CryptoDataProvider
-from finik.cryptonator import Cryptonator
 
 app = Flask(__name__)
 app.config.from_object('settings_default')  # common default settings
@@ -61,9 +63,6 @@ if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()
 else:
     profit_manager.update_currency_data_from_whattomine(json.load(open('coins.json')))
-
-crypto_data = CryptoDataProvider("coins.json")
-cryptonator = Cryptonator()
 
 rig_manager.distribute_all_rigs()
 

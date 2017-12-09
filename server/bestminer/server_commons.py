@@ -1,6 +1,13 @@
+import logging
 import os
 import random
 import string
+
+from bestminer import crypto_data
+from finik.cryptonator import Cryptonator
+
+logger = logging.getLogger(__name__)
+cryptonator = Cryptonator()
 
 
 def round_to_n(num, max_=2):
@@ -9,7 +16,12 @@ def round_to_n(num, max_=2):
     But if int part > 0 then just N digits after comma (360.00)
     с точностью не более n "значащих цифр", после запятой.
     '''
-    left, right = str(num).split('.')
+    vals = str(num).split('.')
+    left = vals[0]
+    if len(vals) > 1:
+        right = vals[1]
+    else:
+        right = ""
     if left != "0":
         nums = []
         for n in right:
@@ -111,3 +123,46 @@ def expand_command_line(configuration_group, worker='worker'):
     for var, value in expand_vars.items():
         command_line = command_line.replace('%' + var + "%", value)
     return command_line
+
+
+def calculate_profit_converted(rig, target_currency):
+    """
+    calculate current profit for given rig. Convert profit to given currency.
+    :param rig:
+    :param target_currency: currency code which convert to: 'USD', 'RUR', 'BTC'
+    :return: value of profit in given currency or None in case if cannot convert
+    """
+    currency = rig.configuration_group.currency
+    profit = 0
+    if currency.algo in rig.hashrate:
+        profit = get_profit(currency.code, rig.hashrate[currency.algo])
+    dual_profit = 0
+    if rig.configuration_group.is_dual:
+        dual_currency = rig.configuration_group.dual_currency
+        if dual_currency.algo in rig.hashrate:
+            dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
+    try:
+        exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
+        profit_target_currency = profit * exchange_rate
+        if dual_profit:
+            exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
+            profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
+        return profit_target_currency
+    except:
+        logger.error("Error calculate_current_profit to {} for rig={}".format(target_currency, rig))
+        return None
+
+
+def get_profit(currency_code, hashrate):
+    """
+    return daily profit for given currency and hashrate
+    :param currency_code: 'ETH' 'Nicehash-Ethash'
+    :param hashrate: 141000000 (as hashers in second)
+    :return:
+    """
+    try:
+        profit = crypto_data.calc_profit(crypto_data.for_currency(currency_code), hashrate, 86400)
+        return profit
+    except Exception as e:
+        logging.error("Exception get_profit: %s" % e)
+        raise e

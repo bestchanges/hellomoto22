@@ -16,3 +16,4 @@ poloniex
 BitEx
 flask-login
 Flask-Mail
+ccxt

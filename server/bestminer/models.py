@@ -1,4 +1,5 @@
 import datetime
+from statistics import median
 
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
     ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, \
@@ -36,6 +37,15 @@ class Currency(Document):
     updated_at = DateTimeField()
     listed_in = ListField(StringField(), default=[]) # exchange_code from exchanges
     exchange_rates_btc = DictField(default={}) # exchange_code : data {'volume_24h': xx, 'rate': xx, 'updated': ... }
+
+    def get_median_exchange_rate(self):
+        rates = []
+        # TODO: check if rate not staled
+        for exchange_rate_btc in self.exchange_rates_btc.values():
+            rates.append(exchange_rate_btc['rate'])
+        if not rates:
+            return None
+        return median(rates)
 
     def __unicode__(self):
         return self.code

@@ -1,12 +1,12 @@
 {
-  "client_version": "0.28",
+  "client_version": "0.27.1",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
     "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Test ETH",
+    "config_name": "Test ETH+DCR",
     "env": {
       "GPU_FORCE_64BIT_PTR": "0",
       "GPU_MAX_ALLOC_PERCENT": "100",
@@ -16,7 +16,7 @@
     },
     "miner": "Pseudo Claymore Miner",
     "miner_code": "pseudo_claymore_miner",
-    "miner_command_line": "-u miner_emu.py --file ETH.txt --dst_file log_noappend.txt --delay 0.3 ",
+    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --dst_file log_noappend.txt --delay 0.3 ",
     "miner_directory": "miner_emu",
     "miner_exe": "python",
     "miner_family": "claymore",

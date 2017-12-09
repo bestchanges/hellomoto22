@@ -15,12 +15,12 @@ var rig_data = {{ rig_data|tojson|safe }}
 $(function(){
     // Отображается 1 вкладка,
     // т.к. отсчёт начинается с нуля
-    $("#navTabs li:eq(2) a").tab('show');
+    // $("#navTabs li:eq(2) a").tab('show');
 });
 </script>
 <ul id="navTabs" class="nav nav-tabs">
   <li><a data-toggle="tab" href="#panel_info">Info</a></li>
-  <li><a data-toggle="tab" href="#panel_hashrate">Hashrate</a></li>
+  <li><a data-toggle="tab" href="#panel_hashrate">Benchmark</a></li>
   <li><a data-toggle="tab" href="#panel_profit">Profit</a></li>
   <li><a data-toggle="tab" href="#panel_screen">Screen</a></li>
 </ul>
@@ -168,7 +168,9 @@ function get_log() {
 setTimeout('get_log()',5000)
 }
 
-get_log()
+$(document).ready(function() {
+    get_log()
+})
 
 </script>
 <pre id="log_area">

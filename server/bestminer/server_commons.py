@@ -4,7 +4,7 @@ import random
 import string
 
 from bestminer import crypto_data
-from bestminer.models import ConfigurationGroup
+from bestminer.models import ConfigurationGroup, Currency
 from bestminer.profit import calc_mining_profit
 from finik.cryptonator import Cryptonator
 
@@ -20,12 +20,14 @@ def round_to_n(num, max_=2):
     '''
     if not num:
         return num
-    vals = str(num).split('.')
+    vals = "{:.12f}".format(num).split('.')
     left = vals[0]
     if len(vals) > 1:
         right = vals[1]
     else:
         right = ""
+    if len(left) > max_:
+        return str(left) # if int part longer when max_ return only it
     if left != "0":
         nums = []
         for n in right:
@@ -131,10 +133,18 @@ def expand_command_line(configuration_group, worker='worker'):
 
 def get_exchange_rate(from_, to):
     try:
+        if to == 'BTC':
+            found = Currency.objects(code=from_)
+            if found:
+                currency = found[0]
+                return currency.get_median_exchange_rate()
         return cryptonator.get_exchange_rate(from_, to)
     except:
         return None
 
+
+def get_exchange_rate_to_btc(currency):
+    return currency.get_median_exchange_rate()
 
 def calculate_profit_converted(rig, target_currency):
     """
@@ -190,3 +200,50 @@ def list_configurations_applicable_to_rig(rig):
             continue
         select_config.append(config)
     return select_config
+
+
+def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=False):
+    """
+    Convetr value if hashrate to compact form: 123000000 -> 123 Mh/s
+    :param hashrate:
+    :param algorithm:
+    :param compact_for: 'rig' or 'net' - there are different compact rules for them
+    :param return_string:
+    :return: tuple of value and units. If return_as_string return rounded string presentation
+    """
+    compact_maps = {
+        'rig': {
+            "CryptoNight": '',
+            "Equihash": '',
+            "Lyra2REv2": 'k',
+            "NeoScrypt": 'k',
+            "Blake (14r)": 'G',
+            '__default__': 'M',
+        },
+        'net': {
+            "CryptoNight": 'M',
+            "Equihash": 'M',
+            "Lyra2REv2": 'T',
+            "NeoScrypt": 'G',
+            "Blake (14r)": 'T',
+            '__default__': 'G',
+        },
+    }
+    algo_map = compact_maps[compact_for]
+    mult_map = {
+        '': 1,
+        'k': 1e3,
+        'M': 1e6,
+        'G': 1e9,
+        'T': 1e12,
+        'P': 1e15,
+    }
+    if algorithm in algo_map:
+        letter = algo_map[algorithm]
+    else:
+        letter = algo_map['__default__']
+    value = hashrate / mult_map[letter]
+    units = "{}h/s".format(letter)
+    if return_as_string:
+        return "{} {}".format(round_to_n(value), units)
+    return value, units

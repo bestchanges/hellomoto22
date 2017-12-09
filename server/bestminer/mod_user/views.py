@@ -14,7 +14,7 @@ from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
 from bestminer.profit import calc_mining_profit
 from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig, \
-    get_profit, get_exchange_rate
+    get_profit, get_exchange_rate, get_exchange_rate_to_btc, compact_hashrate
 
 mod = Blueprint('user', __name__, template_folder='templates')
 
@@ -301,31 +301,33 @@ def rig_profit_data_json(uuid=None):
                 "reward": [],
                 "rate": [],
                 "profit_btc": [],
-                "profit": [],
+                "profit": None,
             }
             row1['currency'].append(currency.code)
             best_miner_code = None
             target_hashrate = {}
-            if algo in rig.target_hashrate and min:
+            if algo in rig.target_hashrate and True: # FORGOT SOMETHING!!!
                 # we will find best miner for this algo
                 max_hashrate = 0
                 for miner_code, hashrate in rig.target_hashrate[algo].items():
                     # choosing by max hashrate on first algorithm (i.e. Ethash)
-                    if hashrate[algorithm] > max_hashrate:
+                    if algorithm in hashrate and hashrate[algorithm] > max_hashrate:
                         target_hashrate = hashrate
                         max_hashrate = hashrate[algorithm]
                         best_miner_code = miner_code
             if target_hashrate:
-                row1['hashrate'].append(target_hashrate[algorithms[0]])
+                h = target_hashrate[algorithms[0]]
+                row1['hashrate'].append(compact_hashrate(h, algorithms[0], return_as_string=True))
             else:
-                row1['hashrate'].append('?')
-            row1['net_hashrate'].append(currency.nethash)
+                row1['hashrate'].append('Need benchmark')
+            row1['net_hashrate'].append(
+                compact_hashrate(currency.nethash, algorithms[0], compact_for='net', return_as_string=True))
             try:
                 profit_first_currency = calc_mining_profit(currency, target_hashrate[currency.algo])
             except:
                 profit_first_currency = None
             row1['reward'].append(round_to_n(profit_first_currency))
-            rate = get_exchange_rate(currency.code, 'BTC')
+            rate = get_exchange_rate_to_btc(currency)
             row1['rate'].append(round_to_n(rate))
             if rate and profit_first_currency:
                 profit_btc = rate * profit_first_currency
@@ -342,16 +344,17 @@ def rig_profit_data_json(uuid=None):
                     row2 = deepcopy(row1)
                     row2['currency'].append(currency.code)
                     if target_hashrate:
-                        row2['hashrate'].append(target_hashrate[algorithms[1]])
+                        h = target_hashrate[algorithms[1]]
+                        row2['hashrate'].append(compact_hashrate(h, algorithms[1], return_as_string=True))
                     else:
                         row2['hashrate'].append('?')
-                    row2['net_hashrate'].append(currency.nethash)
+                    row2['net_hashrate'].append(compact_hashrate(currency.nethash, algorithms[1], compact_for='net', return_as_string=True))
                     try:
                         profit = calc_mining_profit(currency, target_hashrate[currency.algo])
                     except:
                         profit = None
                     row2['reward'].append(round_to_n(profit))
-                    rate = get_exchange_rate(currency.code, 'BTC')
+                    rate = get_exchange_rate_to_btc(currency)
                     row2['rate'].append(round_to_n(rate))
                     if rate and profit:
                         profit_btc = rate * profit
@@ -363,10 +366,10 @@ def rig_profit_data_json(uuid=None):
                         profit_total = rate * profit_btc + profit_first_currency
                     else:
                         profit_total = None
-                    row2['profit'].append(round_to_n(profit_total))
+                    row2['profit'] = round_to_n(profit_total)
                     result.append(row2)
             else:
-                row1['profit'].append(round_to_n(profit_first_currency))
+                row1['profit'] = round_to_n(profit_first_currency)
                 result.append(row1)
     return flask.jsonify({'data': result})
 

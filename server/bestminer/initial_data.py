@@ -315,8 +315,6 @@ def create_initial_objects_for_user(user):
     	set__dual_pool_password = "x",
     	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
     )
-    user.settings.default_configuration_group = cg
-    user.save()
 
     mp_c = MinerProgram.objects.get(code="claymore")
     cg = ConfigurationGroup.objects(name="ETH").modify(
@@ -333,6 +331,9 @@ def create_initial_objects_for_user(user):
     	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
     	set__is_dual = False,
     )
+
+    user.settings.default_configuration_group = cg
+    user.save()
 
     mp_e = MinerProgram.objects.get(code="ewbf")
     cg = ConfigurationGroup.objects(name="ZEC(nvidia)").modify(

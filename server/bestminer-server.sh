@@ -15,9 +15,6 @@ dir="."
 cmd="python server.py"
 user=""
 
-BESTMINER_SETTINGS=settings.py
-export BESTMINER_SETTINGS
-
 name=`basename $0`
 pid_file="$name.pid"
 stdout_log="$name.log"

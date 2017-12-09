@@ -3,6 +3,7 @@ import math
 
 import flask
 import flask_login
+from copy import deepcopy
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
@@ -11,7 +12,9 @@ from bestminer import task_manager, logging_server
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig
+from bestminer.profit import calc_mining_profit
+from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig, \
+    get_profit, get_exchange_rate
 
 mod = Blueprint('user', __name__, template_folder='templates')
 
@@ -234,7 +237,7 @@ def get_uptime(rig_state):
 
 @mod.route('/rigs.json')
 @login_required
-def rig_list_json():
+def rigs_json():
     user = flask_login.current_user.user
     rigs = Rig.objects(user=user)
     data = []
@@ -272,8 +275,100 @@ def rig_list_json():
 
 @mod.route('/rigs')
 @login_required
-def rig_list():
+def rigs():
     return flask.render_template("rigs.html")
+
+
+@mod.route('/rig/<uuid>/profit_data.json', methods=["GET", "POST"])
+@login_required
+def rig_profit_data_json(uuid=None):
+    user = flask_login.current_user.user
+    result = []
+    rig = Rig.objects.get(uuid=uuid)
+    algos = {}
+    # get all supported algos from all miners
+    for miner in MinerProgram.enabled(supported_pu=rig.pu, supported_os=rig.os):
+        for algo in miner.algos:
+            algos[algo] = 1
+    for algo in algos:
+        algorithms = algo.split('+')
+        algorithm = algorithms[0]
+        for currency in Currency.objects(algo=algorithm):
+            row1 = {
+                "currency": [],
+                "hashrate": [],
+                "net_hashrate": [],
+                "reward": [],
+                "rate": [],
+                "profit_btc": [],
+                "profit": [],
+            }
+            row1['currency'].append(currency.code)
+            best_miner_code = None
+            target_hashrate = {}
+            if algo in rig.target_hashrate and min:
+                # we will find best miner for this algo
+                max_hashrate = 0
+                for miner_code, hashrate in rig.target_hashrate[algo].items():
+                    # choosing by max hashrate on first algorithm (i.e. Ethash)
+                    if hashrate[algorithm] > max_hashrate:
+                        target_hashrate = hashrate
+                        max_hashrate = hashrate[algorithm]
+                        best_miner_code = miner_code
+            if target_hashrate:
+                row1['hashrate'].append(target_hashrate[algorithms[0]])
+            else:
+                row1['hashrate'].append('?')
+            row1['net_hashrate'].append(currency.nethash)
+            try:
+                profit_first_currency = calc_mining_profit(currency, target_hashrate[currency.algo])
+            except:
+                profit_first_currency = None
+            row1['reward'].append(round_to_n(profit_first_currency))
+            rate = get_exchange_rate(currency.code, 'BTC')
+            row1['rate'].append(round_to_n(rate))
+            if rate and profit_first_currency:
+                profit_btc = rate * profit_first_currency
+            else:
+                profit_btc = None
+            row1['profit_btc'].append(round_to_n(profit_btc))
+            rate = get_exchange_rate('BTC', user.settings.profit_currency)
+            if rate and profit_btc:
+                profit_first_currency = rate * profit_btc
+            else:
+                profit_first_currency = None
+            if len(algorithms) == 2: # dual
+                for currency in Currency.objects(algo=algorithms[1]):
+                    row2 = deepcopy(row1)
+                    row2['currency'].append(currency.code)
+                    if target_hashrate:
+                        row2['hashrate'].append(target_hashrate[algorithms[1]])
+                    else:
+                        row2['hashrate'].append('?')
+                    row2['net_hashrate'].append(currency.nethash)
+                    try:
+                        profit = calc_mining_profit(currency, target_hashrate[currency.algo])
+                    except:
+                        profit = None
+                    row2['reward'].append(round_to_n(profit))
+                    rate = get_exchange_rate(currency.code, 'BTC')
+                    row2['rate'].append(round_to_n(rate))
+                    if rate and profit:
+                        profit_btc = rate * profit
+                    else:
+                        profit_btc = None
+                    row2['profit_btc'].append(round_to_n(profit_btc))
+                    rate = get_exchange_rate('BTC', user.settings.profit_currency)
+                    if rate and profit_first_currency and profit_first_currency:
+                        profit_total = rate * profit_btc + profit_first_currency
+                    else:
+                        profit_total = None
+                    row2['profit'].append(round_to_n(profit_total))
+                    result.append(row2)
+            else:
+                row1['profit'].append(round_to_n(profit_first_currency))
+                result.append(row1)
+    return flask.jsonify({'data': result})
 
 
 @mod.route('/rig/<uuid>/info', methods=["GET", "POST"])

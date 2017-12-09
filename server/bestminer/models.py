@@ -1,7 +1,8 @@
 import datetime
 
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
-    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, queryset_manager
+    ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, \
+    queryset_manager, LongField
 
 # we do net restric algorithms anymore
 # ALGORITHMS = (
@@ -27,11 +28,11 @@ PU_TYPE = (('amd', 'amd'), ('nvidia', 'nvidia'))
 
 class Currency(Document):
     code = StringField(max_length=20, unique=True)
-    difficulty = DecimalField()
+    difficulty = FloatField()
     algo = StringField(max_length=50)  # actually should be named 'algorithm' TODO: rename
     block_time = FloatField()  # seconds
-    block_reward = DecimalField()
-    nethash = DecimalField()
+    block_reward = FloatField()
+    nethash = LongField()
     updated_at = DateTimeField()
 
     def __unicode__(self):
@@ -116,6 +117,10 @@ class MinerProgram(Document):
     supported_os = ListField(StringField(choices=OS_TYPE), required=True)
     supported_pu = ListField(StringField(choices=PU_TYPE), required=True)
     is_enabled = BooleanField(default=True)
+
+    @queryset_manager
+    def enabled(doc_cls, queryset):
+        return queryset.filter(is_enabled=True)
 
     def __unicode__(self):
         return self.name

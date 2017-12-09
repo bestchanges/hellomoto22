@@ -16,7 +16,7 @@ $(document).ready(function() {
             { "data": "online",
                 render: function ( data, type, row ) {
                     if (data.is_online) {
-                        return 'ON ' + data.uptime
+                        return 'ON (' + data.uptime + ')'
                     } else {
                         return 'OFF'
                     }
@@ -27,7 +27,7 @@ $(document).ready(function() {
                     if (data.is_run) {
                         return data.configuration_name
                     } else {
-                        return '(stopped) ' + data.configuration_name
+                        return '(stop)' + data.configuration_name
                     }
                 }
             },

@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "_formhelpers.html" import render_field %}
 {% block head %}
 
 <script type="text/javascript" >
@@ -9,12 +10,56 @@ var rig_data = {{ rig_data|tojson|safe }}
 {% block body %}
 {% from "_formhelpers.html" import render_field %}
 
+<!-- https://itchief.ru/lessons/bootstrap-3/100-bootstrap-3-dynamic-tabs -->
+<script>
+$(function(){
+    // Отображается 1 вкладка,
+    // т.к. отсчёт начинается с нуля
+    $("#navTabs li:eq(2) a").tab('show');
+});
+</script>
+<ul id="navTabs" class="nav nav-tabs">
+  <li><a data-toggle="tab" href="#panel_info">Info</a></li>
+  <li><a data-toggle="tab" href="#panel_hashrate">Hashrate</a></li>
+  <li><a data-toggle="tab" href="#panel_profit">Profit</a></li>
+  <li><a data-toggle="tab" href="#panel_screen">Screen</a></li>
+</ul>
+
+<div class="tab-content">
+  <div id="panel_info" class="tab-pane fade in active">
+
 <h1>Rig configuration</h1>
 
-  {% if error %}
-    <p class=error><strong>Error:</strong> {{ error }}
-  {% endif %}
-{% from "_formhelpers.html" import render_field %}
+<h2>Profit management </h2>
+<div class="row">
+  <div class="col-4">
+    <div class="list-group" id="list-tab" role="tablist">
+      <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Manual</a>
+      <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">Automatic</a>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="tab-content" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
+        In Manual mode you can set your own mining configuration. You can choose currency, pool and wallet.
+      </div>
+      <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
+        In Automatic mode BestMiner will choose set profitable configuration for each rig.
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
+  e.target // newly activated tab
+  e.relatedTarget // previous active tab
+  alert('Changed1')
+})
+</script>
+
+
+
+
 <form method=post>
   {{ form.csrf_token }}
   {{ render_field(form.worker) }}
@@ -23,6 +68,24 @@ var rig_data = {{ rig_data|tojson|safe }}
   {{ render_field(form.pu, style="height: 30px;") }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
+
+        <div>
+  Set miner configuration:
+    <form action="set_config" action="GET">
+    <select id="config" name="config">
+    {% for config in configs %}
+        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
+    {% endfor %}
+    </select>
+      <input type="submit" value="Set">
+    </form>
+
+  </div>
+
+
+
+  </div><!-- END OF PANEL -->
+  <div id="panel_hashrate" class="tab-pane fade">
 
 <h2>Hashrate</h2>
 
@@ -47,45 +110,53 @@ var rig_data = {{ rig_data|tojson|safe }}
 {% endfor %}
 </table>
 
-<h2>Profit management </h2>
-<div class="row">
-  <div class="col-4">
-    <div class="list-group" id="list-tab" role="tablist">
-      <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Manual</a>
-      <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">Automatic</a>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="tab-content" id="nav-tabContent">
-      <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
-        In Manual mode you can set your own mining configuration. You can choose currency, pool and wallet.
-      </div>
-      <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
-        In Automatic mode BestMiner will choose set profitable configuration for each rig.
-      </div>
-    </div>
-  </div>
-</div>
 
-  <div>
-  Set miner configuration:
-    <form action="set_config" action="GET">
-    <select id="config" name="config">
-    {% for config in configs %}
-        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
-    {% endfor %}
-    </select>
-      <input type="submit" value="Set">
-    </form>
+  </div><!-- END OF PANEL -->
+  <div id="panel_profit" class="tab-pane fade">
 
-  </div>
 <script>
-  $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
-  e.target // newly activated tab
-  e.relatedTarget // previous active tab
-})
+$(document).ready(function() {
+    var table = $('#datalist').DataTable({
+        "ajax": "profit_data.json",
+        "paging": false,
+        "scrollY": 400,
+        "select": {
+            style:    'os',
+            selector: 'td:first-child'
+        },
+        "columns": [
+            { "data": "currency" },
+            { "data": "hashrate" },
+            { "data": "net_hashrate" },
+            { "data": "reward" },
+            { "data": "rate" },
+            { "data": "profit_btc" },
+            { "data": "profit" }
+        ]
+    })
+ });
 </script>
-<h2>Screen view</h2>
+
+      <h2>Profit table</h2>
+<table id="datalist" class="display" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Currency</th>
+                <th>My hashrate</th>
+                <th>Net hashrate</th>
+                <th>Reward 24h</th>
+                <th>Exchange</th>
+                <th>Profit BTC</th>
+                <th>Profit</th>
+            </tr>
+        </thead>
+</table>
+
+
+  </div><!-- END OF PANEL -->
+  <div id="panel_screen" class="tab-pane fade">
+
+<h2>Miner Screen view</h2>
 <script type="text/javascript" >
 function get_log() {
   $.ajax({
@@ -103,4 +174,10 @@ get_log()
 <pre id="log_area">
 {{ log }}
 </pre>
+
+  </div><!-- END OF PANEL -->
+</div>
+
+
+
 {% endblock %}

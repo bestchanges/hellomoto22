@@ -5,6 +5,7 @@ import string
 
 from bestminer import crypto_data
 from bestminer.models import ConfigurationGroup
+from bestminer.profit import calc_mining_profit
 from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ def round_to_n(num, max_=2):
     But if int part > 0 then just N digits after comma (360.00)
     с точностью не более n "значащих цифр", после запятой.
     '''
+    if not num:
+        return num
     vals = str(num).split('.')
     left = vals[0]
     if len(vals) > 1:
@@ -126,6 +129,13 @@ def expand_command_line(configuration_group, worker='worker'):
     return command_line
 
 
+def get_exchange_rate(from_, to):
+    try:
+        return cryptonator.get_exchange_rate(from_, to)
+    except:
+        return None
+
+
 def calculate_profit_converted(rig, target_currency):
     """
     calculate current profit for given rig. Convert profit to given currency.
@@ -136,12 +146,12 @@ def calculate_profit_converted(rig, target_currency):
     currency = rig.configuration_group.currency
     profit = 0
     if currency.algo in rig.hashrate:
-        profit = get_profit(currency.code, rig.hashrate[currency.algo])
+        profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
     dual_profit = 0
     if rig.configuration_group.is_dual:
         dual_currency = rig.configuration_group.dual_currency
         if dual_currency.algo in rig.hashrate:
-            dual_profit = get_profit(currency.code, rig.hashrate[currency.algo])
+            dual_profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
     try:
         exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
         profit_target_currency = profit * exchange_rate
@@ -157,6 +167,7 @@ def calculate_profit_converted(rig, target_currency):
 def get_profit(currency_code, hashrate):
     """
     return daily profit for given currency and hashrate
+    !!!! deprecated use calc_mining_profit()
     :param currency_code: 'ETH' 'Nicehash-Ethash'
     :param hashrate: 141000000 (as hashers in second)
     :return:

@@ -436,4 +436,4 @@ def rig_set_config(uuid):
     rig.configuration_group = config
     rig.save()
     task_manager.add_switch_miner_task(rig, config)
-    return rig_info(uuid)
+    return flask.redirect(url_for('.rig_info', uuid=uuid))

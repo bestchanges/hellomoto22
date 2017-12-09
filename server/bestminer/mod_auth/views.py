@@ -34,7 +34,7 @@ def register():
 
         user,user_password = create_user(email=email)
 
-        server_email.send_welcome_email(flask_mail, user, user_password, request.host_url + '/auth/login')
+        server_email.send_welcome_email(flask_mail, user, user_password, request.host_url + '/user/download')
 
         flask.flash('Account registered. Email with password sent to your address.')
         return flask.redirect(flask.url_for('.login'))

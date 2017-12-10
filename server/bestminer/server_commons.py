@@ -201,7 +201,7 @@ def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=Fa
             "Equihash": '',
             "Lyra2REv2": 'k',
             "NeoScrypt": 'k',
-            "Blake (14r)": 'G',
+            "Blake (14r)": 'M',
             '__default__': 'M',
         },
         'net': {

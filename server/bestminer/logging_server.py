@@ -190,7 +190,7 @@ class SaveClientLogHistory(logging.Handler):
                                                               encoding='utf-8')
                 #log_file = open(os.path.join(dirs, log_filename), 'a', encoding='utf-8')
                 #h = logging.StreamHandler(log_file)
-                h.setFormatter(logging.Formatter('%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s)'))
+                h.setFormatter(logging.Formatter('%(asctime)-10s|%(name)-10s|%(levelname)s|%(message)s'))
                 client_log_file_logger.addHandler(h)
                 client_log_file_logger.propagate = False
                 self.uuid_file_logs[rig_uuid] = client_log_file_logger

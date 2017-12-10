@@ -36,7 +36,13 @@ def download_win():
 @login_required
 def settings():
     user = flask_login.current_user.user
-    formtype = model_form(UserSettings)
+    field_args = {
+        'default_configuration_group': {
+            'queryset': ConfigurationGroup.objects(user=user)
+        }
+    }
+    formtype = model_form(UserSettings, field_args=field_args)
+
     obj = user.settings
 
     if request.method == 'POST':

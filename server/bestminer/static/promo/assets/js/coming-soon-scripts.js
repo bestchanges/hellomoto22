@@ -17,7 +17,7 @@ jQuery(document).ready(function() {
     */
     var now = new Date();
     //var countTo = 25 * 24 * 60 * 60 * 1000 + now.valueOf();
-    var countTo = '2017/12/10';
+    var countTo = '2017/12/17';
     $('.timer').countdown(countTo, function(event) {
         var $this = $(this);
         switch(event.type) {

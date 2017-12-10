@@ -15,7 +15,7 @@
     },
     "miner": "Claymore",
     "miner_code": "claymore",
-    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.worker002 -psw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1",
+    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.worker001 -epsw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1",
     "miner_directory": "claymore10_win",
     "miner_exe": "EthDcrMiner64.exe",
     "miner_family": "claymore",
@@ -30,5 +30,5 @@
   "task_manager": {
     "request_interval_sec": 15
   },
-  "worker": "worker002"
+  "worker": "worker001"
 }

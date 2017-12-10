@@ -78,6 +78,8 @@ root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(name)-10s|%(levelname)-4s: %(message)s')
 
+stat_manager = None
+task_manager = None
 
 def get_system_id():
     '''
@@ -406,6 +408,8 @@ def claymore_handle_line(line):
         elif family == 'NVIDIA':
             if 'nvidia' not in pu_types:
                 pu_types.append('nvidia')
+        if stat_manager:
+            stat_manager.send_stat()
 
 
     # GPU #0: Ellesmere, 4096 MB available, 32 compute units
@@ -687,10 +691,29 @@ class TaskManager(threading.Thread):
             time.sleep(request_interval)
 
 
+
+
+
 class StatisticManager(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
         self.logger = logging.getLogger("statistic_manager")
         super().__init__(group, target, name, args, kwargs, daemon=daemon)
+
+    def send_stat(self):
+        try:
+            state_info = get_state_info()
+            self.logger.info("Send stat to server")
+            result = call_server_api("client/stat", state_info)
+            if result:
+                # display several of received data
+                status_strs = []
+                for prop in ['profit', 'worker', 'mining', ]:
+                    if prop in result:
+                        status_strs.append("{}: {}".format(prop, result[prop]))
+                print('#  ' + ', '.join(status_strs))
+        except Exception as e:
+            self.logger.error("Exception sending stat: %s" % e)
+            pass
 
     def run(self):
         request_interval = config["statistic_manager"]["request_interval_sec"]
@@ -699,20 +722,7 @@ class StatisticManager(threading.Thread):
         # for first run wait while statistic will be ready
         time.sleep(request_interval)
         while True:
-            try:
-                state_info = get_state_info()
-                self.logger.info("Send stat to server")
-                result = call_server_api("client/stat", state_info)
-                if result:
-                    status_strs = []
-                    for prop in ['profit', 'worker', 'mining', ]:
-                        if prop in result:
-                            status_strs.append("{}: {}".format(prop, result[prop]))
-                    print('#  ' + ', '.join(status_strs))
-                # pprint.pprint(result)
-            except Exception as e:
-                self.logger.error("Exception sending stat: %s" % e)
-                pass
+            self.send_stat()
             time.sleep(request_interval)
 
 

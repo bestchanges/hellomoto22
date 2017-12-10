@@ -95,6 +95,7 @@ if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
     # update in background
     exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
 
+
 # REGISTER ALL VIEWS
 
 import bestminer.mod_auth.views
@@ -114,7 +115,7 @@ app.register_blueprint(bestminer.mod_admin.views.mod, url_prefix='/admin')
 app.register_blueprint(bestminer.api_client.api.mod, url_prefix='/client')
 
 import bestminer.initial_data
-
+initial_data.fix_users_missed_configurations()
 initial_data.initial_data()
 if app.config.get('TESTING', False):
     initial_data.sample_data()

@@ -192,60 +192,61 @@ def test_data_for_user(user):
     mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
     eth = Currency.objects.get(code="ETH")
     dcr = Currency.objects.get(code="DCR")
-    cg = ConfigurationGroup.objects(name="Test ETH+DCR").modify(
-        upsert=True,
-        set__user = user,
-    	set__currency = eth,
-    	set__miner_program = mp_pc,
-        set__algo = "+".join([eth.algo, dcr.algo]),
-        set__command_line=mp_pc.command_line,
-        set__env=mp_pc.env,
-        set__pool_server = 'eu1.ethermine.org:4444',
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__pool_password = "x",
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = True,
-    	set__dual_currency = dcr,
-        set__dual_pool_server='dcr.coinmine.pl:2222',
-    	set__dual_pool_login = "egoaga19",
-    	set__dual_pool_password = "x",
-    	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
-    )
+    cg = ConfigurationGroup()
+    cg.name="Test ETH+DCR"
+    cg.user = user
+    cg.currency = eth
+    cg.miner_program = mp_pc
+    cg.algo = "+".join([eth.algo, dcr.algo])
+    cg.command_line=mp_pc.command_line
+    cg.env=mp_pc.env
+    cg.pool_server = 'eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = True
+    cg.dual_currency = dcr
+    cg.dual_pool_server='dcr.coinmine.pl:2222'
+    cg.dual_pool_login = "egoaga19"
+    cg.dual_pool_password = "x"
+    cg.dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq"
+    cg.save()
+
     user.settings.default_configuration_group = cg
     user.save()
 
 
-    cg = ConfigurationGroup.objects(name="Test ETH").modify(
-        upsert=True,
-        set__user=user,
-        set__currency = eth,
-        set__miner_program=mp_pc,
-        set__algo = eth.algo,
-        set__command_line=mp_pc.command_line,
-        set__env=mp_pc.env,
-        set__pool_server = 'eu1.ethermine.org:4444',
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="Test ETH"
+    cg.user=user
+    cg.currency = eth
+    cg.miner_program=mp_pc
+    cg.algo = eth.algo
+    cg.command_line=mp_pc.command_line
+    cg.env=mp_pc.env
+    cg.pool_server = 'eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = False
+    cg.save()
 
     mp_pe = MinerProgram.objects.get(code="pseudo_ewbf_miner")
     zec = Currency.objects.get(code="ZEC")
-    cg = ConfigurationGroup.objects(name="Test ZEC").modify(
-        upsert=True,
-        set__user = user,
-        set__miner_program = mp_pe,
-        set__algo= zec.algo,
-        set__command_line=mp_pe.command_line,
-        set__env=mp_pe.env,
-        set__currency = zec,
-        set__pool_server = 'eu1-zcash.flypool.org:3333',
-    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="Test ZEC"
+    cg.user = user
+    cg.miner_program = mp_pe
+    cg.algo= zec.algo
+    cg.command_line=mp_pe.command_line
+    cg.env=mp_pe.env
+    cg.currency = zec
+    cg.pool_server = 'eu1-zcash.flypool.org:3333'
+    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
+    cg.is_dual = False
+    cg.save()
 
 
 
@@ -286,6 +287,15 @@ def create_user(email, name=None, password=None, settings=None):
     create_initial_objects_for_user(user)
     return user, password
 
+def fix_users_missed_configurations():
+    for user in User.objects():
+        confs = ConfigurationGroup.objects(user=user)
+        if len(confs) == 0:
+            create_initial_objects_for_user(user)
+            for rig in Rig.objects(user=user):
+                rig.configuration_group = user.settings.default_configuration_group
+                rig.save()
+
 
 def create_initial_objects_for_user(user):
     """
@@ -298,110 +308,111 @@ def create_initial_objects_for_user(user):
     eth = Currency.objects.get(code="ETH")
     dcr = Currency.objects.get(code="DCR")
     zec = Currency.objects.get(code="ZEC")
-    cg = ConfigurationGroup.objects(name="ETH+DCR").modify(
-        upsert=True,
-        set__user = user,
-        set__command_line = mp_cd.command_line,
-        set__currency = eth,
-    	set__miner_program = mp_cd,
-        set__algo = "+".join([eth.algo, dcr.algo]),
-        set__pool_server='eu1.ethermine.org:4444',
-        set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = True,
-    	set__dual_currency = dcr,
-    	set__dual_pool_server = 'dcr.coinmine.pl:2222',
-    	set__dual_pool_login = "egoaga19.%WORKER%",
-    	set__dual_pool_password = "x",
-    	set__dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq",
-    )
+    
+    cg = ConfigurationGroup()
+    cg.name="ETH+DCR"
+    cg.user = user
+    cg.command_line = mp_cd.command_line
+    cg.currency = eth
+    cg.miner_program = mp_cd
+    cg.algo = "+".join([eth.algo, dcr.algo])
+    cg.pool_server='eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = True
+    cg.dual_currency = dcr
+    cg.dual_pool_server = 'dcr.coinmine.pl:2222'
+    cg.dual_pool_login = "egoaga19.%WORKER%"
+    cg.dual_pool_password = "x"
+    cg.dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq"
+    cg.save()
 
     mp_c = MinerProgram.objects.get(code="claymore")
-    cg = ConfigurationGroup.objects(name="ETH").modify(
-        upsert=True,
-        set__user=user,
-        set__miner_program=mp_c,
-        set__algo = "+".join([eth.algo]),
-        set__command_line = mp_c.command_line,
-        set__env = mp_c.env,
-        set__currency = eth,
-    	set__pool_server = 'eu1.ethermine.org:4444',
-    	set__pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="ETH"
+    cg.user=user
+    cg.miner_program=mp_c
+    cg.algo = "+".join([eth.algo])
+    cg.command_line = mp_c.command_line
+    cg.env = mp_c.env
+    cg.currency = eth
+    cg.pool_server = 'eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = False
+    cg.save()
 
     user.settings.default_configuration_group = cg
     user.save()
 
     # ZEC
     mp_e = MinerProgram.objects.get(code="ewbf")
-    cg = ConfigurationGroup.objects(name="ZEC(nvidia)").modify(
-        upsert=True,
-        set__user=user,
-        set__miner_program=mp_e,
-        set__algo = "+".join([zec.algo]),
-        set__command_line = mp_e.command_line,
-        set__env = mp_e.env,
-        set__currency = zec,
-    	set__pool_server = 'eu1-zcash.flypool.org:3333',
-    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="ZEC(nvidia)"
+    cg.user=user
+    cg.miner_program=mp_e
+    cg.algo = "+".join([zec.algo])
+    cg.command_line = mp_e.command_line
+    cg.env = mp_e.env
+    cg.currency = zec
+    cg.pool_server = 'eu1-zcash.flypool.org:3333'
+    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
+    cg.is_dual = False
+    cg.save()
 
     mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
-    cg = ConfigurationGroup.objects(name="ZEC(amd)").modify(
-        upsert=True,
-        set__user=user,
-        set__miner_program=mp_e,
-        set__algo = "+".join([zec.algo]),
-        set__command_line = mp_e.command_line,
-        set__env = mp_e.env,
-        set__currency = zec,
-    	set__pool_server = 'eu1-zcash.flypool.org:3333',
-    	set__pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="ZEC(amd)"
+    cg.user=user
+    cg.miner_program=mp_e
+    cg.algo = "+".join([zec.algo])
+    cg.command_line = mp_e.command_line
+    cg.env = mp_e.env
+    cg.currency = zec
+    cg.pool_server = 'eu1-zcash.flypool.org:3333'
+    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
+    cg.is_dual = False
+    cg.save()
 
     # BTG
     btg = Currency.objects.get(code="BTG")
     mp_e = MinerProgram.objects.get(code="ewbf")
-    cg = ConfigurationGroup.objects(name="BTG(nvidia)").modify(
-        upsert=True,
-        set__user=user,
-        set__miner_program=mp_e,
-        set__algo = "+".join([btg.algo]),
-        set__command_line = mp_e.command_line,
-        set__env = mp_e.env,
-        set__currency = btg,
-    	set__pool_server = 'btg.suprnova.cc:8816',
-    	set__pool_login = "egoaga19.%WORKER%",
-    	set__pool_password = "x",
-    	set__wallet = "",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="BTG(nvidia)"
+    cg.user=user
+    cg.miner_program=mp_e
+    cg.algo = "+".join([btg.algo])
+    cg.command_line = mp_e.command_line
+    cg.env = mp_e.env
+    cg.currency = btg
+    cg.pool_server = 'btg.suprnova.cc:8816'
+    cg.pool_login = "egoaga19.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = ""
+    cg.is_dual = False
+    cg.save()
 
     mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
-    cg = ConfigurationGroup.objects(name="BTG(amd)").modify(
-        upsert=True,
-        set__user=user,
-        set__miner_program=mp_e,
-        set__algo="+".join([btg.algo]),
-        set__command_line=mp_e.command_line,
-        set__env=mp_e.env,
-        set__currency=btg,
-        set__pool_server='btg.suprnova.cc:8816',
-        set__pool_login="egoaga19.%WORKER%",
-        set__pool_password = "x",
-    	set__wallet = "",
-    	set__is_dual = False,
-    )
+    cg = ConfigurationGroup()
+    cg.name="BTG(amd)"
+    cg.user=user
+    cg.miner_program=mp_e
+    cg.algo="+".join([btg.algo])
+    cg.command_line=mp_e.command_line
+    cg.env=mp_e.env
+    cg.currency=btg
+    cg.pool_server='btg.suprnova.cc:8816'
+    cg.pool_login="egoaga19.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = ""
+    cg.is_dual = False
+    cg.save()
 
     if app.config.get("TESTING"):
         test_data_for_user(user)

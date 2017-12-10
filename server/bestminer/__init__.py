@@ -115,6 +115,7 @@ app.register_blueprint(bestminer.mod_admin.views.mod, url_prefix='/admin')
 app.register_blueprint(bestminer.api_client.api.mod, url_prefix='/client')
 
 import bestminer.initial_data
+# TODO: this was intended code for repairing after bug. Delete it soon
 initial_data.fix_users_missed_configurations()
 initial_data.initial_data()
 if app.config.get('TESTING', False):

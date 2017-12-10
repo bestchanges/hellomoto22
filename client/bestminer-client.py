@@ -279,6 +279,17 @@ def self_update():
     kill_process(miner_process)
     os._exit(200)
 
+class ProgramMonitor():
+    def __init__(self, read_stdout, send_stdout_to_server):
+        pass
+
+    def run(self):
+        """
+        Main task: monitor miner health state
+        :return:
+        """
+        pass
+
 def run_miner(miner_config):
     """
     Run miner for specified config.
@@ -538,7 +549,10 @@ def claymore_handler():
                     # wait for new line
                     time.sleep(1)
                 else:
-                    root_logger.debug("STOP claymore_miner handler thread")
+                    root_logger.warning("STOP claymore_miner handler thread")
+                    root_logger.warning("I will restart miner!")
+                    time.sleep(3)
+                    restart_miner()
                     return
 
 def ewbf_handle_line(line):
@@ -601,7 +615,11 @@ def ewbf_handler():
                     # wait for new line
                     time.sleep(1)
                 else:
-                    root_logger.debug("STOP ewbf_miner handler thread")
+                    # miner died. Run it again and when exit this thread
+                    root_logger.warning("STOP ewbf_miner handler thread")
+                    root_logger.warning("I will restart miner!")
+                    time.sleep(3)
+                    restart_miner()
                     return
 
 
@@ -686,8 +704,8 @@ class TaskManager(threading.Thread):
         while True:
             try:
                 self.get_and_execute_task()
-            except Exception as e:
-                self.logger.error("Exception running task: %s" % e)
+            except:
+                self.logger.error("Exception running task: ")
             time.sleep(request_interval)
 
 
@@ -722,7 +740,10 @@ class StatisticManager(threading.Thread):
         # for first run wait while statistic will be ready
         time.sleep(request_interval)
         while True:
-            self.send_stat()
+            try:
+                self.send_stat()
+            except:
+                pass
             time.sleep(request_interval)
 
 

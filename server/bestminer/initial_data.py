@@ -152,42 +152,43 @@ def initial_data():
         set__server = 'dcr.coinmine.pl:2222',
     )
 
+    if app.config.get("TESTING"):
+        # ADD TESTING MINER FOR TESTING ENVIRONMENT
+        miner_program = MinerProgram.objects(name='Pseudo Claymore Miner').modify(
+            upsert=True,
+            set__family = 'claymore',
+            set__code = 'pseudo_claymore_miner',
+            set__dir = 'miner_emu',
+            set__win_exe = '..\..\epython\python.exe',
+            set__dir_linux = 'miner_emu',
+            set__linux_bin = 'python',
+            set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
+            set__env=DEFAULT_MINER_ENV,
+            set__algos=['Ethash+Blake (14r)', 'Ethash'],
+            set__supported_os=['Windows', 'Linux'],
+            set__supported_pu=['nvidia', 'amd'],
+            set__is_enabled=True,
+        )
+        miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
+            upsert=True,
+            set__family = 'ewbf',
+            set__code = 'pseudo_ewbf_miner',
+            set__dir = 'miner_emu',
+            set__win_exe = '..\..\epython\python.exe',
+            set__dir_linux = 'miner_emu',
+            set__linux_bin = 'python',
+            set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
+            set__env=DEFAULT_MINER_ENV,
+            set__algos=['Equihash', ],
+            set__supported_os=['Windows', 'Linux'],
+            set__supported_pu=['nvidia', ],
+            set__is_enabled=True,
+        )
+
 
 
 
 def test_data_for_user(user):
-    miner_program = MinerProgram.objects(name='Pseudo Claymore Miner').modify(
-        upsert=True,
-        set__family = 'claymore',
-        set__code = 'pseudo_claymore_miner',
-        set__dir = 'miner_emu',
-        set__win_exe = 'python',
-        set__dir_linux = 'miner_emu',
-        set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Ethash+Blake (14r)', 'Ethash'],
-        set__supported_os=['Windows', 'Linux'],
-        set__supported_pu=['nvidia', 'amd'],
-        set__is_enabled=True,
-    )
-
-    miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
-        upsert=True,
-        set__family = 'ewbf',
-        set__code = 'pseudo_ewbf_miner',
-        set__dir = 'miner_emu',
-        set__win_exe = 'python',
-        set__dir_linux = 'miner_emu',
-        set__linux_bin = 'python',
-        set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Equihash', ],
-        set__supported_os=['Windows', 'Linux'],
-        set__supported_pu=['nvidia', ],
-        set__is_enabled=True,
-    )
-
 
     mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
     eth = Currency.objects.get(code="ETH")

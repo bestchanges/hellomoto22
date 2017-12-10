@@ -109,6 +109,7 @@ def set_target_hashrate_from_current(rig, miner_code):
         if algorithm in current_hashrate and current_hashrate[algorithm] > target_value:
             # update value
             # TODO: better use setter Rig.set_target_hashrate_for_algo_and_miner_code
+            # TODO: NO WAY! It's huge ugly structure. Better use separate collection RigMinerAlgoHashrate
             rig.target_hashrate[algo][miner_code][algorithm] = current_hashrate[algorithm]
     return False
 

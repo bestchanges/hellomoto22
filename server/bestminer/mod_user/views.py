@@ -349,7 +349,7 @@ def rig_profit_data_json(uuid=None):
                 for currency in Currency.objects(algo=algorithms[1]):
                     row2 = deepcopy(row1)
                     row2['currency'].append(currency.code)
-                    if target_hashrate:
+                    if target_hashrate and algorithms[1] in target_hashrate:
                         h = target_hashrate[algorithms[1]]
                         row2['hashrate'].append(compact_hashrate(h, algorithms[1], return_as_string=True))
                     else:

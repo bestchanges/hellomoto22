@@ -181,7 +181,8 @@ def receive_stat():
     rig.cards_temp = stat['pu_temperatire']
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
-    set_target_hashrate_from_current(rig, stat['miner']['config']['miner_code'])
+    if stat['miner']['miner_config']:
+        set_target_hashrate_from_current(rig, stat['miner']['miner_config']['miner_code'])
     rig.is_online = True
     if not rig.pu and 'pu_types' in stat and stat['pu_types']:
         # do not overwrite pu if set explicitly
@@ -194,7 +195,7 @@ def receive_stat():
     if stat['client_version'] != get_client_version():
         task_manager.add_task(task_name="self_update", data={}, rig_uuid=rig.uuid)
     # if configuration grup from client different when send task to change miner
-    if stat['miner']['config']['config_name'] != rig.configuration_group.name:
+    if not stat['config']['miner_config'] or stat['config']['miner_config']['config_name'] != rig.configuration_group.name:
         task_manager.add_switch_miner_task(rig, rig.configuration_group)
     conf = rig.configuration_group
     profit_currency = rig.user.settings.profit_currency

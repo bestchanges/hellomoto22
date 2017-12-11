@@ -3,6 +3,7 @@
 {% block head %}
 <script>
 $(document).ready(function() {
+
     var table = $('#datalist').DataTable({
         "ajax": "rigs.json",
         "paging": false,
@@ -39,7 +40,11 @@ $(document).ready(function() {
                 "defaultContent": "<button class='edit' title='Edit'>Edit</button> <button class='cl'>Info</button> <button class='o' title='Reboot rig'>R</button>"
             }
         ]
- });
+    });
+
+setInterval( function () {
+    table.ajax.reload();
+}, 30000 );
 
 $( "#dialog-confirm" ).dialog({
       resizable: false,

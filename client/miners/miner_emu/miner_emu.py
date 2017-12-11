@@ -20,12 +20,14 @@ filename = args.file
 delay = args.delay
 
 if args.dst_file:
-    dst_file = open(args.dst_file, "w", buffering=1)
+    dst_file = open(args.dst_file, "w", buffering=1, encoding='866')
 
+#print(sys.stdout.encoding)
 while True:
-    with open(filename) as file:
+    with open(filename, encoding='866', newline='') as file:
         for line in file:
             if args.dst_file:
+                print(line.strip())
                 dst_file.write(line)
             else:
                 print(line.strip())

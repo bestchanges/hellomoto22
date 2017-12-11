@@ -181,7 +181,7 @@ def receive_stat():
     rig.cards_temp = stat['pu_temperatire']
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
-    if stat['miner']['miner_config']:
+    if 'miner_config' in stat['miner'] and stat['miner']['miner_config']:
         set_target_hashrate_from_current(rig, stat['miner']['miner_config']['miner_code'])
     rig.is_online = True
     if not rig.pu and 'pu_types' in stat and stat['pu_types']:

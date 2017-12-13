@@ -1,22 +1,26 @@
 import datetime
+import logging
 import math
+import traceback
 
 import flask
 import flask_login
 from copy import deepcopy
+
+import sys
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 
-from bestminer import task_manager, logging_server
+from bestminer import client_api, logging_server, rig_managers
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.profit import calc_mining_profit
-from bestminer.server_commons import calculate_profit_converted, round_to_n, list_configurations_applicable_to_rig, \
-    get_exchange_rate, get_exchange_rate_to_btc, compact_hashrate
+from bestminer.server_commons import round_to_n, list_configurations_applicable_to_rig, \
+    get_exchange_rate, compact_hashrate, assert_expr
 
 mod = Blueprint('user', __name__, template_folder='templates')
+logger = logging.getLogger(__name__)
 
 @mod.route('/download')
 @login_required
@@ -89,6 +93,8 @@ def config_list_json():
 def config_miner_data_json():
     # TODO: filter queried data
     miner_program_id = request.args.get('id')
+    if not miner_program_id:
+        return flask.jsonify({})
     miner_program = MinerProgram.objects.get(id=miner_program_id)
     algos = miner_program.algos[0].split('+')
     currencies = Currency.objects(algo=algos[0])
@@ -255,7 +261,9 @@ def rigs_json():
                 if algorithm in rig.hashrate:
                     hashrate.append(compact_hashrate(rig.hashrate[algorithm], algorithm, return_as_string=True))
         profit_currency = rig.user.settings.profit_currency
-        profit = calculate_profit_converted(rig, profit_currency)
+        profit_btc = rig.get_current_profit_btc()
+        rate = get_exchange_rate('BTC', profit_currency)
+        profit = profit_btc * rate
         data.append({
             'name': rig.worker,
             'online': {
@@ -285,12 +293,38 @@ def rigs():
     return flask.render_template("rigs.html")
 
 
+@mod.route('/rig/<uuid>/start_benchmark.json', methods=["GET", "POST"])
+@login_required
+def rig_start_benchmark_json(uuid=None):
+    try:
+        user = flask_login.current_user.user
+        rig = Rig.objects.get(uuid=uuid)
+        assert_expr(rig.user == user)
+        rig_managers.set_rig_manager(rig, rig_managers.BENCHMARK)
+        return flask.jsonify({'message': "Benchmark started. It can takes 5-10 minutes to complete. You will see results of benchmark here in the table"})
+    except:
+        traceback.print_exc()
+        logger.error("start_benchmark_json for {}.".format(uuid))
+        return flask.jsonify({'error': "error while start benchmark"})
+
+
+@mod.route('/rig/<uuid>/reboot.json', methods=["GET", "POST"])
+@login_required
+def rig_reboot_json(uuid=None):
+    user = flask_login.current_user.user
+    rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
+    rm = rig_managers.get_rig_manager_by_name(rig_managers.MANUAL)
+    rm.reboot(rig)
+
+
 @mod.route('/rig/<uuid>/profit_data.json', methods=["GET", "POST"])
 @login_required
 def rig_profit_data_json(uuid=None):
     user = flask_login.current_user.user
     result = []
     rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
     algos = {}
     # get all supported algos from all miners
     for miner in MinerProgram.enabled(supported_pu=rig.pu, supported_os=rig.os):
@@ -329,11 +363,11 @@ def rig_profit_data_json(uuid=None):
             row1['net_hashrate'].append(
                 compact_hashrate(currency.nethash, algorithms[0], compact_for='net', return_as_string=True))
             try:
-                profit_first_currency = calc_mining_profit(currency, target_hashrate[currency.algo])
+                profit_first_currency = currency.calc_mining_profit(target_hashrate[currency.algo])
             except:
                 profit_first_currency = None
             row1['reward'].append(round_to_n(profit_first_currency))
-            rate = get_exchange_rate_to_btc(currency)
+            rate = currency.get_median_btc_rate()
             row1['rate'].append(round_to_n(rate))
             if rate and profit_first_currency:
                 profit_btc = rate * profit_first_currency
@@ -356,11 +390,11 @@ def rig_profit_data_json(uuid=None):
                         row2['hashrate'].append('?')
                     row2['net_hashrate'].append(compact_hashrate(currency.nethash, algorithms[1], compact_for='net', return_as_string=True))
                     try:
-                        profit = calc_mining_profit(currency, target_hashrate[currency.algo])
+                        profit = currency.calc_mining_profit(target_hashrate[currency.algo])
                     except:
                         profit = None
                     row2['reward'].append(round_to_n(profit))
-                    rate = get_exchange_rate_to_btc(currency)
+                    rate = currency.get_median_btc_rate()
                     row2['rate'].append(round_to_n(rate))
                     if rate and profit:
                         profit_btc = rate * profit
@@ -383,7 +417,9 @@ def rig_profit_data_json(uuid=None):
 @mod.route('/rig/<uuid>/info', methods=["GET", "POST"])
 @login_required
 def rig_info(uuid=None):
+    user = flask_login.current_user.user
     rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
     select_config = []
     for config in list_configurations_applicable_to_rig(rig):
         select_config.append({
@@ -436,10 +472,12 @@ def rig_log(uuid):
 @login_required
 def rig_set_config(uuid):
     config_id = request.args.get('config')
-    # TODO: SECURITY: check if it user's config
     rig = Rig.objects.get(uuid=uuid)
+    user = flask_login.current_user.user
+    assert_expr(rig.user == user)
     config = ConfigurationGroup.objects.get(id=config_id)
     rig.configuration_group = config
     rig.save()
+    from bestminer import task_manager
     task_manager.add_switch_miner_task(rig, config)
     return flask.redirect(url_for('.rig_info', uuid=uuid))

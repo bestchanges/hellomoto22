@@ -1,8 +1,12 @@
+# TODO: Move to rig_manager.py
+
+import logging
 import os
 from datetime import datetime
 
 from bestminer.server_commons import expand_command_line
 
+logger = logging.getLogger(__name__)
 
 class TaskManager():
     """
@@ -21,21 +25,22 @@ class TaskManager():
         :param rig:
         :return:
         """
+        logger.debug("add_switch_miner_task: rig={} configuration_group={}".format(rig, configuration_group))
         self.add_task(
             "switch_miner",
             {"miner_config": get_miner_config_for_configuration(configuration_group, rig)},
             rig.uuid
         )
 
-    def add_benchmark_task(self, rig, configuration_group):
+    def reboot_task(self, rig):
         """
         Add to task manager command for rig to switch miner to current configuration_group.
         :param rig:
         :return:
         """
         self.add_task(
-            "switch_miner",
-            {"miner_config": get_miner_config_for_configuration(rig.configuration_group, rig)},
+            "reboot",
+            {},
             rig.uuid
         )
 
@@ -74,9 +79,6 @@ class TaskManager():
             return None
         if len(self.clients_tasks[rig_uuid]) > 0:
             return self.clients_tasks[rig_uuid].pop(0)
-
-
-task_manager = TaskManager()
 
 
 def get_miner_config_for_configuration(conf, rig):

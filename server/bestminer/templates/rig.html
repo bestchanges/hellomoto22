@@ -74,6 +74,7 @@ $(function(){
 
 <h2>Hashrate</h2>
 
+<button onclick="ajax_call('start_benchmark.json')">Start benchmark</button>
 <table>
   <tr>
     <th>Algorithm</th>
@@ -85,7 +86,7 @@ $(function(){
     <td>{{ data['algo'] }}</td>
     <td>{{ data['miner'].name }}</td>
 {% if not data['target_hashrate'] %}
-    <td>Run benchmark!</td>
+    <td>Need benchmark</td>
 {% else %}
   {% for algorithm, value in data['target_hashrate'].items() %}
       <td>{{  algorithm }} {{ value }} </td>

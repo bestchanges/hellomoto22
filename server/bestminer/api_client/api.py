@@ -7,10 +7,11 @@ from uuid import UUID
 import flask
 from flask import Blueprint, request
 
-from bestminer import task_manager, models, app
+from bestminer import task_manager, models, rig_managers
+from bestminer.client_api import get_miner_config_for_configuration
 from bestminer.models import Rig, ConfigurationGroup, User
-from bestminer.server_commons import assert_expr, get_client_version, calculate_profit_converted, round_to_n
-from bestminer.task_manager import get_miner_config_for_configuration
+from bestminer.server_commons import assert_expr, get_client_version, round_to_n, \
+    get_exchange_rate
 
 logger = logging.getLogger(__name__)
 
@@ -184,10 +185,13 @@ def receive_stat():
     if 'miner_config' in stat['miner'] and stat['miner']['miner_config']:
         set_target_hashrate_from_current(rig, stat['miner']['miner_config']['miner_code'])
     rig.is_online = True
+    do_run_benchmark = False
     if not rig.pu and 'pu_types' in stat and stat['pu_types']:
+        # WE GOT PU TYPE FROM CLIENT. AND THAT's NEW INFORMATION FOR US
         # do not overwrite pu if set explicitly
         # Note: now rig supports only ONE PU family
         rig.pu = stat['pu_types'][0]
+        do_run_benchmark = True
     rig.last_online_at = datetime.datetime.now
     rig.is_miner_run = stat['miner']['is_run']
     rig.save()
@@ -197,15 +201,19 @@ def receive_stat():
     # if configuration grup from client different when send task to change miner
     if not stat['config']['miner_config'] or stat['config']['miner_config']['config_name'] != rig.configuration_group.name:
         task_manager.add_switch_miner_task(rig, rig.configuration_group)
+    if do_run_benchmark:
+        rig_managers.set_rig_manager(rig, rig_managers.BENCHMARK)
     conf = rig.configuration_group
     profit_currency = rig.user.settings.profit_currency
-    profit = calculate_profit_converted(rig, profit_currency)
-    responce = {
+    profit_btc = rig.get_current_profit_btc()
+    rate = get_exchange_rate('BTC', profit_currency)
+    profit = profit_btc * rate
+    response = {
         'worker': rig.worker,
         'mining': conf.name,
         'profit': '{} {}'.format(round_to_n(profit), profit_currency),
         'current hashrate': rig.hashrate,
         'target  hashrate': rig.target_hashrate,
     }
-    return flask.jsonify(responce)
+    return flask.jsonify(response)
 

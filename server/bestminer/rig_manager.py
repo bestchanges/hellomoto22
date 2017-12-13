@@ -1,35 +1,63 @@
 import logging
 import threading
+import traceback
 from datetime import datetime
 from time import sleep
 
-from bestminer import task_manager
 from bestminer.models import *
 
-MANUAL = 'ManualRigManager'
-AUTOPROFIT = 'AutoProfitRigManager'
-BENCHMARK = 'BenchmarkRigManager'
 
-
-logger = logging.getLogger(__name__)
 
 class RigManager():
-    def accept_rig(self, rig):
-        raise Exception("Implement it!")
 
+    def __init__(self, papa) -> None:
+        """
+        :param papa: RigManagers instance which is contains all of managers
+        """
+        self.papa = papa
 
-class ManualRigManager(RigManager):
-    def accept_rig(self, rig):
+    def accept_rig(self, rig, data=None):
+        pass
+
+    def remove_rig(self, rig):
+        pass
+
+    def list_rigs(self):
+        pass
+
+    def switch_miner(self, rig, configuration_group):
+        pass
+
+    def reboot(self, rig):
+        import bestminer
+        bestminer.task_manager.reboot_task(rig)
+
+    def update_client_program(self, rig):
+        pass
+
+    def start(self):
         pass
 
 
-class AutoProfitRigManager(RigManager):
-    def accept_rig(self, rig):
+class ManualRigManager(RigManager):
+
+    def accept_rig(self, rig, data=None):
+        cg = rig.configuration_group
+        # if current configuration group is not belongs to user when set to default configuration group
+        if cg.user != rig.user:
+            rig.configuration_group = rig.user.settings.default_configuration_group
+            rig.save()
+            import bestminer
+            bestminer.task_manager.add_switch_miner_task(rig, cg)
+
+
+
+class AutoSwitchRigManager(RigManager):
+
+    def accept_rig(self, rig, data=None):
         # if rig do not have any target hashrate - start benchmark
         if not rig.target_hashrate:
-            rig.manager = BENCHMARK
-            rig.save()
-            benchmark().accept_rig(rig)
+            raise Exception("Benchmark required before auto profit")
 
 
 class BenchmarkRigManager(RigManager):
@@ -37,137 +65,227 @@ class BenchmarkRigManager(RigManager):
     Manage of benchmark process of the rigs.
     """
 
-    def __init__(self, minimum_wait_sec=20, maximum_wait_sec=60, sleep_time=10):
-        super().__init__()
-        # queue of tasks for benchmark for given rig
+    logger = logging.getLogger(__name__)
+
+    ETHASH_BLAKE = "Ethash+Blake Benchmark"
+    ETHASH = "Ethash Benchmark"
+    EQUIHASH_NVIDIA = "Equihash(nvidia) Benchmark"
+    EQUIHASH_AMD = "Equihash(amd) benchmark"
+
+
+    benchmark_configs = {
+        'Windows': {
+            'nvidia' : [ETHASH, ETHASH_BLAKE, EQUIHASH_NVIDIA],
+            'amd' : [ETHASH, ETHASH_BLAKE, EQUIHASH_AMD],
+        }
+    }
+
+    def __init__(self, papa, minimum_wait_sec=20, maximum_wait_sec=160, sleep_time=7):
+        super().__init__(papa)
+        # queue of scheduled tasks for rig
         self.tasks = {}  # rig_uuid -> [ config_group, ... ]
-        # dict of currently runiing benchmarks
+        # dict of currently running benchmarks
         self.running_tasks = {} # rig_uuid-> { 'rig': ... 'conf_group' ..., 'started_at': ....}
         self.minimum_wait_sec = minimum_wait_sec
         self.maximum_wait_sec = maximum_wait_sec
         self.sleep_time = sleep_time
-        # TODO: move to method def start()
-        self.thread = threading.Thread(target=self.run, name='Benchmark manager')
-        self.thread.start()
 
     def __del__(self):
         # TODO: is it correct of stop thread?
         self.thread._stop()
 
-    def accept_rig(self, rig):
+    def start(self):
+        # TODO: move to method def start()
+        self.thread = threading.Thread(target=self.run, name='Benchmark manager')
+        self.thread.start()
+
+
+    def accept_rig(self, rig, data=None):
+        if not rig.os:
+            raise Exception("No os specified in rig")
+        if not rig.pu:
+            raise Exception("No pu specified in rig")
+        # reset target hashrate values
+        rig.target_hashrate = {}
+        rig.save()
+        for cn in self.benchmark_configs[rig.os][rig.pu]:
+            cg = ConfigurationGroup.objects.get(user=None, name=cn)
+            self.add_task(rig, cg)
+
+        super().accept_rig(rig, data)
         self.start_next_task(rig.uuid)
 
     def start_next_task(self, rig_uuid):
+        """
+        Gives rig command to start new benchmark.
+        If there is no tasks in queue fallbacks rig to one of MANUAL or AUTOSWITCH mode
+        :param rig_uuid:
+        :return:
+        """
         if rig_uuid in self.running_tasks and self.running_tasks[rig_uuid]:
             # already processing
             return
+        rig = Rig.objects.get(uuid=rig_uuid)
         if rig_uuid not in self.tasks or not self.tasks[rig_uuid]:
-            logger.warning("Nothing to start. No tasks for rig {}".format(rig_uuid))
+            self.logger.info("Nothing to start. No tasks for rig {}".format(rig_uuid))
+            # fallback to auto switch manager or manual
+            # Right now all goes to MANUAL. TODO: reenable AUTOSWITCH when it ready
+            if False and rig.target_hashrate:
+                next_manager = self.papa.AUTOSWITCH
+            else:
+                next_manager = self.papa.MANUAL
+            self.papa.set_rig_manager(rig, next_manager)
             return
         task = self.tasks[rig_uuid].pop(0)
-        task['started_at'] = datetime.now()
+        task['started_at'] = datetime.datetime.now()
         self.running_tasks[rig_uuid] = task
-        task_manager.add_switch_miner_task(task['rig'], task['configuration_group'])
+        rig.configuration_group = task['configuration_group']
+        rig.save()
+        import bestminer
+        bestminer.task_manager.add_switch_miner_task(task['rig'], task['configuration_group'])
 
     def add_task(self, rig, configuration_group):
         uuid = rig.uuid
         if not uuid in self.tasks:
             self.tasks[uuid] = []
-        logger.debug("Add task to benchmark for algo {} with miner {} for rig {}".format(configuration_group.algo, configuration_group.miner_program, rig))
+        self.logger.debug("Add task to benchmark for algo {} with miner {} for rig {}".format(configuration_group.algo, configuration_group.miner_program, rig))
         self.tasks[uuid].append({'rig': rig, 'configuration_group': configuration_group})
         self.start_next_task(uuid)
 
     def run(self):
-        logger.info('Starting benchmark server...')
+        self.logger.info('Starting benchmark server...')
         while True:
             # note: make copy to avoid 'dictionary changed size during iteration'
             for rig_uuid, task in self.running_tasks.copy().items():
-                started_at = task['started_at']
-                now = datetime.now()
-                runned_time = now - started_at
-                logger.debug("benchmark run for {}".format(runned_time))
-                rig = task['rig']
-                if runned_time.total_seconds() < self.minimum_wait_sec:
-                    logger.debug("{} below mininum of {}".format(runned_time, self.minimum_wait_sec))
-                    continue
-                if runned_time.total_seconds() > self.maximum_wait_sec:
-                    # if time above maximum: go to next task
-                    logger.warning("Timeout of benchmark for {}. task: {}".format(rig, task))
-                    del self.running_tasks[rig_uuid]
-                    self.start_next_task(rig_uuid)  # start next task if exist
-                #  if exists current hashrate: save current as target and go to
-                # see set_target_hashrate_from_current() where target hashrate is stored
-                rig = Rig.objects.get(uuid=rig_uuid)
-                configuration_group = task['configuration_group']
-                target_hashrate = rig.get_target_hashrate_for_algo_and_miner_code(configuration_group.algo, configuration_group.miner_program.code)
-                if target_hashrate:
-                    logger.info("It took {} to benchmark {} on {}".format(runned_time, configuration_group, rig))
-                    del self.running_tasks[rig_uuid]
-                    self.start_next_task(rig_uuid) # start next task if exist
+                try:
+                    started_at = task['started_at']
+                    now = datetime.datetime.now()
+                    runned_time = now - started_at
+                    self.logger.debug("benchmark run for {}".format(runned_time))
+                    rig = task['rig']
+                    if runned_time.total_seconds() < self.minimum_wait_sec:
+                        self.logger.debug("{} below mininum of {}".format(runned_time, self.minimum_wait_sec))
+                        continue
+                    if runned_time.total_seconds() > self.maximum_wait_sec:
+                        # if time above maximum: go to next task
+                        self.logger.warning("Timeout of benchmark for {}. task: {}".format(rig, task))
+                        del self.running_tasks[rig_uuid]
+                        self.start_next_task(rig_uuid)  # start next task if exist
+                    #  if exists current hashrate: save current as target and go to
+                    # see set_target_hashrate_from_current() where target hashrate is stored
+                    rig = Rig.objects.get(uuid=rig_uuid)
+                    configuration_group = task['configuration_group']
+                    target_hashrate = rig.get_target_hashrate_for_algo_and_miner_code(configuration_group.algo, configuration_group.miner_program.code)
+                    if target_hashrate:
+                        self.logger.info("It took {} to benchmark {} on {}".format(runned_time, configuration_group, rig))
+                        del self.running_tasks[rig_uuid]
+                        self.start_next_task(rig_uuid) # start next task if exist
+                except Exception as e:
+                    self.logger.error("Exception during execution. {}".format(e))
+                    print(e)
             # ok. now sleep for next iteration
             sleep(self.sleep_time)
+
+    def remove_rig(self, rig):
+        del self.tasks[rig.uuid]
+        if rig.uuid in self.running_tasks:
+            del self.running_tasks[rig.uuid]
+        super().remove_rig(rig)
 
 
     def rig_in_benchmark(self, rig_uuid):
         return rig_uuid in self.running_tasks and len(self.running_tasks[rig_uuid]) > 0
 
-    def benchmark_rig(self, rig, force_all=False):
-        # get all applicable miners
-        logger.debug("Add rig {} for benchmark".format(rig))
-        miners = MinerProgram.objects(supported_os=rig.os, supported_pu=rig.pu)
-        logger.debug("Foung {} of applicable miners".format(len(miners)))
-        for miner in miners:
-            # check if they not have target_hashrate yet
-            algo = miner.algos[0]
-            if force_all or (algo not in rig.target_hashrate or miner.code not in rig.target_hashrate[algo]):
-                # find configuration group for this miner
-                configs = ConfigurationGroup.objects(miner_program=miner)
-                logger.debug("Found {} configs for miner {}".format(len(configs), miner))
-                if len(configs) == 0:
-                    logger.error("Found 0 configs for miner {}. Skip benchmark".format(miner))
-                    continue
-                self.add_task(rig, configs[0])
-
-
-def distribute_all_rigs():
+class RigManagers():
     """
-    query all rigs and distribute them amoung corresponging manager
-    :return:
+    Do not forget to call start_all in order to make rig_managers work
     """
-    for rig in Rig.objects():
-        manager_name = rig.manager
-        manager = rig_manager_by_name(manager_name)
-        manager.accept_rig(rig)
+    logger = logging.getLogger(__name__)
 
-rig_managers = {}
+    # constants for clients
+    BENCHMARK = BenchmarkRigManager.__name__
+    AUTOSWITCH = AutoSwitchRigManager.__name__
+    MANUAL = ManualRigManager.__name__
 
-def __add_rig_manager(rig_manager):
-    rig_managers[type(rig_manager).__name__] = rig_manager
+    def __init__(self):
+        self.rig_managers = {}
+        self.__add_rig_manager(BenchmarkRigManager(self))
+        self.__add_rig_manager(ManualRigManager(self))
+        self.__add_rig_manager(AutoSwitchRigManager(self))
 
-def rig_manager_by_name(name) -> RigManager:
-    return rig_managers[name]
+    def __add_rig_manager(self, rig_manager):
+        self.rig_managers[type(rig_manager).__name__] = rig_manager
 
-def manual() -> ManualRigManager:
-    return rig_manager_by_name(MANUAL)
+    def get_rig_manager_by_name(self, name) -> RigManager:
+        return self.rig_managers[name]
 
-def benchmark() -> BenchmarkRigManager:
-    return rig_manager_by_name(BENCHMARK)
+    def manual(self) -> ManualRigManager:
+        return self.get_rig_manager_by_name(ManualRigManager.__name__)
 
-def autoprofit() -> BenchmarkRigManager:
-    return rig_manager_by_name(AUTOPROFIT)
+    def benchmark(self) -> BenchmarkRigManager:
+        return self.get_rig_manager_by_name(BenchmarkRigManager.__name__)
 
-__add_rig_manager(BenchmarkRigManager())
-__add_rig_manager(ManualRigManager())
-__add_rig_manager(AutoProfitRigManager())
+    def autoprofit(self) -> BenchmarkRigManager:
+        return self.get_rig_manager_by_name(AutoSwitchRigManager.__name__)
+
+    def start_all(self):
+        """
+        Run all required manager's threads
+        :return:
+        """
+        for interface in self.rig_managers.values():
+            interface.start()
+
+
+    def distribute_all_rigs(self):
+        """
+        Run once in server start.
+        query all rigs and distribute them amoung corresponging manager
+        It cancels all benchmarking and fall em back to auto or manual
+        :return:
+        """
+        for rig in Rig.objects():
+            manager_name = rig.manager
+            # fallback to auto switch manager or manual
+            if manager_name == self.BENCHMARK:
+                # TODO: reenable when AUTOSWITCH ready
+                if False and rig.target_hashrate:
+                    manager_name = self.AUTOSWITCH
+                else:
+                    manager_name = self.MANUAL
+                rig.manager = manager_name
+                rig.save()
+            if manager_name:
+                try:
+                    manager = self.get_rig_manager_by_name(manager_name)
+                    manager.accept_rig(rig)
+                except Exception as e:
+                    self.logger.error("Error setting manager {} for rig {}. {}".format(manager_name, rig, e))
+
+
+    def set_rig_manager(self, rig, rig_manager_name, data=None):
+        current_rig_manager_name = rig.manager
+        self.logger.debug("Changing rig manager for {} from {} to {}".format(rig, current_rig_manager_name, rig_manager_name))
+        rig_manager = self.get_rig_manager_by_name(rig_manager_name)
+        # reassign if change to the same
+        #if current_rig_manager_name == rig_manager_name:
+        #    self.logger.debug("Already managed by this. No need to change")
+        #    return
+        # ok they different. Let's change
+        if current_rig_manager_name:
+            current_rig_manager = self.get_rig_manager_by_name(current_rig_manager_name)
+            current_rig_manager.remove_rig(rig)
+        rig_manager.accept_rig(rig, data)
+        # now save new rig_manager in rig settings
+        rig.manager = rig_manager.__class__.__name__
+        rig.save()
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    bm = benchmark()
-    mm = manual()
-    # bm = BenchmarkRigManager(minimum_wait_sec=3, maximum_wait_sec=10, sleep_time=1)
-    rig = Rig.objects()[0]
-    group = ConfigurationGroup.objects()[0]
-    bm.add_task(rig, group)
-    logger.info("OK")
+    bm = BenchmarkRigManager(minimum_wait_sec=3, maximum_wait_sec=10, sleep_time=1)
+    rig = Rig.objects(worker="worker001")[0]
+    bm.accept_rig(rig)
 
 

@@ -34,6 +34,7 @@ $(document).ready(function() {
             },
             { "data": "profit" },
             { "data": "hashrate" },
+            { "data": "temp" },
             {
                 "targets": -1,
                 "data": null,
@@ -61,6 +62,8 @@ $( "#dialog-confirm" ).dialog({
   },
   click: function() {
             $( this ).dialog( "close" );
+            uuid = $("#dialog-rig-uuid").text()
+            ajax_call('/user/rig/' + uuid + '/reboot.json')
             }
         },
         {
@@ -86,6 +89,7 @@ $( "#dialog-confirm" ).dialog({
     $('#datalist tbody').on( 'click', 'button.o', function () {
         var data = table.row( $(this).parents('tr') ).data();
         $("#dialog-rig-name").text(data['name']);
+        $("#dialog-rig-uuid").text(data['uuid']);
         $( "#dialog-confirm" ).dialog("open");
     } );
 } );
@@ -103,6 +107,7 @@ $( "#dialog-confirm" ).dialog({
                 <th>Mining</th>
                 <th>Profit</th>
                 <th>Hashrate</th>
+                <th>Temp,C</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -110,6 +115,7 @@ $( "#dialog-confirm" ).dialog({
 
 <div id="dialog-confirm" title="Reboot confirmation">
   <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>Are you shure you want to reboot rig <span id="dialog-rig-name"></span>?</p>
+    <span style="display: none" id="dialog-rig-uuid"></span>
 </div>
 
 </div>

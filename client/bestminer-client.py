@@ -26,7 +26,7 @@ import uptime as uptime
 
 logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)-4s: %(message)s',
-    level=logging.INFO
+    level=logging.DEBUG
 )
 logger = logging.getLogger('client')
 server_only_logger = logging.getLogger('server_logger')
@@ -598,7 +598,7 @@ class EwbfMinerManager(MinerManager):
         # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
         # Temp: GPU0: 56C GPU1: 52C GPU2: 50C
         # TODO: temp do not parse due to special codes for color switching before temperature value
-        m = re.findall('GPU(\d+): (\d+)C', line)
+        m = re.findall('GPU[^\d]*(\d+)[^\d]*:[^\d]*(\d+)', line)
         if len(m) > 0:
             temps = []
             for num, temp in m:
@@ -723,6 +723,7 @@ class TaskManager(threading.Thread):
             self.logger.info("Get task '{}'".format(task_name))
             if task_name == "switch_miner":
                 miner_config = task_data["miner_config"]
+                logger.info("New mining config '{}'".format(miner_config['config_name']))
                 # save new config in order to start correct miner next run
                 config['miner_config'] = miner_config
                 save_config()

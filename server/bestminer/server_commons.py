@@ -4,7 +4,6 @@ import random
 import string
 
 from bestminer.models import ConfigurationGroup, Currency
-from bestminer.profit import calc_mining_profit
 from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
@@ -136,40 +135,9 @@ def get_exchange_rate(from_, to):
             found = Currency.objects(code=from_)
             if found:
                 currency = found[0]
-                return currency.get_median_exchange_rate()
+                return currency.get_median_btc_rate()
         return cryptonator.get_exchange_rate(from_, to)
     except:
-        return None
-
-
-def get_exchange_rate_to_btc(currency):
-    return currency.get_median_exchange_rate()
-
-def calculate_profit_converted(rig, target_currency):
-    """
-    calculate current profit for given rig. Convert profit to given currency.
-    :param rig:
-    :param target_currency: currency code which convert to: 'USD', 'RUR', 'BTC'
-    :return: value of profit in given currency or None in case if cannot convert
-    """
-    currency = rig.configuration_group.currency
-    profit = 0
-    if currency.algo in rig.hashrate:
-        profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
-    dual_profit = 0
-    if rig.configuration_group.is_dual:
-        dual_currency = rig.configuration_group.dual_currency
-        if dual_currency.algo in rig.hashrate:
-            dual_profit = calc_mining_profit(currency, rig.hashrate[currency.algo])
-    try:
-        exchange_rate = cryptonator.get_exchange_rate(currency.code, target_currency)
-        profit_target_currency = profit * exchange_rate
-        if dual_profit:
-            exchange_rate_dual = cryptonator.get_exchange_rate(dual_currency.code, target_currency)
-            profit_target_currency = profit_target_currency + dual_profit * exchange_rate_dual
-        return profit_target_currency
-    except:
-        logger.error("Error calculate_current_profit to {} for rig={}".format(target_currency, rig))
         return None
 
 

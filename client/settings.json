@@ -6,7 +6,7 @@
     "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Test ETH+DCR",
+    "config_name": "PIRL+DCR",
     "env": {
       "GPU_MAX_ALLOC_PERCENT": "100",
       "GPU_MAX_HEAP_SIZE": "100",
@@ -15,7 +15,7 @@
     },
     "miner": "Pseudo Claymore Miner",
     "miner_code": "pseudo_claymore_miner",
-    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --dst_file log_noappend.txt --delay 0.3 ",
+    "miner_command_line": "-u miner_emu.py --file PIRL.txt --dst_file log_noappend.txt --delay 0.3 ",
     "miner_directory": "miner_emu",
     "miner_exe": "..\\..\\epython\\python.exe",
     "miner_family": "claymore",

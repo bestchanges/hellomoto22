@@ -16,9 +16,14 @@ DEFAULT_MINER_ENV = {
     'GPU_SINGLE_ALLOC_PERCENT': '100',
 }
 
+from bestminer.rig_manager import BenchmarkRigManager
+
+
 def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
-    profit_manager.update_currency_data_from_whattomine(json.load(open('coins1.json', 'r')))
+    profit_manager.update_currency_from_wtm(json.load(open('coins1.json', 'r')))
+
+    create_benckmark_configurations()
 
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
@@ -298,6 +303,96 @@ def fix_users_missed_configurations():
                 rig.save()
 
 
+def create_benckmark_configurations():
+    eth = Currency.objects.get(code="ETH")
+    dcr = Currency.objects.get(code="DCR")
+    zec = Currency.objects.get(code="ZEC")
+
+    mp_cd = MinerProgram.objects.get(code="claymore_dual")
+    cg_n = BenchmarkRigManager.ETHASH_BLAKE
+    l = ConfigurationGroup.objects(user=None, name=cg_n)
+    if l:
+        cg = l[0]
+    else:
+        cg = ConfigurationGroup()
+        cg.name = cg_n
+    cg.currency = eth
+    cg.miner_program = mp_cd
+    cg.algo = "+".join([eth.algo, dcr.algo])
+    cg.pool_server = 'eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = True
+    cg.dual_currency = dcr
+    cg.dual_pool_server = 'dcr.coinmine.pl:2222'
+    cg.dual_pool_login = "egoaga19.benchmark"
+    cg.dual_pool_password = "x"
+    cg.dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq"
+    cg.save()
+
+    cg_n = BenchmarkRigManager.ETHASH
+    mp_c = MinerProgram.objects.get(code="claymore")
+    l = ConfigurationGroup.objects(user=None, name=cg_n)
+    if l:
+        cg = l[0]
+    else:
+        cg = ConfigurationGroup()
+        cg.name = cg_n
+    cg.miner_program = mp_c
+    cg.algo = "+".join([eth.algo])
+    cg.command_line = mp_c.command_line
+    cg.env = mp_c.env
+    cg.currency = eth
+    cg.pool_server = 'eu1.ethermine.org:4444'
+    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark"
+    cg.pool_password = "x"
+    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
+    cg.is_dual = False
+    cg.save()
+
+    # ZEC
+    cg_n = BenchmarkRigManager.EQUIHASH_NVIDIA
+    mp_e = MinerProgram.objects.get(code="ewbf")
+    l = ConfigurationGroup.objects(user=None, name=cg_n)
+    if l:
+        cg = l[0]
+    else:
+        cg = ConfigurationGroup()
+        cg.name = cg_n
+    cg.miner_program = mp_e
+    cg.algo = "+".join([zec.algo])
+    cg.command_line = mp_e.command_line
+    cg.env = mp_e.env
+    cg.currency = zec
+    cg.pool_server = 'eu1-zcash.flypool.org:3333'
+    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.benchmark"
+    cg.pool_password = "x"
+    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
+    cg.is_dual = False
+    cg.save()
+
+    mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
+    cg_n = BenchmarkRigManager.EQUIHASH_AMD
+    l = ConfigurationGroup.objects(user=None, name=cg_n)
+    if l:
+        cg = l[0]
+    else:
+        cg = ConfigurationGroup()
+        cg.name = cg_n
+    cg.miner_program = mp_e
+    cg.algo = "+".join([zec.algo])
+    cg.command_line = mp_e.command_line
+    cg.env = mp_e.env
+    cg.currency = zec
+    cg.pool_server = 'eu1-zcash.flypool.org:3333'
+    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%"
+    cg.pool_password = "x"
+    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
+    cg.is_dual = False
+    cg.save()
+
+
 def create_initial_objects_for_user(user):
     """
     Create default configuration_groups for given user.
@@ -305,11 +400,11 @@ def create_initial_objects_for_user(user):
     :param user:
     :return:
     """
-    mp_cd = MinerProgram.objects.get(code="claymore_dual")
     eth = Currency.objects.get(code="ETH")
     dcr = Currency.objects.get(code="DCR")
     zec = Currency.objects.get(code="ZEC")
     
+    mp_cd = MinerProgram.objects.get(code="claymore_dual")
     cg = ConfigurationGroup()
     cg.name="ETH+DCR"
     cg.user = user

@@ -19,10 +19,8 @@ from flask import Flask
 from flask_mail import Mail
 from flask_mongoengine import MongoEngine
 
-from bestminer.rig_manager import rig_managers
-from bestminer.profit import ProfitManager
-from bestminer import server_email, rig_manager, exchanges
-from bestminer.task_manager import TaskManager
+from bestminer.profit import WTMManager
+from bestminer import server_email, rig_manager, exchanges, client_api
 
 app = Flask(__name__)
 
@@ -66,18 +64,16 @@ login_manager.user_callback = load_user
 login_manager.session_protection = "strong"
 login_manager.login_view = '/auth/login'
 
-task_manager = TaskManager()
+task_manager = client_api.TaskManager()
 
-profit_manager = ProfitManager(
+profit_manager = WTMManager(
     sleep_time=app.config.get('BESTMINER_UPDATE_WTM_DELAY', 500),
 #    save_wtm_to_file='coins.json'
 )
 if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()
 else:
-    profit_manager.update_currency_data_from_whattomine(json.load(open('coins1.json')))
-
-rig_manager.distribute_all_rigs()
+    profit_manager.update_currency_from_wtm(json.load(open('coins1.json')))
 
 logging_server_o = LoggingServer()
 logging_server_o.start()
@@ -94,6 +90,18 @@ if app.config.get('BESTMINER_EXCHANGES_UPDATE_ONCE_AT_START'):
 if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
     # update in background
     exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
+
+import bestminer.initial_data
+# TODO: this was intended code for repairing after bug. Delete it soon
+initial_data.fix_users_missed_configurations()
+initial_data.initial_data()
+if app.config.get('TESTING', False):
+    initial_data.sample_data()
+
+# can do only after initial_data
+rig_managers = bestminer.rig_manager.RigManagers()
+rig_managers.distribute_all_rigs()
+rig_managers.start_all()
 
 
 # REGISTER ALL VIEWS
@@ -113,12 +121,4 @@ app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')
 app.register_blueprint(bestminer.mod_user.views.mod, url_prefix='/user')
 app.register_blueprint(bestminer.mod_admin.views.mod, url_prefix='/admin')
 app.register_blueprint(bestminer.api_client.api.mod, url_prefix='/client')
-
-import bestminer.initial_data
-# TODO: this was intended code for repairing after bug. Delete it soon
-initial_data.fix_users_missed_configurations()
-initial_data.initial_data()
-if app.config.get('TESTING', False):
-    initial_data.sample_data()
-
 

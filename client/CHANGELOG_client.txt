@@ -1,3 +1,10 @@
+0.29
+[new] rig can reboot now
+[fix] profit for PIRL/HUSH now displayed
+[fix] temp for EWBF miner is displayed
+[fix] client cannot detect GPU.
+
+
 0.28
 1. Restart miner if exits
 2. fully recreated internal structure

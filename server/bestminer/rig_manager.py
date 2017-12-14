@@ -173,14 +173,13 @@ class AutoSwitchRigManager(RigManager):
                     if config == current_config:
                         current_profit = profit
                         break
-                current_threshold = current_profit * (1 + threshold / 100)
-                if current_profit and current_threshold >= best_profit:
+                if current_profit and current_profit * (1 + threshold / 100) >= best_profit:
                     # if we found that current profit is same as
                     best_config = current_config
                     best_profit = current_profit
                 else:
-                    self.logger.debug("Threshold {}% not passed. Current={} Current+Threshold={} Best={}".format(
-                        current_profit, current_threshold, best_profit
+                    self.logger.debug("Threshold {}% not passed. Current={} Best={}".format(
+                        current_profit, best_profit
                     ))
         return best_config, best_profit
 

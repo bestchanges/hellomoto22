@@ -26,8 +26,6 @@ app = Flask(__name__)
 
 # one of: production,testing,development
 
-
-
 running_platform = os.getenv("BESTMINER_PLATFORM")
 
 if running_platform:

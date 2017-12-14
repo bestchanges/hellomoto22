@@ -12,7 +12,7 @@ def send_welcome_email(flask_mail, user, password, login_url):
 
 def send_subscribe_email(flask_mail, email):
     msg = Message(
-        subject="Registration at BestMiner (beta) - 2nd wave",
+        subject="Registration at BestMiner (beta) - 3rd wave",
         recipients = [email],
         cc =['bestminer@egorbs.ru'],
         bcc=['egor.fedorov@gmail.com'],

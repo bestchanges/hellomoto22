@@ -1,6 +1,7 @@
 import datetime
 from statistics import median
 
+import mongoengine
 from mongoengine import StringField, Document, BooleanField, DateTimeField, DecimalField, FloatField, URLField, \
     ReferenceField, ListField, DictField, UUIDField, IntField, EmbeddedDocument, EmbeddedDocumentField, \
     queryset_manager, LongField
@@ -97,7 +98,8 @@ PROFIT_CURRENCIES = (
 
 class UserSettings(EmbeddedDocument):
     profit_currency = StringField(choices=PROFIT_CURRENCIES, default='RUR', required=True)
-    default_configuration_group = ReferenceField('ConfigurationGroup')
+    default_configuration_group = ReferenceField('ConfigurationGroup') # NOT SUPPORTED: reverse_delete_rule=mongoengine.DENY
+    auto_profit_switch_thresold = IntField(min_value=0, default=5, verbose_name="Profit threshold, %", help_text="threshold to switch better currency profit, %")
 
 
 class User(Document):
@@ -127,11 +129,11 @@ class User(Document):
 
 class Pool(Document):
     name = StringField(max_length=100, unique_with='user')
-    user = ReferenceField(User)  # if exist then this is user's specific pool
+    user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)  # if exist then this is user's specific pool
     pool_family = StringField(max_length=30, choices=POOLS_FAMILY)
     info = StringField()
     website = URLField()
-    currency = ReferenceField(Currency, required=True)
+    currency = ReferenceField(Currency, required=True, reverse_delete_rule=mongoengine.DENY)
     fee = FloatField(required=True, default=0, min_value=0, max_value=1)  # fee rate. For 1% == 0.01
     servers = ListField(StringField(max_length=100, regex='[\w\.\-]+:\d+'))
     server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
@@ -182,8 +184,8 @@ class Exchange(Document):
 
 class PoolAccount(Document):
     name = StringField(max_length=200)
-    user = ReferenceField(User, required=True)
-    pool = ReferenceField(Pool, required=True)
+    user = ReferenceField(User, required=True, reverse_delete_rule=mongoengine.CASCADE)
+    pool = ReferenceField(Pool, required=True, reverse_delete_rule=mongoengine.DENY)
     #    currency = ReferenceField(Currency, required=True, verbose_name="Currency", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     login = StringField(required=True, max_length=200, help_text="Login for pool connection")
     password = StringField(max_length=100)
@@ -195,54 +197,81 @@ class PoolAccount(Document):
 
 class ConfigurationGroup(Document):
     name = StringField(max_length=100, required=True, verbose_name="Configuration Name")
-    user = ReferenceField(User)
-    miner_program = ReferenceField(MinerProgram, required=True, verbose_name="Miner")
+    user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)
+    miner_program = ReferenceField(MinerProgram, required=True, verbose_name="Miner", reverse_delete_rule=mongoengine.DENY)
     # algo: for single currency has taken from currency algo, for dual concatenate using '+'
     # example: 'Ethash', 'Ethash+Blake'
     algo = StringField(required=True)
     command_line = StringField()
     env = DictField(default={})
     currency = ReferenceField(Currency, required=True, verbose_name="Coin",
-                              radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
-    pool = ReferenceField(Pool, verbose_name="Pool")
+                              radio=True, reverse_delete_rule=mongoengine.DENY)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
+    pool = ReferenceField(Pool, verbose_name="Pool", reverse_delete_rule=mongoengine.DENY)
     pool_server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+',
                               verbose_name="Startum server")  # server:port
     pool_login = StringField(required=True, max_length=200, verbose_name="Pool login")
     pool_password = StringField(max_length=50, verbose_name="Pool password")
-    exchange = ReferenceField(Exchange)
+    exchange = ReferenceField(Exchange, reverse_delete_rule=mongoengine.DENY)
     wallet = StringField(max_length=200)
     is_dual = BooleanField(default=False)
-    dual_currency = ReferenceField(Currency, verbose_name="Coin (dual)")
-    dual_pool = ReferenceField(Pool)
+    dual_currency = ReferenceField(Currency, verbose_name="Coin (dual)", reverse_delete_rule=mongoengine.DENY)
+    dual_pool = ReferenceField(Pool, reverse_delete_rule=mongoengine.DENY)
     # so you thins regexp (...|) looks ugly? Complain to wtforms+mongoengine which trace '' as string value for field (instead of None)
     dual_pool_server = StringField(max_length=100, regex='([\w\.\-]+:\d+|)',
                                    verbose_name="Startum server (dual)")  # server:port
     dual_pool_login = StringField(max_length=200, verbose_name="Pool login")
     dual_pool_password = StringField(max_length=50, verbose_name="Pool password")
-    dual_exchange = ReferenceField(Exchange)
+    dual_exchange = ReferenceField(Exchange, reverse_delete_rule=mongoengine.CASCADE)
     dual_wallet = StringField(max_length=200)
     is_active = BooleanField(default=True)
 
     @queryset_manager
-    def active(doc_cls, queryset):
-        return queryset.filter(is_active=True)
+    def list_for_user(doc_cls, queryset, user):
+        return queryset.filter(is_active=True, user=user)
+
+    @staticmethod
+    def filter_applicable_for_rig(list, rig):
+        result = []
+        for configuration_group in list:
+            if configuration_group.miner_program in rig.disabled_miner_programs:
+                continue
+            if not rig.pu in configuration_group.miner_program.supported_pu:
+                continue
+            if not rig.os in configuration_group.miner_program.supported_os:
+                continue
+            result.append(configuration_group)
+        return result
 
     def __unicode__(self):
         return self.name
 
+    def calc_profit_for_target_hashrate(self, target_hashrate):
+        """
+        :param target_hashrate:
+        :return: profit value in BTC or None in case of exception.
+        """
+        try:
+            profit = self.currency.calc_mining_profit(target_hashrate.hashrate)
+            profit_btc = self.currency.get_median_btc_rate() * profit
+            if self.is_dual:
+                profit_dual = self.dual_currency.calc_mining_profit(target_hashrate.hashrate_dual)
+                profit_btc += self.dual_currency.get_median_btc_rate() * profit_dual
+            return profit_btc
+        except:
+            return None
 
 class ExchangeRate(Document):
-    exchange = ReferenceField(Exchange, unique_with=["from_currency", "to_currency"])
-    from_currency = ReferenceField(Currency)
-    to_currency = ReferenceField(Currency)
+    exchange = ReferenceField(Exchange, unique_with=["from_currency", "to_currency"], reverse_delete_rule=mongoengine.CASCADE)
+    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
+    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
     rate = FloatField()
     when = DateTimeField()
 
 
 class ExchangeRateHistory(Document):
-    exchange = ReferenceField(Exchange)
-    from_currency = ReferenceField(Currency)
-    to_currency = ReferenceField(Currency)
+    exchange = ReferenceField(Exchange, reverse_delete_rule=mongoengine.DENY)
+    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
+    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
     rate = FloatField()
     when = DateTimeField()
 
@@ -250,10 +279,10 @@ class ExchangeRateHistory(Document):
 class Rig(Document):
     uuid = UUIDField(required=True, binary=False, unique=True)
     worker = StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
-    configuration_group = ReferenceField(ConfigurationGroup, required=True)
+    configuration_group = ReferenceField(ConfigurationGroup, required=True, reverse_delete_rule=mongoengine.DENY)
     os = StringField(choices=OS_TYPE)
     pu = StringField(choices=PU_TYPE)
-    user = ReferenceField(User)
+    user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)
     manager = StringField()  # required=True, default='AutoProfitRigManager', choices=MANAGERS,
     comment = StringField(max_length=100)
     system_gpu_list = ListField(StringField(), default=[])
@@ -267,19 +296,14 @@ class Rig(Document):
     last_online_at = DateTimeField()
     is_miner_run = BooleanField(default=False)
     log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
+#    disabled_algos = ListField(StringField(choices=[('a','a'),('b','b')]), default=[])
+    disabled_miner_programs = ListField(ReferenceField(MinerProgram, reverse_delete_rule=mongoengine.CASCADE), verbose_name="Disabled Miners", help_text="You may turn off some miners from running on this rig")
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)
 
     def __eq__(self, other):
         return self.uuid.__eq__(other.uuid)
-
-    def get_target_hashrate_for_algo_and_miner_code(self, algo, miner_code):
-        if self.target_hashrate and algo in self.target_hashrate and miner_code in self.target_hashrate[algo]:
-            return self.target_hashrate[algo][miner_code]
-
-    def set_target_hashrate_for_algo_and_miner_code(self, algo, miner_code, hashrate):
-        self.target_hashrate[algo][miner_code] = hashrate
 
     def get_current_profit_btc(self):
         """
@@ -299,3 +323,14 @@ class Rig(Document):
                 dual_profit = currency.calc_mining_profit(self.hashrate[currency.algo])
                 dual_profit_btc = currency.get_median_btc_rate() * dual_profit
         return profit_btc + dual_profit_btc
+
+
+class TargetHashrate(Document):
+    rig = ReferenceField(Rig, required=True, unique_with=['miner_program', 'algo'], reverse_delete_rule=mongoengine.CASCADE)
+    miner_program = ReferenceField(MinerProgram, required=True, reverse_delete_rule=mongoengine.CASCADE)
+    algo = StringField(required=True)
+    algorithm = StringField(required=True)
+    hashrate = FloatField(default=0)
+    algorithm_dual = StringField()
+    hashrate_dual = FloatField(default=0)
+

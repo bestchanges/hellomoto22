@@ -26,7 +26,7 @@ import uptime as uptime
 
 logging.basicConfig(
     format='%(asctime)-10s|%(name)-10s|%(levelname)-4s: %(message)s',
-    level=logging.DEBUG
+    level=logging.INFO
 )
 logger = logging.getLogger('client')
 server_only_logger = logging.getLogger('server_logger')
@@ -445,7 +445,6 @@ class ClaymoreMinerManager(MinerManager):
     def handle_log_line(self, line):
 
         # NVIDIA Cards available: 3
-        # AMD Cards available: 8
         m = re.findall('(AMD|NVIDIA) Cards available:', line)
         if len(m) > 0:
             family = m[0]
@@ -455,6 +454,7 @@ class ClaymoreMinerManager(MinerManager):
             elif family == 'NVIDIA':
                 if 'nvidia' not in self.pu_types:
                     self.pu_types.append('nvidia')
+            # send info about cards to server asap
             if stat_manager:
                 stat_manager.send_stat()
 
@@ -572,8 +572,8 @@ class ClaymoreMinerManager(MinerManager):
         fn = os.path.join(miner_dir, 'log_noappend.txt')
         try:
             fp = open(fn, 'r', encoding='866', newline='')
-            # actually no need to seek. in claymore if filename has "noappend" the log will be truncated at start
-            fp.seek(0, 2)
+            # no need to seek. in claymore if filename has "noappend" the log will be truncated at start
+            # fp.seek(0, 2)
         except:
             self.logger.error("Cannot open miner log %s" % fn)
             self.kill_miner()
@@ -743,8 +743,8 @@ class TaskManager(threading.Thread):
         while True:
             try:
                 self.get_and_execute_task()
-            except:
-                self.logger.error("Exception running task: ")
+            except Exception as e:
+                self.logger.error("Exception running task: {}".format(e))
             time.sleep(request_interval)
 
 

@@ -21,42 +21,56 @@ $(function(){
 <ul id="navTabs" class="nav nav-tabs">
   <li><a data-toggle="tab" href="#panel_info">Info</a></li>
   <li><a data-toggle="tab" href="#panel_hashrate">Benchmark</a></li>
-  <li><a data-toggle="tab" href="#panel_profit">Profit table</a></li>
+  <li><a data-toggle="tab" href="#panel_profit">Profit</a></li>
   <li><a data-toggle="tab" href="#panel_screen">Screen</a></li>
   <li><a data-toggle="tab" href="#panel_edit">Settings</a></li>
 </ul>
 
 <div class="tab-content">
   <div id="panel_info" class="tab-pane fade in active">
-
+<h2>Configurations:</h2>
         <div>
             <h2>Set what to mine</h2>
-    <form action="set_config" action="GET">
-    <select id="config" name="config">
+    <table class="table">
+        <thead>
+        <tr>
+            <td>Config</td>
+            <td>Profit</td>
+            <td>Command</td>
+        </tr>
+        </thead>
+        <tbody>
     {% for config in configs %}
-        <option value="{{ config.id }}" {% if config.current %}selected="1"{% endif %}>{{ config.name }}</option>
+        <tr>
+            <td>{{ config.name }}</td>
+            <td>{{ config.profit }}</td>
+            {% if config.current %}
+            <td>current</td>
+            {% else %}
+            <td><button onclick="ajax_call('switch_config.json', { 'config': '{{ config.id }}' })">Switch</button></td>
+            {% endif %}
+        </tr>
     {% endfor %}
-    </select>
-      <input type="submit" value="Set">
-    </form>
+        </tbody>
+    </table>
 
   </div>
 
 
-<h2>Profit management </h2>
+<h2>Profit management</h2>
 <div class="row">
   <div class="col-4">
     <div class="list-group" id="list-tab" role="tablist">
-      <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Manual</a>
-      <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">Automatic</a>
+      <a class="list-group-item list-group-item-action active" id="list-manual-list" data-toggle="list" href="#list-manual" role="tab" aria-controls="manual">Manual</a>
+      <a class="list-group-item list-group-item-action" id="list-autoswitch-list" data-toggle="list" href="#list-autoswitch" role="tab" aria-controls="autoswitch">Automatic</a>
     </div>
   </div>
   <div class="col-4">
     <div class="tab-content" id="nav-tabContent">
-      <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
+      <div class="tab-pane fade show active" id="list-manual" role="tabpanel" aria-labelledby="list-manual-list">
         In Manual mode you can set your own mining configuration. You can choose currency, pool and wallet.
       </div>
-      <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
+      <div class="tab-pane fade" id="list-autoswitch" role="tabpanel" aria-labelledby="list-autoswitch-list">
         In Automatic mode BestMiner will choose set profitable configuration for each rig.
       </div>
     </div>
@@ -65,9 +79,20 @@ $(function(){
 <script>
   $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
   e.target // newly activated tab
+  //alert(e.target.innerText)
+  $('#confirmSwitchToNewMode').show()
   e.relatedTarget // previous active tab
 })
+
+function set_profit_manager() {
+active = $('div#list-tab a.active')
+ajax_call('switch_mode.json', { 'mode': active[0].innerText })
+}
+
 </script>
+  <div id="confirmSwitchToNewMode" style="display:none">
+      <button onclick="set_profit_manager()">Set profit management</button>
+</div>
 
   </div><!-- END OF PANEL -->
   <div id="panel_hashrate" class="tab-pane fade">
@@ -75,25 +100,27 @@ $(function(){
 <h2>Hashrate</h2>
 
 <button onclick="ajax_call('start_benchmark.json')">Start benchmark</button>
-<table>
+<table class="table">
+    <thead>
   <tr>
     <th>Algorithm</th>
     <th>Miner</th>
     <th>Hashrate</th>
   </tr>
+  </thead>
+    <tbody>
 {% for data in algos %}
   <tr>
     <td>{{ data['algo'] }}</td>
     <td>{{ data['miner'].name }}</td>
-{% if not data['target_hashrate'] %}
+{% if not data['target_hashrates'] %}
     <td>Need benchmark</td>
 {% else %}
-  {% for algorithm, value in data['target_hashrate'].items() %}
-      <td>{{  algorithm }} {{ value }} </td>
-  {% endfor %}
+      <td>{{  ",".join(data['target_hashrates']) }} </td>
 {% endif %}
   </tr>
 {% endfor %}
+    </tbody>
 </table>
 
 
@@ -178,6 +205,7 @@ $(document).ready(function() {
   {{ render_field(form.comment) }}
   {{ render_field(form.os, style="height: 30px;") }}
   {{ render_field(form.pu, style="height: 30px;") }}
+  {{ render_field(form.disabled_miner_programs, style="height: 100px;") }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 

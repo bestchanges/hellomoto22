@@ -38,7 +38,7 @@ $(document).ready(function() {
             {
                 "targets": -1,
                 "data": null,
-                "defaultContent": "<button class='edit' title='Edit'>Edit</button> <button class='cl'>Info</button> <button class='o' title='Reboot rig'>R</button>"
+                "defaultContent": "<button class='edit' title='Edit'>Edit</button> <button class='cl'>Info</button> <button class='o' title='Reboot rig'>R</button> <button class='x' title='Delete rig'>X</button>"
             }
         ]
     });
@@ -62,8 +62,8 @@ $( "#dialog-confirm" ).dialog({
   },
   click: function() {
             $( this ).dialog( "close" );
-            uuid = $("#dialog-rig-uuid").text()
-            ajax_call('/user/rig/' + uuid + '/reboot.json')
+            url = $("#dialog-url").text()
+            ajax_call(url)
             }
         },
         {
@@ -88,8 +88,15 @@ $( "#dialog-confirm" ).dialog({
 
     $('#datalist tbody').on( 'click', 'button.o', function () {
         var data = table.row( $(this).parents('tr') ).data();
-        $("#dialog-rig-name").text(data['name']);
-        $("#dialog-rig-uuid").text(data['uuid']);
+        $("#dialog-message").text('Are you shure you want to REBOOT rig ' + data['name'] + '?');
+        $("#dialog-url").text('/user/rig/' + data['uuid'] + '/reboot.json');
+        $( "#dialog-confirm" ).dialog("open");
+    } );
+
+    $('#datalist tbody').on( 'click', 'button.x', function () {
+        var data = table.row( $(this).parents('tr') ).data();
+        $("#dialog-message").text('Confirm deleting rig ' + data['name'] + '?');
+        $("#dialog-url").text('/user/rig/' + data['uuid'] + '/delete.json');
         $( "#dialog-confirm" ).dialog("open");
     } );
 } );
@@ -114,8 +121,8 @@ $( "#dialog-confirm" ).dialog({
 </table>
 
 <div id="dialog-confirm" title="Reboot confirmation">
-  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>Are you shure you want to reboot rig <span id="dialog-rig-name"></span>?</p>
-    <span style="display: none" id="dialog-rig-uuid"></span>
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span><span id="dialog-message"></span></p>
+    <span style="display: none" id="dialog-url"></span>
 </div>
 
 </div>

@@ -15,8 +15,9 @@ from flask_mongoengine.wtf import model_form
 from bestminer import client_api, logging_server, rig_managers
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
-from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings
-from bestminer.server_commons import round_to_n, list_configurations_applicable_to_rig, \
+from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings, \
+    TargetHashrate
+from bestminer.server_commons import round_to_n, \
     get_exchange_rate, compact_hashrate, assert_expr
 
 mod = Blueprint('user', __name__, template_folder='templates')
@@ -262,8 +263,12 @@ def rigs_json():
                     hashrate.append(compact_hashrate(rig.hashrate[algorithm], algorithm, return_as_string=True))
         profit_currency = rig.user.settings.profit_currency
         profit_btc = rig.get_current_profit_btc()
-        rate = get_exchange_rate('BTC', profit_currency)
-        profit = profit_btc * rate
+        try:
+            rate = get_exchange_rate('BTC', profit_currency)
+            profit = profit_btc * rate
+        except:
+            logger.warning("Cannot convert BTC to {}".format(profit_currency))
+            profit = None
         data.append({
             'name': rig.worker,
             'online': {
@@ -318,6 +323,18 @@ def rig_reboot_json(uuid=None):
     rm.reboot(rig)
 
 
+@mod.route('/rig/<uuid>/delete.json', methods=["GET", "POST"])
+@login_required
+def rig_delete_json(uuid=None):
+    user = flask_login.current_user.user
+    rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
+    # set to manual in order to delete data from others
+    rig_managers.set_rig_manager(rig, rig_managers.MANUAL)
+    rig.delete()
+    return flask.jsonify("Rig deleted")
+
+
 @mod.route('/rig/<uuid>/profit_data.json', methods=["GET", "POST"])
 @login_required
 def rig_profit_data_json(uuid=None):
@@ -345,25 +362,20 @@ def rig_profit_data_json(uuid=None):
             }
             row1['currency'].append(currency.code)
             best_miner_code = None
-            target_hashrate = {}
-            if algo in rig.target_hashrate and True: # FORGOT SOMETHING!!!
-                # we will find best miner for this algo
-                max_hashrate = 0
-                for miner_code, hashrate in rig.target_hashrate[algo].items():
-                    # choosing by max hashrate on first algorithm (i.e. Ethash)
-                    if algorithm in hashrate and hashrate[algorithm] > max_hashrate:
-                        target_hashrate = hashrate
-                        max_hashrate = hashrate[algorithm]
-                        best_miner_code = miner_code
-            if target_hashrate:
-                h = target_hashrate[algorithms[0]]
+            found = TargetHashrate.objects(rig=rig, algo=algo) # TODO: sort by first hashrate value (need max)
+            if found:
+                rig_miner_algo_hashrate = found[0]
+            else:
+                rig_miner_algo_hashrate = None
+            if rig_miner_algo_hashrate:
+                h = rig_miner_algo_hashrate.hashrate
                 row1['hashrate'].append(compact_hashrate(h, algorithms[0], return_as_string=True))
             else:
                 row1['hashrate'].append('Need benchmark')
             row1['net_hashrate'].append(
                 compact_hashrate(currency.nethash, algorithms[0], compact_for='net', return_as_string=True))
             try:
-                profit_first_currency = currency.calc_mining_profit(target_hashrate[currency.algo])
+                profit_first_currency = currency.calc_mining_profit(rig_miner_algo_hashrate.hashrate)
             except:
                 profit_first_currency = None
             row1['reward'].append(round_to_n(profit_first_currency))
@@ -383,14 +395,14 @@ def rig_profit_data_json(uuid=None):
                 for currency in Currency.objects(algo=algorithms[1]):
                     row2 = deepcopy(row1)
                     row2['currency'].append(currency.code)
-                    if target_hashrate and algorithms[1] in target_hashrate:
-                        h = target_hashrate[algorithms[1]]
+                    if rig_miner_algo_hashrate:
+                        h = rig_miner_algo_hashrate.hashrate_dual
                         row2['hashrate'].append(compact_hashrate(h, algorithms[1], return_as_string=True))
                     else:
                         row2['hashrate'].append('?')
                     row2['net_hashrate'].append(compact_hashrate(currency.nethash, algorithms[1], compact_for='net', return_as_string=True))
                     try:
-                        profit = currency.calc_mining_profit(target_hashrate[currency.algo])
+                        profit = currency.calc_mining_profit(rig_miner_algo_hashrate.hashrate_dual)
                     except:
                         profit = None
                     row2['reward'].append(round_to_n(profit))
@@ -421,13 +433,17 @@ def rig_info(uuid=None):
     rig = Rig.objects.get(uuid=uuid)
     assert_expr(rig.user == user)
     select_config = []
-    for config in list_configurations_applicable_to_rig(rig):
+    autoswitch_manager = rig_managers.autoprofit()
+    rate = get_exchange_rate('BTC', user.settings.profit_currency)
+    if not rate:
+        rate = 0
+    for config,profit in autoswitch_manager.list_configuration_group_profit_for_rig(rig):
         select_config.append({
             'name': config.name,
             'id': str(config.id),
             'current': rig.configuration_group.id == config.id,
+            'profit': "{} {}".format(round_to_n(profit * rate), user.settings.profit_currency)
         })
-
     all_algos = []
     miners = MinerProgram.objects(supported_pu=rig.pu, supported_os=rig.os)
     for miner in miners:
@@ -438,15 +454,29 @@ def rig_info(uuid=None):
             continue
         for algo in miner.algos:
             # we have 'Ethash+blake' - now get target hashrate for it
-            target_hasrate = {}
-            if rig.target_hashrate and algo in rig.target_hashrate and miner.code in rig.target_hashrate[algo]:
-                target_hasrate = rig.target_hashrate[algo][miner.code]
-            all_algos.append({'algo': algo, 'miner': miner, 'target_hashrate': target_hasrate})
+            target_hashrates = []
+            found = TargetHashrate.objects(rig=rig, miner_program=miner, algo=algo)
+            if found:
+                rig_miner_algo_hashrate = found[0]
+                algorithms = algo.split('+')
+                target_hashrates.append(
+                    compact_hashrate(rig_miner_algo_hashrate.hashrate, algorithms[0], compact_for='rig', return_as_string=True)
+                )
+                if rig_miner_algo_hashrate.algorithm_dual:
+                    target_hashrates.append(
+                        compact_hashrate(rig_miner_algo_hashrate.hashrate_dual, algorithms[1], compact_for='rig',
+                                         return_as_string=True)
+                    )
+            all_algos.append({'algo': algo, 'miner': miner, 'target_hashrates': target_hashrates})
     # for algo,target_hashrate in rig.target_hashrate.items():
 
     field_args = {
+        'disabled_miner_programs': {
+        #     'multiple': True,
+             'queryset': MinerProgram.objects(supported_os=rig.os, supported_pu=rig.pu)
+        }
     }
-    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu'], field_args=field_args)
+    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs'], field_args=field_args)
     form = formtype(obj=rig)
 
     if request.method == 'POST':
@@ -468,16 +498,37 @@ def rig_log(uuid):
     return log
 
 
-@mod.route('/rig/<uuid>/set_config', methods=['GET', 'POST'])
+@mod.route('/rig/<uuid>/switch_config.json', methods=['GET', 'POST'])
 @login_required
-def rig_set_config(uuid):
-    config_id = request.args.get('config')
-    rig = Rig.objects.get(uuid=uuid)
-    user = flask_login.current_user.user
-    assert_expr(rig.user == user)
-    config = ConfigurationGroup.objects.get(id=config_id)
-    rig.configuration_group = config
-    rig.save()
-    from bestminer import task_manager
-    task_manager.add_switch_miner_task(rig, config)
-    return flask.redirect(url_for('.rig_info', uuid=uuid))
+def rig_switch_config_json(uuid):
+    try:
+        config_id = request.args.get('config')
+        rig = Rig.objects.get(uuid=uuid)
+        user = flask_login.current_user.user
+        assert_expr(rig.user == user)
+        rig_manager = rig_managers.manual()
+        config = ConfigurationGroup.objects.get(id=config_id)
+        rig_manager.switch_miner(rig, config)
+        return flask.jsonify({'message': "Ok. Refresh the browser page"})
+    except Exception as e:
+        return flask.jsonify({'error': str(e)})
+
+
+@mod.route('/rig/<uuid>/switch_mode.json', methods=['GET', 'POST'])
+@login_required
+def rig_switch_manager_json(uuid):
+    try:
+        mode = request.args.get('mode')
+        rig = Rig.objects.get(uuid=uuid)
+        user = flask_login.current_user.user
+        assert_expr(rig.user == user)
+        if mode == 'Manual':
+            rig_manager = rig_managers.manual()
+        elif mode == 'Automatic':
+            rig_manager = rig_managers.autoprofit()
+        else:
+            raise Exception("Unexpected mode '{}'".format(mode))
+        rm = rig_managers.set_rig_manager(rig, rig_manager)
+        return flask.jsonify({'message': "Ok. Manager set to {}".format(rm.__class__.__name__)})
+    except Exception as e:
+        return flask.jsonify({'error': str(e)})

@@ -3,7 +3,7 @@ import os
 import random
 import string
 
-from bestminer.models import ConfigurationGroup, Currency
+from bestminer.models import Currency
 from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
@@ -130,6 +130,12 @@ def expand_command_line(configuration_group, worker='worker'):
 
 
 def get_exchange_rate(from_, to):
+    """
+    return current exchange rate from currency to curreny.
+    :param from_:
+    :param to:
+    :return: value or None if cannot be found
+    """
     try:
         if to == 'BTC':
             found = Currency.objects(code=from_)
@@ -139,19 +145,6 @@ def get_exchange_rate(from_, to):
         return cryptonator.get_exchange_rate(from_, to)
     except:
         return None
-
-
-# TODO: move as query to ConfigurationGroup ?
-def list_configurations_applicable_to_rig(rig):
-    configs = ConfigurationGroup.objects(user=rig.user, )
-    select_config = []
-    for config in configs:
-        if rig.pu not in config.miner_program.supported_pu:
-            continue
-        if rig.os not in config.miner_program.supported_os:
-            continue
-        select_config.append(config)
-    return select_config
 
 
 def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=False):

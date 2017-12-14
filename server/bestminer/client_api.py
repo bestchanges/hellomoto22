@@ -1,4 +1,3 @@
-# TODO: Move to rig_manager.py
 
 import logging
 import os
@@ -8,6 +7,7 @@ from bestminer.server_commons import expand_command_line
 
 logger = logging.getLogger(__name__)
 
+# TODO: Move to rig_manager.py
 class TaskManager():
     """
     This class do client's task management.

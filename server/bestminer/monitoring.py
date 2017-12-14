@@ -27,5 +27,7 @@ class MonitoringManager():
                     logger.debug("rig {} goes offline: {} ({} ago)".format(rig, last_online, timedelta))
                     rig.is_online = False
                     rig.hashrate = {}
+                    rig.cards_temp = []
+                    rig.cards_fan = []
                     rig.save()
             time.sleep(self.sleep_time)

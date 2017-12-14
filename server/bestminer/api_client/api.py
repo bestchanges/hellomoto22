@@ -9,7 +9,7 @@ from flask import Blueprint, request
 
 from bestminer import task_manager, models, rig_managers
 from bestminer.client_api import get_miner_config_for_configuration
-from bestminer.models import Rig, ConfigurationGroup, User
+from bestminer.models import Rig, ConfigurationGroup, User, TargetHashrate, MinerProgram
 from bestminer.server_commons import assert_expr, get_client_version, round_to_n, \
     get_exchange_rate
 
@@ -89,7 +89,7 @@ def test_get_random_config(rig):
     return ConfigurationGroup.objects.get(name=name_new_config)
 
 
-def set_target_hashrate_from_current(rig, miner_code):
+def set_target_hashrate_from_current(rig):
     '''
     Update this rig target hashrate. If current hashrate for given algo exceedes the target hashrate then update target
     Rig object not saved.
@@ -98,21 +98,29 @@ def set_target_hashrate_from_current(rig, miner_code):
     '''
     algo = rig.configuration_group.algo
     current_hashrate = rig.hashrate
-    if not algo in rig.target_hashrate:
-        rig.target_hashrate[algo] = {}
-    if not miner_code in rig.target_hashrate[algo]:
-        rig.target_hashrate[algo][miner_code] = {}
-    for algorithm in algo.split('+'):
-        if algorithm in rig.target_hashrate[algo]:
-            target_value = rig.target_hashrate[algo][algorithm]
-        else:
-            target_value = 0
-        if algorithm in current_hashrate and current_hashrate[algorithm] > target_value:
-            # update value
-            # TODO: better use setter Rig.set_target_hashrate_for_algo_and_miner_code
-            # TODO: NO WAY! It's huge ugly structure. Better use separate collection RigMinerAlgoHashrate
-            rig.target_hashrate[algo][miner_code][algorithm] = current_hashrate[algorithm]
-    return False
+    miner_program = rig.configuration_group.miner_program
+    found = TargetHashrate.objects(rig=rig, miner_program=miner_program, algo=algo)
+    if found:
+        rig_miner_algo_hashrate = found[0]
+    else:
+        rig_miner_algo_hashrate = TargetHashrate()
+        rig_miner_algo_hashrate.rig = rig
+        rig_miner_algo_hashrate.miner_program = miner_program
+        rig_miner_algo_hashrate.algo = algo
+        algorithms = algo.split('+')
+        rig_miner_algo_hashrate.algorithm = algorithms[0]
+        if len(algorithms) > 1:
+            rig_miner_algo_hashrate.algorithm_dual = algorithms[1]
+        rig_miner_algo_hashrate.save()
+    # for dual algos we use only first algoritm to find max value
+    algorithms = algo.split('+')
+    algorithm = algorithms[0] # 'Ethash' from 'Ethash+Blake'
+    if algorithm in current_hashrate and current_hashrate[algorithm] > rig_miner_algo_hashrate.hashrate:
+        rig_miner_algo_hashrate.hashrate = current_hashrate[algorithm]
+        # if is_dual and current_hashrate has value for dual
+        if len(algorithms)>1 and algorithms[1] in current_hashrate:
+            rig_miner_algo_hashrate.hashrate_dual = current_hashrate[algorithms[1]]
+        rig_miner_algo_hashrate.save()
 
 
 @mod.route("/stat_and_task", methods=["GET", "POST", "PUT"])
@@ -182,8 +190,7 @@ def receive_stat():
     rig.cards_temp = stat['pu_temperatire']
     rig.rebooted = datetime.datetime.fromtimestamp(stat['reboot_timestamp'])
     rig.hashrate = stat["hashrate"]["current"]
-    if 'miner_config' in stat['miner'] and stat['miner']['miner_config']:
-        set_target_hashrate_from_current(rig, stat['miner']['miner_config']['miner_code'])
+    set_target_hashrate_from_current(rig)
     rig.is_online = True
     do_run_benchmark = False
     if not rig.pu and 'pu_types' in stat and stat['pu_types']:

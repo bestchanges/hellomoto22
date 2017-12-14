@@ -179,7 +179,7 @@ class AutoSwitchRigManager(RigManager):
                     best_profit = current_profit
                 else:
                     self.logger.debug("Threshold {}% not passed. Current={} Best={}".format(
-                        current_profit, best_profit
+                        threshold, current_profit, best_profit
                     ))
         return best_config, best_profit
 

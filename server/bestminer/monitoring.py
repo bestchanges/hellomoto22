@@ -26,6 +26,7 @@ class MonitoringManager():
                 if timedelta.total_seconds() > self.offline_timeout:
                     logger.debug("rig {} goes offline: {} ({} ago)".format(rig, last_online, timedelta))
                     rig.is_online = False
+                    rig.is_miner_run = False
                     rig.hashrate = {}
                     rig.cards_temp = []
                     rig.cards_fan = []

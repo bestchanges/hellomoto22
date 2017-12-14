@@ -58,7 +58,7 @@ class ManualRigManager(RigManager):
 
     def switch_miner(self, rig, configuration_group):
         if rig.manager != self.__class__.__name__:
-            raise Exception("Cannot switch while miner in conttrol of {}".format(rig.manager))
+            raise Exception("Cannot switch while miner in control of {}".format(rig.manager))
         self._switch_rig_to(rig, configuration_group)
 
 
@@ -115,7 +115,7 @@ class AutoSwitchRigManager(RigManager):
                         self._switch_rig_to(rig, best_config)
                 except Exception as e:
                     self.logger.error("Exception during execution. {}".format(e))
-                    print(e)
+                    traceback.print_exc()
             # ok. now sleep for next iteration
             sleep(self.sleep_time)
 
@@ -300,7 +300,7 @@ class BenchmarkRigManager(RigManager):
                         self.start_next_task(rig_uuid) # start next task if exist
                 except Exception as e:
                     self.logger.error("Exception during execution. {}".format(e))
-                    print(e)
+                    traceback.print_exc()
             # ok. now sleep for next iteration
             sleep(self.sleep_time)
 
@@ -374,6 +374,7 @@ class RigManagers():
                 manager.accept_rig(rig)
             except Exception as e:
                 self.logger.error("Error setting manager {} for rig {}. {}".format(manager_name, rig, e))
+                traceback.print_exc()
 
 
     def set_rig_manager(self, rig, rig_manager_or_name, data=None):

@@ -23,8 +23,6 @@ def initial_data():
     # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
     profit_manager.update_currency_from_wtm(json.load(open('coins1.json', 'r')))
 
-    create_benckmark_configurations()
-
     Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
     Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
 
@@ -156,6 +154,8 @@ def initial_data():
                 'dcr-as.coinmine.pl:2222'],
         set__server = 'dcr.coinmine.pl:2222',
     )
+
+    create_benckmark_configurations()
 
     if app.config.get("TESTING"):
         # ADD TESTING MINER FOR TESTING ENVIRONMENT

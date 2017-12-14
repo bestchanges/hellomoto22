@@ -8,6 +8,7 @@ import re
 lines = [
 '2017-12-14 12:22:21,787|server_logger|INFO|Temp: GPU0 57C GPU1 51C GPU2 49C',
 '2017-12-14 12:22:21,787|server_logger|INFO|GPU0: 285 Sol/s GPU1: 288 Sol/s GPU2: 281 Sol/s',
+'Temp: GPU0: 50C GPU1: 28C GPU2: 39C',
 ]
 # TODO: temp do not parse due to special codes for color switching before temperature value
 for line in lines:

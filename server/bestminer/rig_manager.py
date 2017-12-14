@@ -374,7 +374,6 @@ class RigManagers():
                 manager.accept_rig(rig)
             except Exception as e:
                 self.logger.error("Error setting manager {} for rig {}. {}".format(manager_name, rig, e))
-                raise e
 
 
     def set_rig_manager(self, rig, rig_manager_or_name, data=None):

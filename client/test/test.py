@@ -3,8 +3,19 @@
 # ETH - Total Speed: 94.892 Mh/s, Total Shares: 473, Rejected: 0, Time: 05:22
 # DCR - Total Speed: 3890.426 Mh/s, Total Shares: 8655, Rejected: 96
 
-
 import re
+
+lines = [
+'2017-12-14 12:22:21,787|server_logger|INFO|Temp: GPU0 57C GPU1 51C GPU2 49C',
+'2017-12-14 12:22:21,787|server_logger|INFO|GPU0: 285 Sol/s GPU1: 288 Sol/s GPU2: 281 Sol/s',
+]
+# TODO: temp do not parse due to special codes for color switching before temperature value
+for line in lines:
+    m = re.findall('GPU[^\d]*(\d+)[^\d]*(\d+)C', line)
+    for num, temp in m:
+        print(num,temp)
+
+exit()
 
 line = "ETH: GPU0 23.739 Mh/s, GPU1 23.766 Mh/s, GPU2 23.663 Mh/s, GPU3 23.746 Mh/s"
 m = re.findall('ETH: GPU(\d+) ([\d\.]+) ', line)

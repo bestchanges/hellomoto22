@@ -597,8 +597,9 @@ class EwbfMinerManager(MinerManager):
 
         # Temp: GPU0: 60C GPU1: 66C GPU2: 56C GPU3: 61C GPU4: 61C GPU5: 59C
         # Temp: GPU0: 56C GPU1: 52C GPU2: 50C
+        # GPU0: 284 Sol/s GPU1: 287 Sol/s GPU2: 284 Sol/s ### NOT THIS!
         # TODO: temp do not parse due to special codes for color switching before temperature value
-        m = re.findall('GPU[^\d]*(\d+)[^\d]*:[^\d]*(\d+)', line)
+        m = re.findall('GPU[^\d]*(\d+)[^\d]*(\d+)C', line)
         if len(m) > 0:
             temps = []
             for num, temp in m:

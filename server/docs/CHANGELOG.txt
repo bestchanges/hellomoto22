@@ -1,4 +1,24 @@
-beta0.2
+server.beta0.3
+[new] Introduce autoswitch manager. Choose best configuration to mine
+[new] Benchmark now starts automaically on new rig registartion
+[new] switch between automatic and manual profit manager
+[new] option to turn off specific miners on each rig
+[fix] client cannot detect GPU.
+[refactor] new object TargetHashrate. Rig.target_hashrate not longer used
+[better] good looking tables in rig page. Better information presentation.
+[new] can run benchmark manually
+[new] option to delete rig
+introduced fully functional benchmarking
+benchmarking starts on rig add
+rig can reboot now
+profit for PIRL/HUSH now displayed
+temp for EWBF miner is displayed
+Temp column now back in rigs list
+refactoring
++ autorefresh table for rigs
+
+
+server.beta0.2
 * updates on editor of configs
 * unify user registration. introduce default config as user setting
 * create default configs on startup

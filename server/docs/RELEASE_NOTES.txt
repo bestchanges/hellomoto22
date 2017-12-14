@@ -1,6 +1,4 @@
 [beta 0.3]
-+ updated client
-+ autorefresh table for rigs
 
 [beta 0.2.2]
 UPDATE .bashrc add ENV:

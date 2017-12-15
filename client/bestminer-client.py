@@ -873,10 +873,11 @@ class MinerMonitor(threading.Thread):
                 else:
                     self.logger.error("unknown taskname %s" % task_name)
             except Empty:
+                # empty task in queue
                 continue
-            except:
-                self.logger.error("Exception when switch miner %s " % sys.exc_info()[0])
-                pass
+            except Exception as e:
+                self.logger.error("Exception while switch miner: %s" % e)
+                self.logger.error(traceback.format_exc())
 
 
 if __name__ == "__main__":

@@ -844,6 +844,7 @@ class MinerMonitor(threading.Thread):
             # restart if miner died
             try:
                 if not self.miner_manager.is_run():
+                    restart_counter += 1
                     if restart_counter > MAX_MINER_RESTART_ATTAMPTS:
                         logger.error("Miner connot be restarted. Exit after {} attempts".format(restart_counter))
                         self.shutdown()
@@ -856,7 +857,6 @@ class MinerMonitor(threading.Thread):
                     self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
                     self.miner_manager.run_miner()
                     time.sleep(0.5)
-                    restart_counter += 1
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.error("Exception while restart died miner: %s" % e)

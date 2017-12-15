@@ -1,25 +1,20 @@
 {
-  "client_version": "0.28",
+  "client_version": "0.29.2",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,
     "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Test ETH+DCR",
-    "env": {
-      "GPU_MAX_ALLOC_PERCENT": "100",
-      "GPU_MAX_HEAP_SIZE": "100",
-      "GPU_SINGLE_ALLOC_PERCENT": "100",
-      "GPU_USE_SYNC_OBJECTS": "1"
-    },
-    "miner": "Pseudo Claymore Miner",
-    "miner_code": "pseudo_claymore_miner",
-    "miner_command_line": "-u miner_emu.py --file ETHDCR.txt --dst_file log_noappend.txt --delay 0.3 ",
-    "miner_directory": "miner_emu",
-    "miner_exe": "..\\..\\epython\\python.exe",
+    "config_name": "ETH+DCR",
+    "env": {},
+    "miner": "Claymore Dual",
+    "miner_code": "claymore_dual",
+    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.worker001 -epsw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool dcr.coinmine.pl:2222 -dwal egoaga19.worker001 -dpsw x -ftime 10 -dcri 26 -asm 1",
+    "miner_directory": "claymore10_win",
+    "miner_exe": "EthDcrMiner64.exe",
     "miner_family": "claymore",
-    "miner_version": "1.0",
+    "miner_version": "10.0",
     "read_output": false
   },
   "rig_id": "6b433e41-4267-5220-8419-0b0808cfe4b2",

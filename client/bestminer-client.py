@@ -858,8 +858,8 @@ class MinerMonitor(threading.Thread):
                     time.sleep(0.5)
                     restart_counter += 1
             except Exception as e:
-                self.logger.error("Exception while restart died miner: %s" % e)
                 self.logger.error(traceback.format_exc())
+                self.logger.error("Exception while restart died miner: %s" % e)
             try:
                 new_task = miner_monitor_tasks.get(True, 5)
                 task_name = new_task[0]
@@ -873,11 +873,11 @@ class MinerMonitor(threading.Thread):
                 else:
                     self.logger.error("unknown taskname %s" % task_name)
             except Empty:
-                # empty task in queue
+                # empty queue. Ok
                 continue
             except Exception as e:
-                self.logger.error("Exception while switch miner: %s" % e)
                 self.logger.error(traceback.format_exc())
+                self.logger.error("Exception while switch miner: %s" % e)
 
 
 if __name__ == "__main__":

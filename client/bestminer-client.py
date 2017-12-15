@@ -9,6 +9,7 @@ import re
 import shlex
 import threading
 import time
+import traceback
 import urllib
 from logging import handlers
 from queue import Queue, Empty
@@ -316,7 +317,7 @@ class MinerManager():
         if miner process is run when finish it
         :return:
         """
-        if self.is_run():
+        if self.is_run(): # TODO: may be need to be omitted. Try remove it and wrap in try-except
             # Kill currently running process
             self.logger.info("Terminating process ...")
             process = psutil.Process(self.miner_process.pid)
@@ -837,20 +838,28 @@ class MinerMonitor(threading.Thread):
             self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
             self.miner_manager.run_miner()
 
+        restart_counter = 0
+        MAX_MINER_RESTART_ATTAMPTS = 12 # Dirty workaround. Shall reset
         while True:
             # restart if miner died
             try:
                 if not self.miner_manager.is_run():
+                    if restart_counter > MAX_MINER_RESTART_ATTAMPTS:
+                        logger.error("Miner connot be restarted. Exit after {} attempts".format(restart_counter))
+                        self.shutdown()
+                        logging.shutdown()
+                        os._exit(200)
                     self.miner_manager.kill_miner()  # actually not nessessary
-                    delay = 8
+                    delay = 10
                     self.logger.warning("Miner not run. Going to restart after %d seconds" % delay)
                     time.sleep(delay)
                     self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
                     self.miner_manager.run_miner()
                     time.sleep(0.5)
+                    restart_counter += 1
             except:
                 self.logger.error("Exception while restart died miner: %s" % sys.exc_info()[0])
-                pass
+                traceback.print_exc()
             try:
                 new_task = miner_monitor_tasks.get(True, 1)
                 task_name = new_task[0]

@@ -476,39 +476,5 @@ def create_initial_objects_for_user(user):
     cg.is_dual = False
     cg.save()
 
-    # BTG
-    btg = Currency.objects.get(code="BTG")
-    mp_e = MinerProgram.objects.get(code="ewbf")
-    cg = ConfigurationGroup()
-    cg.name="BTG(nvidia)"
-    cg.user=user
-    cg.miner_program=mp_e
-    cg.algo = "+".join([btg.algo])
-    cg.command_line = mp_e.command_line
-    cg.env = mp_e.env
-    cg.currency = btg
-    cg.pool_server = 'btg.suprnova.cc:8816'
-    cg.pool_login = "egoaga19.%WORKER%"
-    cg.pool_password = "x"
-    cg.wallet = ""
-    cg.is_dual = False
-    cg.save()
-
-    mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
-    cg = ConfigurationGroup()
-    cg.name="BTG(amd)"
-    cg.user=user
-    cg.miner_program=mp_e
-    cg.algo="+".join([btg.algo])
-    cg.command_line=mp_e.command_line
-    cg.env=mp_e.env
-    cg.currency=btg
-    cg.pool_server='btg.suprnova.cc:8816'
-    cg.pool_login="egoaga19.%WORKER%"
-    cg.pool_password = "x"
-    cg.wallet = ""
-    cg.is_dual = False
-    cg.save()
-
     if app.config.get("TESTING"):
         test_data_for_user(user)

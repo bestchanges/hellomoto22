@@ -908,7 +908,7 @@ if __name__ == "__main__":
         exit()
     logger.info("Running as worker '%s'" % config['worker'])
 
-    if config['client_version']+'a' != get_client_version():
+    if config['client_version'] != get_client_version():
         logger.info("New version available! Going to install version {}".format(config['client_version']))
         try:
             self_update()

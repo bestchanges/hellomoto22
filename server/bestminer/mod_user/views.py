@@ -94,7 +94,7 @@ def config_list_json():
 def config_miner_data_json():
     # TODO: filter queried data
     miner_program_id = request.args.get('id')
-    if not miner_program_id:
+    if not miner_program_id or miner_program_id == '__None':
         return flask.jsonify({})
     miner_program = MinerProgram.objects.get(id=miner_program_id)
     algos = miner_program.algos[0].split('+')

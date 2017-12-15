@@ -850,18 +850,18 @@ class MinerMonitor(threading.Thread):
                         logging.shutdown()
                         os._exit(200)
                     self.miner_manager.kill_miner()  # actually not nessessary
-                    delay = 10
-                    self.logger.warning("Miner not run. Going to restart after %d seconds" % delay)
+                    delay = 5
+                    self.logger.warning("Miner not run. Going to restart after %d seconds. restart counter=%d" % (delay, restart_counter))
                     time.sleep(delay)
                     self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
                     self.miner_manager.run_miner()
                     time.sleep(0.5)
                     restart_counter += 1
-            except:
-                self.logger.error("Exception while restart died miner: %s" % sys.exc_info()[0])
-                traceback.print_exc()
+            except Exception as e:
+                self.logger.error("Exception while restart died miner: %s" % e)
+                self.logger.error(traceback.format_exc())
             try:
-                new_task = miner_monitor_tasks.get(True, 1)
+                new_task = miner_monitor_tasks.get(True, 5)
                 task_name = new_task[0]
                 if task_name == 'start_miner':
                     miner_config = new_task[1]

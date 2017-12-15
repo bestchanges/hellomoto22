@@ -214,11 +214,14 @@ def receive_stat():
     profit_currency = rig.user.settings.profit_currency
     profit_btc = rig.get_current_profit_btc()
     rate = get_exchange_rate('BTC', profit_currency)
-    profit = profit_btc * rate
+    if rate is None:
+        profit_str = '? {}'.format(profit_currency)
+    else:
+        profit_str = '{} {}'.format(round_to_n(profit_btc * rate), profit_currency)
     response = {
         'worker': rig.worker,
         'mining': conf.name,
-        'profit': '{} {}'.format(round_to_n(profit), profit_currency),
+        'profit': profit_str,
         'current hashrate': rig.hashrate,
         'target  hashrate': rig.target_hashrate,
     }

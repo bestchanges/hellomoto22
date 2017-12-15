@@ -1,6 +1,13 @@
 bestminer-server.sh.log
 bestminer-server.sh.pid
 bestminer-server.sh.err
+gunicorn1.sh.err
+gunicorn1.sh.log
+gunicorn1.sh.pid
+gunicorn.sh.err
+gunicorn.sh.pid
+monitor.sh.log
+monitor.log
 coins.json
 settings.py
 __pycache__/

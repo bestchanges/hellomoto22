@@ -1,5 +1,5 @@
 while : ; do
-wget -q -O /dev/null -T 3 http://localhost:5000/auth/login
+wget -q -O /dev/null -T 5 http://localhost:5000/auth/login
 ret=$?
 if [ "$ret" -ne "0" ] ; then
 	echo error
@@ -7,4 +7,4 @@ if [ "$ret" -ne "0" ] ; then
 	./bestminer-server.sh restart
 fi
 sleep 60
-done
+done >> ./monitor.log

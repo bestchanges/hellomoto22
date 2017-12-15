@@ -1,8 +1,18 @@
+import hashlib
 import logging
 from zipfile import ZipFile
 import os
 
 logger = logging.getLogger(__name__)
+
+
+def save_md5_for_file(filename):
+    md5_value = hashlib.md5(open(filename, 'rb').read()).hexdigest()
+    md5_filename = filename + '.md5'
+    with open(md5_filename, 'w', encoding='ascii') as file:
+        file.write(md5_value)
+        file.close()
+
 
 def miners_zip():
     '''
@@ -20,7 +30,8 @@ def miners_zip():
     for miner_dir in os.listdir(source_dir):
         zip_name = miner_dir + ".zip"
         logger.info("miner %s " % miner_dir)
-        with ZipFile(os.path.join(target_dir, zip_name), 'w') as myzip:
+        full_filename = os.path.join(target_dir, zip_name)
+        with ZipFile(full_filename, 'w') as myzip:
             for root, dirs, files in os.walk(os.path.join(source_dir, miner_dir)):
                 for file in files:
                     if file == '.gitignore':
@@ -28,6 +39,8 @@ def miners_zip():
                     fn = os.path.join(root, file)
                     rel = os.path.relpath(os.path.join(root, file), source_dir)
                     myzip.write(fn, arcname=rel)
+            myzip.close()
+        save_md5_for_file(full_filename)
         logger.info("... done")
 
 
@@ -107,7 +120,9 @@ version.txt
 
             rel = os.path.join(client_dir, "config.txt")
             myzip.writestr(rel, config_txt)
-        logger.info("... done")
+        myzip.close()
+    save_md5_for_file(zip_location)
+    logger.info("... done")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

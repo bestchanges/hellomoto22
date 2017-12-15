@@ -1,5 +1,5 @@
 {
-  "client_version": "0.29.2",
+  "client_version": "0.29.7",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9020,

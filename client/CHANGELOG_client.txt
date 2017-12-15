@@ -1,3 +1,7 @@
+0.30
+[new] if miner failed to run 12 times when exit from client (and will restart by wrapper)
+[new] md5 checksum check for all downloads
+
 0.29
 [new] rig can reboot now
 [fix] profit for PIRL/HUSH now displayed

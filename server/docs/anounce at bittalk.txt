@@ -1,0 +1,50 @@
+There is an project idea.
+BestMine it is a miner software for mining altcoins.
+
+The main features:
+1. automatic switch to the most profitable currency
+2. auto conversion income to BTC and withdraw
+
+It is kind of how nicehash working but expected to have 10-25% more profit.
+
+1. how it works
+* From client it like installation of single application like nicehash does.
+* After startup in make benchmark for all supported algorithms and calculates target hashrate.
+* when it start mining the most profitable coin on public pool.
+* all mining revenue will be automatically converted from altcoin to Bitcoin.
+* detailed statistics, management and monitoring are available on single web dashboard.
+* daily payments in BTC
+
+2. Why is the most profitable?
+Our profit module will constantly monitor coins net parameters and exchange rates.
+When it detected the most profitable combination of Coin, Pool and Exchange it direct rig farm to this coin.
+When the pool send earned coins they will be converted to BTC on exchange.
+
+3. Why it is expected more profit when nicehash does?
+Because nicehash has trading platform for hashrate behind it.
+So the miner's revenue at least lower for the buyer revenue.
+We are instead will mine directly to the best coin directly.
+
+4. What about short term Pump And Dumps?
+This strategy works exactly fine with pumps and dumps.
+When exchange rate pumps for short period we are (all miners from service) can quickly mine and exchange while it is profitable.
+When it doesn't we just switch off taken what we already converted.
+
+D you like this idea? Do you need such service?
+
+PS: we are run our service in beta. You can request invitation here:
+[url]http://46.101.173.156:5000[/url]
+
+What is in it:
+* single dashboard for all rigs
+* editor for configurations (coin, pool, wallet)
+* benchmarking
+* automatic switch to the best profit
+* support Ethash (+dual) and Equihash, both AMD/NVIDIA
+* works only on Windows currently.
+
+What is NOT yet:
+* autconvert to BTC
+* linux version
+
+PS: For support or questions Telegram @bestminer_chat

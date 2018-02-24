@@ -293,6 +293,7 @@ def create_user(email, name=None, password=None, settings=None):
     create_initial_objects_for_user(user)
     return user, password
 
+# TODO: remove. It was workaround for one bug
 def fix_users_missed_configurations():
     for user in User.objects():
         confs = ConfigurationGroup.objects(user=user)

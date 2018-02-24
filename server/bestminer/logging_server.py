@@ -130,6 +130,7 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
 
     allow_reuse_address = 1
 
+    # TODO: make LOGGING_SERVER_PORT in configuration
     def __init__(self, host='0.0.0.0',
                  port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  handler=LogRecordStreamHandler):
@@ -312,6 +313,7 @@ class ClaymoreHandler(logging.Handler):
         return True
 
 
+# TODO: remove it. This function was moved to client side
 class EwbfHandler(logging.Handler):
     def handle(self, record):
         line = record.msg

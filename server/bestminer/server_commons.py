@@ -90,7 +90,7 @@ def gen_password(min_len=8, max_len=10, chars=string.ascii_lowercase + string.di
     return ''.join(random.choice(chars) for x in range(size))
 
 
-def expand_command_line(configuration_group, worker='worker'):
+def expand_command_line(configuration_group, rig = None):
     expand_vars = {}
     if configuration_group.pool_server:
         expand_vars["POOL_SERVER"] = server_address(configuration_group.pool_server)
@@ -117,7 +117,12 @@ def expand_command_line(configuration_group, worker='worker'):
         expand_vars["DUAL_POOL_ACCOUNT"] = ''
         expand_vars["DUAL_POOL_PASSWORD"] = ''
         expand_vars["DUAL_CURRENCY"] = ''
-    expand_vars["WORKER"] = worker
+    if not rig:
+        expand_vars["WORKER"] = 'worker'
+        expand_vars["RIG_UUID"] = '00000000-0000-0000-0000-000000000000'
+    else:
+        expand_vars["WORKER"] = rig.worker
+        expand_vars["RIG_UUID"] = rig.uuid
     command_line = configuration_group.command_line
     if not command_line:
         command_line = configuration_group.miner_program.command_line

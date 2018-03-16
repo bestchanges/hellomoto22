@@ -1,3 +1,9 @@
+[beta 0.4]
+IMPORTANT:
+before run: update all configuration_groups =>
+    for user's set code = 'email_name'
+    for system's set code = 'name'
+
 [beta 0.3]
 
 [beta 0.2.2]

@@ -1,0 +1,88 @@
+Conversion Bot draft
+
+DB scheme:
+
+pool:
+  name:
+  currency: reference
+  addresses: ['stratum://somepool.org:4444']
+  pool_hashrate:
+
+pool_statistic:
+  pool: reference
+  when:
+  pool_hashrate:
+  luck:
+
+pool_account:
+  pool: reference
+  login:
+  password:
+  settings: {}
+
+tx:
+  # transaction referenced real transaction in blockchain
+  amount:
+  currency: reference
+  tx_hash:
+  from_wallet:
+  to_wallet:
+  created: datetime
+  confirmed: datttime
+  sent: datetime
+  recieved: datetime
+  state: sending, receieving, done
+  pool_account:
+  mined_from: datetime
+  mined_to: datetime
+  exchange_account:
+
+# Too complex.. How to use payment Tokens? TODO: simplify
+miner_deposit:
+  type: reward, correction, manual_deposit
+  when: datetime # when it taken into account
+  miner: reference
+  pool_account: reference
+  mined_from: datetime
+  mined_to: datetime
+  miner_rate: fixed point fraction (miners income in given timeframe)
+  tx: reference
+  exchange_account: # where ut holds now
+  from_currency:
+  from_amount:
+  currency: # which currency reward to be converted
+  amount: # target currency amount
+  service_fee_value:
+  service_fee_amount: #  (of "from_currency") taken as: service_fee_value * from_amount
+# exchange_rate:  not need - can be calculated as from_amount/target_amount
+  state: inmature, recieving, in_conversion, credited # finish converted
+
+miner_withdraw:
+  type: manual_withdraw, automatic, fee
+  miner: reference,
+  exchange_account:
+  currency:
+  amount:
+  target_wallet:
+
+exchange_order:
+  # Note that may be several exchange orders: say 'ZEC' - 'BTC' - 'DOGE'
+  exchange_account:
+  from_currency:
+  from_amount:
+  to_currency:
+  to_amount:
+  rate:
+  fee_amount:
+  fee_value:
+  state: // trading, done, waiting
+  tx: reference to related incoming transaction
+
+1 ETH to 0.1 BTC with 0.2% fee
+<1>
+  from_currency: 'ETH'
+  from_amount: 1
+  to_currency: 'BTC'
+  to_amount: 0,0998
+  fee_amount: 0,0002
+  fee_value: 0,002

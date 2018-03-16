@@ -1,0 +1,152 @@
+---
+name: ETH
+code: egor.fedorov@gmail.com_ETH
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: Claymore
+algo: Ethash
+command_line: "-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD%
+  -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate
+  1 -estale 0 -ftime 10 -asm 1"
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+currency:
+  code: ETH
+pool_server: eu1.ethermine.org:4444
+pool_login: 0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%
+pool_password: x
+wallet: '0x397b4b2fa22b8154ad6a92a53913d10186170974'
+is_dual: false
+is_active: true
+---
+name: ETH+DCR
+code: egor.fedorov@gmail.com_ETH+DCR
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: Claymore Dual
+algo: Ethash+Blake (14r)
+command_line: "-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD%
+  -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate
+  1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%
+  -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1"
+env: {}
+currency:
+  code: ETH
+pool_server: eu1.ethermine.org:4444
+pool_login: 0x397b4b2fa22b8154ad6a92a53913d10186170974.%WORKER%
+pool_password: x
+wallet: '0x397b4b2fa22b8154ad6a92a53913d10186170974'
+is_dual: true
+dual_currency:
+  code: DCR
+dual_pool_server: dcr.coinmine.pl:2222
+dual_pool_login: egoaga19.%WORKER%
+dual_pool_password: x
+dual_wallet: DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq
+is_active: true
+---
+name: ZEC(amd)
+code: egor.fedorov@gmail.com_ZEC(amd)
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: Claymore Zcash AMD
+algo: Equihash
+command_line: "-zpool %POOL_SERVER%:%POOL_PORT% -zwal %POOL_ACCOUNT% -zpsw %POOL_PASSWORD%
+  -allpools 1 -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -ftime
+  30 -asm 1"
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+currency:
+  code: ZEC
+pool_server: eu1-zcash.flypool.org:3333
+pool_login: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%
+pool_password: x
+wallet: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q
+is_dual: false
+is_active: true
+---
+name: ZEC(nvidia)
+code: egor.fedorov@gmail.com_ZEC(nvidia)
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: EWBF
+algo: Equihash
+command_line: "--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT% --log
+  2 --pass %POOL_PASSWORD% --eexit 3 --fee 0.5"
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+currency:
+  code: ZEC
+pool_server: eu1-zcash.flypool.org:3333
+pool_login: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%
+pool_password: x
+wallet: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q
+is_dual: false
+is_active: true
+
+
+---
+name: Test ETH+DCR
+code: egor.fedorov@gmail.com_Test ETH+DCR
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: Pseudo Claymore Miner
+algo: Ethash+Blake (14r)
+command_line: "-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt
+  --delay 0.3 "
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+currency:
+  code: ETH
+pool_server: eu1.ethermine.org:4444
+pool_login: '0x397b4b2fa22b8154ad6a92a53913d10186170974'
+pool_password: x
+wallet: '0x397b4b2fa22b8154ad6a92a53913d10186170974'
+is_dual: true
+dual_currency:
+  code: DCR
+dual_pool_server: dcr.coinmine.pl:2222
+dual_pool_login: egoaga19
+dual_pool_password: x
+dual_wallet: DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq
+is_active: true
+---
+name: Test ZEC
+code: egor.fedorov@gmail.com_Test ZEC
+user:
+  email: egor.fedorov@gmail.com
+miner_program:
+  name: Pseudo EWBF Miner
+algo: Equihash
+command_line: "-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log
+  --delay 0.5 "
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+currency:
+  code: ZEC
+pool_server: eu1-zcash.flypool.org:3333
+pool_login: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%
+pool_password: x
+wallet: t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q
+is_dual: false
+is_active: true

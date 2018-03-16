@@ -16,3 +16,10 @@ flask-login
 Flask-Mail
 ccxt
 gevent
+tornado
+pyyaml
+#mongodb-migrations
+#web3
+#py-solc
+#eth-testrpc>=1.3.3
+#ethereum>=1.6.1,<2.0

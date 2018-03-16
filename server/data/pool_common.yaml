@@ -1,0 +1,65 @@
+---
+name: Ethermine
+api_url: https://api.ethermine.org
+server: eu1.ethermine.org:4444
+info: Text information
+website: https://ethermine.org
+fee: 0.01
+currency:
+  code: ETH
+pool_family: ethermine
+servers:
+- us1.ethermine.org:4444
+- us1.ethermine.org:14444
+- eu1.ethermine.org:4444
+- eu1.ethermine.org:14444
+---
+name: ZEN suprnova
+servers:
+- zen.suprnova.cc:3618
+currency:
+  code: ZEN
+server: zen.suprnova.cc:3618
+pool_family: suprnova
+website: https://zen.suprnova.cc
+info: ''
+fee: 0.01
+---
+name: BTG suprnova
+servers:
+- btg.suprnova.cc:8816
+currency:
+  code: BTG
+server: btg.suprnova.cc:8816
+pool_family: suprnova
+website: https://btg.suprnova.cc
+info:
+fee: 0.01
+---
+name: FlyPool
+pool_family: ethermine
+server: eu1-zcash.flypool.org:3333
+info: "Zcash pool"
+website: http://zcash.flypool.org
+fee: 0.01
+currency:
+  code: ZEC
+api_url: https://api-zcash.flypool.org
+servers:
+- asia1-zcash.flypool.org:3333
+- eu1-zcash.flypool.org:3333
+- eu1-zcash.flypool.org:13333
+---
+name: Decred Coinmine
+servers:
+- dcr.coinmine.pl:2222
+- dcr-eu.coinmine.pl:2222
+- dcr-us.coinmine.pl:2222
+- dcr-as.coinmine.pl:2222
+currency:
+  code: DCR
+server: dcr.coinmine.pl:2222
+pool_family: coinmine
+website: https://www2.coinmine.pl/dcr/index.php?page=statistics&action=pool
+info: ''
+fee: 0.01

@@ -1,0 +1,53 @@
+Python developer vacancy
+
+Details:
+Our team works in the rocket growing market of cryptocurrency.
+We belive that cryptocurrencies will change the world and we want to be part in this.
+We are developing services which makes cryptocurrency easy accessible for more people.
+We focused on cryptocurrency mining, exchange and ICO services.
+
+We’re looking for developers to extend our team for new project.
+
+Who is important to us:
+    • You have good English skills. You need to be ready to become part of international team.
+    * You are responsive and can work independently
+    * You appreciate other team members and make your code well understandable by others
+    * Good basucal technical skills
+    * You are ready to study new technologies.
+      You are not required to have knowledge in cryptocurrency industry. You will be taught.
+
+Stack and skills:
+Backend
+    * Python (Multithreading)
+    * Flask, REST API, Twisted
+    * Mongo DB
+    * Linux (adminstration will be plus)
+    * GitHUB
+Frontend
+    * jQuery UI
+
+Required Skills:
+    • Understanding of web app scalability and performance aspects
+    • General sense for design and UI/UX
+
+What we offer you:
+    * Flexible working schedule at the hours that you feel most productive.
+    * Office in Saint-Petersburg. But also remote work is acceptable.
+    • Opportunity to travel around the globe for strategy and product meetings.
+    • Work in a super motivated and smart team.
+      We only hire team members who we think are masters of their field, well motivated.
+
+Actually we are looking for the team member who share our enthusiasm and curiosity, who belive they can change the world.
+
+Our hiring process has the following stages:
+TODO: fill later
+    * Write a reply message. Please attach link to your GitHub/Portfolio/CV.
+    • We will send a questionnaire to you with questions about your personality as well as your skillset. It will take you about 20-30 mins to complete this questionnaire. This helps us to get to know you a bit better and gives us a first assessment of your technical abilities. Please make sure to provide us with long form answers.
+    • If we like your answers we will give you a test task. The test task will typically take about 12 hours and will be paid. Based on this we will judge your ability to execute on a given problem. We’ll only give you the test task if we believe that you are a good fit and valuable addition to the team.
+    • The last step is several interviews with our team. We believe that it is important that everyone in the team gets along with everyone else and value an honest and direct feedback culture.
+
+If this process has not scared you off, please apply!
+We’re looking for applicants with the right attitude, who hold themselves to a high standard with deadlines.
+You don’t have to have perfect skills, there is an opportunity to learn along the way –
+your attitude and desire to learn is the most important quality for this job.
+

@@ -1,0 +1,6 @@
+---
+name: Poloniex
+handler: PoloniexExchange
+---
+name: Bittrex
+handler: BittrexExchange

@@ -28,6 +28,8 @@ app = Flask(__name__)
 
 running_platform = os.getenv("BESTMINER_PLATFORM")
 
+app.config.BESTMINER_PLATFORM = running_platform
+
 if running_platform:
     # load default platform specific settings
     app.config.from_object('settings_default.{}'.format(running_platform))
@@ -37,9 +39,21 @@ else:
 if os.path.isfile('settings.py'):
     app.config.from_object('settings')  # server's specific settings
 
+###
+# Start database migration (before any other database query)
+###
+from mongodb_migrations.cli import MigrationManager
+migration_manager = MigrationManager()
+migration_manager.config.mongo_database = app.config.get("MONGODB_DB")
+migration_manager.config.mongo_host = app.config.get("MONGODB_HOST")
+migration_manager.config.mongo_port = app.config.get("MONGODB_PORT")
+# TODO: add mongo authentication config
+migration_manager.run()
+
+
+
 db = MongoEngine()
 db.init_app(app)
-
 flask_mail = Mail(app)
 
 class LoginUser(UserMixin):
@@ -90,11 +104,7 @@ if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
     exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
 
 import bestminer.initial_data
-# TODO: this was intended code for repairing after bug. Delete it soon
-initial_data.fix_users_missed_configurations()
-initial_data.initial_data()
-if app.config.get('TESTING', False):
-    initial_data.sample_data()
+initial_data.load_data(app.config.BESTMINER_PLATFORM)
 
 # can do only after initial_data
 rig_managers = bestminer.rig_manager.RigManagers()

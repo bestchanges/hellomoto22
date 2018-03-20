@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$/../bmpools">
       <sourceFolder url="file://$MODULE_DIR$/../bmpools" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../bmpools/python" />
     </content>
     <content url="file://$MODULE_DIR$/client">
       <excludeFolder url="file://$MODULE_DIR$/client/update" />

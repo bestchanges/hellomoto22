@@ -262,22 +262,6 @@ class ConfigurationGroup(Document):
         except:
             return None
 
-class ExchangeRate(Document):
-    exchange = ReferenceField(Exchange, unique_with=["from_currency", "to_currency"], reverse_delete_rule=mongoengine.CASCADE)
-    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    rate = FloatField()
-    when = DateTimeField()
-
-
-class ExchangeRateHistory(Document):
-    exchange = ReferenceField(Exchange, reverse_delete_rule=mongoengine.DENY)
-    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    rate = FloatField()
-    when = DateTimeField()
-
-
 class Rig(Document):
     uuid = UUIDField(required=True, binary=False, unique=True)
     worker = StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)

@@ -18,6 +18,8 @@ ccxt
 gevent
 tornado
 pyyaml
+jsonrpcserver
+jsonrpcclient
 #mongodb-migrations
 #web3
 #py-solc

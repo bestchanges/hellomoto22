@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../bmpools">
+      <sourceFolder url="file://$MODULE_DIR$/../bmpools" isTestSource="false" />
+    </content>
     <content url="file://$MODULE_DIR$/client">
       <excludeFolder url="file://$MODULE_DIR$/client/update" />
     </content>

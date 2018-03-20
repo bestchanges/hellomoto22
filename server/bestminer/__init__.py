@@ -51,7 +51,6 @@ migration_manager.config.mongo_port = app.config.get("MONGODB_PORT")
 migration_manager.run()
 
 
-
 db = MongoEngine()
 db.init_app(app)
 flask_mail = Mail(app)
@@ -122,7 +121,7 @@ import bestminer.api_client.api
 
 @app.route("/")
 def index():
-    return flask.redirect('/static/promo/about.html')
+    return flask.redirect('http://www.bestminer.io')
 
 app.register_blueprint(bestminer.mod_auth.views.mod, url_prefix='/auth')
 app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')

@@ -2,12 +2,12 @@
 
 # run this on server side to update server to the latest
 . .bashrc
-./bestminer-server.sh stop
+./gunicorn1.sh stop
 git pull
 pip install -r requirements.txt
 sleep 1
 python bestminer/distr.py
-./bestminer-server.sh start
+./gunicorn1.sh start
 sleep 2
-tail ./bestminer-server.sh.log
-./bestminer-server.sh status
+#tail ./bestminer-server.sh.log
+./gunicorn1.sh status

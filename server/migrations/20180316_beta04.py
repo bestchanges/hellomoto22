@@ -8,7 +8,7 @@ class Migration (BaseMigration):
             i += 1
             if 'user' in config and config['user']:
                 user = self.db.user.find_one({'_id' : config['user']})
-                config['code'] = i
+                config['code'] = str(i)
             else:
                 config['code'] = config['name']
             self.db.configuration_group.save(config)

@@ -122,7 +122,7 @@ def expand_command_line(configuration_group, rig = None):
         expand_vars["RIG_UUID"] = '00000000-0000-0000-0000-000000000000'
     else:
         expand_vars["WORKER"] = rig.worker
-        expand_vars["RIG_UUID"] = rig.uuid
+        expand_vars["RIG_UUID"] = str(rig.uuid)
     command_line = configuration_group.command_line
     if not command_line:
         command_line = configuration_group.miner_program.command_line

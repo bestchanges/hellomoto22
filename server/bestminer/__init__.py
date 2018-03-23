@@ -6,6 +6,8 @@ import os
 import bestminer.logging_config
 
 import json
+
+from bestminer.distr import client_zip_windows_for_update
 from bestminer.monitoring import MonitoringManager
 import flask
 from flask_login import LoginManager, UserMixin
@@ -50,6 +52,8 @@ migration_manager.config.mongo_port = app.config.get("MONGODB_PORT")
 # TODO: add mongo authentication config
 migration_manager.run()
 
+# TODO: if client/version.txt != zip_windows_for_update.version.txt
+client_zip_windows_for_update()
 
 db = MongoEngine()
 db.init_app(app)

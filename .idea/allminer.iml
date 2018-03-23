@@ -8,6 +8,9 @@
       <sourceFolder url="file://$MODULE_DIR$/../bmpools" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../bmpools/python" />
     </content>
+    <content url="file://$MODULE_DIR$/../exchanges">
+      <sourceFolder url="file://$MODULE_DIR$/../exchanges" isTestSource="false" />
+    </content>
     <content url="file://$MODULE_DIR$/client">
       <excludeFolder url="file://$MODULE_DIR$/client/update" />
     </content>

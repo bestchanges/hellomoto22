@@ -47,14 +47,15 @@ def load_documents_from_yaml(yaml_content, doc_class, primary_key_field):
             objects = doc_class.objects(__raw__={primary_key_field: data[primary_key_field]})
         except Exception as e:
             raise Exception("For {}, entry #{}, {}".format(doc_class._class_name, object_num, e))
-        if len(objects) != 1:
+        if len(objects) > 1:
             raise Exception(
                 "For {}, entry #{}, for primary key '{}' = '{}' was found {} entries instead of expected 1".format(
                     doc_class._class_name, object_num, primary_key_field, data[primary_key_field], len(objects)))
-        object = objects[0]
-        if not object:
+        if not objects:
             # create new instance
             object = doc_class()
+        else:
+            object = objects[0]
         # now fill all fields to values
         for field_name, field_value in data.items():
             try:

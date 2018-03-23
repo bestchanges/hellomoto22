@@ -1,5 +1,6 @@
 0.31
 [fix] sometimes BM started before Afterburner and caused lower hashrate. Add delay on first start of miner
+[fix] profit calculation for dual mining was incorrect. fixed
 
 0.30
 [new] if miner failed to run 12 times when exit from client (and will restart by wrapper)

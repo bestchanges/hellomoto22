@@ -1,6 +1,8 @@
 @echo off
 rem set PYTHONUNBUFFERED=1
 
+timeout 10
+
 :START
 echo start bestminer
 epython\python bestminer-client.py

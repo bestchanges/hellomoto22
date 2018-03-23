@@ -192,8 +192,13 @@ def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=Fa
         letter = algo_map[algorithm]
     else:
         letter = algo_map['__default__']
-    value = hashrate / mult_map[letter]
     units = "{}h/s".format(letter)
-    if return_as_string:
-        return "{} {}".format(round_to_n(value), units)
-    return value, units
+    if hashrate:
+        value = hashrate / mult_map[letter]
+        if return_as_string:
+            return "{} {}".format(round_to_n(value), units)
+        return value, units
+    else:
+        if return_as_string:
+            return "{} {}".format('?', units)
+        return None, units

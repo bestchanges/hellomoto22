@@ -204,6 +204,7 @@ def create_initial_objects_for_user(user):
     mp_cd = MinerProgram.objects.get(code="claymore_dual")
     cg = ConfigurationGroup()
     cg.name="ETH+DCR"
+    cg.code = user.email + '_' + "ETH+DCR"
     cg.user = user
     cg.command_line = mp_cd.command_line
     cg.currency = eth
@@ -224,6 +225,7 @@ def create_initial_objects_for_user(user):
     mp_c = MinerProgram.objects.get(code="claymore")
     cg = ConfigurationGroup()
     cg.name="ETH"
+    cg.code = user.email + '_' + "ETH"
     cg.user=user
     cg.miner_program=mp_c
     cg.algo = "+".join([eth.algo])
@@ -244,6 +246,7 @@ def create_initial_objects_for_user(user):
     mp_e = MinerProgram.objects.get(code="ewbf")
     cg = ConfigurationGroup()
     cg.name="ZEC(nvidia)"
+    cg.code = user.email + '_' + "ZEC(nvidia)"
     cg.user=user
     cg.miner_program=mp_e
     cg.algo = "+".join([zec.algo])
@@ -260,6 +263,7 @@ def create_initial_objects_for_user(user):
     mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
     cg = ConfigurationGroup()
     cg.name="ZEC(amd)"
+    cg.code = user.email + '_' + "ZEC(amd)"
     cg.user=user
     cg.miner_program=mp_e
     cg.algo = "+".join([zec.algo])

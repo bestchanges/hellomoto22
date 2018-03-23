@@ -3,11 +3,10 @@ import os
 import random
 import string
 
+from bestminer.exchanges import convert_currency
 from bestminer.models import Currency
-from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
-cryptonator = Cryptonator()
 
 
 def round_to_n(num, max_=2):
@@ -147,7 +146,7 @@ def get_exchange_rate(from_, to):
             if found:
                 currency = found[0]
                 return currency.get_median_btc_rate()
-        return cryptonator.get_exchange_rate(from_, to)
+        return convert_currency(from_, to)
     except:
         return None
 

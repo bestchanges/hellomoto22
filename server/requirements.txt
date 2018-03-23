@@ -1,5 +1,4 @@
 wtforms
-expiringdict
 Flask==0.12.0
 Jinja2==2.8.1
 gunicorn==19.6.0
@@ -18,9 +17,9 @@ ccxt
 gevent
 tornado
 pyyaml
-jsonrpcserver
 jsonrpcclient
-#mongodb-migrations
+PyLocache
+mongodb-migrations
 #web3
 #py-solc
 #eth-testrpc>=1.3.3

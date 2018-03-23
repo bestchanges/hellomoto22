@@ -306,8 +306,8 @@ class Rig(Document):
         if self.configuration_group.is_dual:
             dual_currency = self.configuration_group.dual_currency
             if dual_currency.algo in self.hashrate:
-                dual_profit = currency.calc_mining_profit(self.hashrate[currency.algo])
-                dual_profit_btc = currency.get_median_btc_rate() * dual_profit
+                dual_profit = dual_currency.calc_mining_profit(self.hashrate[currency.algo])
+                dual_profit_btc = dual_currency.get_median_btc_rate() * dual_profit
         return profit_btc + dual_profit_btc
 
 

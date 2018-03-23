@@ -12,10 +12,10 @@
 . .bashrc
 
 dir="."
-cmd="gunicorn --bind 0.0.0.0:5000 -k gevent --pid gunicorn1.pid --threads 1 bestminer:app"
+pid_file="gunicorn1.pid"
+cmd="gunicorn --bind 0.0.0.0:5000 -k gevent --pid $pid_file --threads 1 bestminer:app"
 
 name=`basename $0`
-pid_file="gunicorn.pid"
 stdout_log="$name.log"
 stderr_log="$name.err"
 

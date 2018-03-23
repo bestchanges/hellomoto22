@@ -1,0 +1,97 @@
+---
+name: Claymore Dual
+supported_os:
+- Windows
+- Linux
+dir_linux: claymore10_linux
+command_line: "-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD%
+  -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate
+  1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT%
+  -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1"
+dir: claymore10_win
+code: claymore_dual
+linux_bin: ethdcrminer64
+is_enabled: true
+supported_pu:
+- nvidia
+- amd
+win_exe: EthDcrMiner64.exe
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+algos:
+- Ethash+Blake (14r)
+family: claymore
+---
+name: Claymore
+supported_os:
+- Windows
+- Linux
+dir_linux: claymore10_linux
+command_line: "-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD%
+  -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate
+  1 -estale 0 -ftime 10 -asm 1"
+dir: claymore10_win
+code: claymore
+linux_bin: ethdcrminer64
+is_enabled: true
+supported_pu:
+- nvidia
+- amd
+win_exe: EthDcrMiner64.exe
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+algos:
+- Ethash
+family: claymore
+---
+name: Claymore Zcash AMD
+supported_os:
+- Windows
+dir_linux: claymore_zcash_amd_linux
+command_line: "-zpool %POOL_SERVER%:%POOL_PORT% -zwal %POOL_ACCOUNT% -zpsw %POOL_PASSWORD%
+  -allpools 1 -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -ftime
+  30 -asm 1"
+dir: claymore_zcash_amd
+code: claymore_zcash_amd
+linux_bin: ethdcrminer64
+is_enabled: true
+supported_pu:
+- amd
+win_exe: ZecMiner64.exe
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+algos:
+- Equihash
+family: claymore
+---
+name: EWBF
+supported_os:
+- Windows
+- Linux
+dir_linux: ewbf_linux
+command_line: "--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT% --log
+  2 --pass %POOL_PASSWORD% --eexit 3 --fee 0.5"
+dir: ewbf_win
+code: ewbf
+linux_bin: miner
+is_enabled: true
+supported_pu:
+- nvidia
+win_exe: miner.exe
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+algos:
+- Equihash
+family: ewbf

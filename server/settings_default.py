@@ -6,7 +6,12 @@ import socket
 class base(object):
     DEBUG = False
     TESTING = False
-    MONGODB_SETTINGS = {'DB': 'testing'}
+    MONGODB_DB = 'testing'
+    MONGODB_HOST = 'localhost'
+    MONGODB_PORT = None
+    MONGODB_USERNAME = None
+    MONGODB_PASSWORD = None
+
     SECRET_KEY = 'secret_for_bestminer_dsfsj3wasd'
 
     # Flask-login
@@ -42,7 +47,7 @@ class production(base):
     DEBUG = False
     TESTING = False
 
-    MONGODB_SETTINGS = {'DB': 'bestminer'}
+    MONGODB_DB = 'bestminer'
     BESTMINER_UPDATE_WTM_DELAY = 300
     BESTMINER_UPDATE_WTM = True
 

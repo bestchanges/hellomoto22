@@ -128,7 +128,7 @@ class User(Document):
 
 
 class Pool(Document):
-    name = StringField(max_length=100, unique_with='user')
+    name = StringField(max_length=100, uinque=True)
     user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)  # if exist then this is user's specific pool
     pool_family = StringField(max_length=30, choices=POOLS_FAMILY)
     info = StringField()
@@ -138,6 +138,7 @@ class Pool(Document):
     servers = ListField(StringField(max_length=100, regex='[\w\.\-]+:\d+'))
     server = StringField(required=True, max_length=100, regex='[\w\.\-]+:\d+')  # server:port
     is_online = BooleanField(default=True)
+    api_url = StringField()
 
     def __unicode__(self):
         return self.name
@@ -184,7 +185,7 @@ class Exchange(Document):
 
 class PoolAccount(Document):
     name = StringField(max_length=200)
-    user = ReferenceField(User, required=True, reverse_delete_rule=mongoengine.CASCADE)
+    user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)
     pool = ReferenceField(Pool, required=True, reverse_delete_rule=mongoengine.DENY)
     #    currency = ReferenceField(Currency, required=True, verbose_name="Currency", radio=True)  # PERHAPS NOT NEED AS SOON AS POOL MINE ONLY ONE COIN
     login = StringField(required=True, max_length=200, help_text="Login for pool connection")
@@ -197,6 +198,7 @@ class PoolAccount(Document):
 
 class ConfigurationGroup(Document):
     name = StringField(max_length=100, required=True, verbose_name="Configuration Name")
+    code = StringField(required=True, unique=True, verbose_name="Unique code")
     user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)
     miner_program = ReferenceField(MinerProgram, required=True, verbose_name="Miner", reverse_delete_rule=mongoengine.DENY)
     # algo: for single currency has taken from currency algo, for dual concatenate using '+'
@@ -260,22 +262,6 @@ class ConfigurationGroup(Document):
         except:
             return None
 
-class ExchangeRate(Document):
-    exchange = ReferenceField(Exchange, unique_with=["from_currency", "to_currency"], reverse_delete_rule=mongoengine.CASCADE)
-    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    rate = FloatField()
-    when = DateTimeField()
-
-
-class ExchangeRateHistory(Document):
-    exchange = ReferenceField(Exchange, reverse_delete_rule=mongoengine.DENY)
-    from_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    to_currency = ReferenceField(Currency, reverse_delete_rule=mongoengine.DENY)
-    rate = FloatField()
-    when = DateTimeField()
-
-
 class Rig(Document):
     uuid = UUIDField(required=True, binary=False, unique=True)
     worker = StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
@@ -320,8 +306,8 @@ class Rig(Document):
         if self.configuration_group.is_dual:
             dual_currency = self.configuration_group.dual_currency
             if dual_currency.algo in self.hashrate:
-                dual_profit = currency.calc_mining_profit(self.hashrate[currency.algo])
-                dual_profit_btc = currency.get_median_btc_rate() * dual_profit
+                dual_profit = dual_currency.calc_mining_profit(self.hashrate[currency.algo])
+                dual_profit_btc = dual_currency.get_median_btc_rate() * dual_profit
         return profit_btc + dual_profit_btc
 
 

@@ -3,11 +3,10 @@ import os
 import random
 import string
 
+from bestminer.exchanges import convert_currency
 from bestminer.models import Currency
-from finik.cryptonator import Cryptonator
 
 logger = logging.getLogger(__name__)
-cryptonator = Cryptonator()
 
 
 def round_to_n(num, max_=2):
@@ -90,7 +89,7 @@ def gen_password(min_len=8, max_len=10, chars=string.ascii_lowercase + string.di
     return ''.join(random.choice(chars) for x in range(size))
 
 
-def expand_command_line(configuration_group, worker='worker'):
+def expand_command_line(configuration_group, rig = None):
     expand_vars = {}
     if configuration_group.pool_server:
         expand_vars["POOL_SERVER"] = server_address(configuration_group.pool_server)
@@ -117,7 +116,12 @@ def expand_command_line(configuration_group, worker='worker'):
         expand_vars["DUAL_POOL_ACCOUNT"] = ''
         expand_vars["DUAL_POOL_PASSWORD"] = ''
         expand_vars["DUAL_CURRENCY"] = ''
-    expand_vars["WORKER"] = worker
+    if not rig:
+        expand_vars["WORKER"] = 'worker'
+        expand_vars["RIG_UUID"] = '00000000-0000-0000-0000-000000000000'
+    else:
+        expand_vars["WORKER"] = rig.worker
+        expand_vars["RIG_UUID"] = str(rig.uuid)
     command_line = configuration_group.command_line
     if not command_line:
         command_line = configuration_group.miner_program.command_line
@@ -142,7 +146,7 @@ def get_exchange_rate(from_, to):
             if found:
                 currency = found[0]
                 return currency.get_median_btc_rate()
-        return cryptonator.get_exchange_rate(from_, to)
+        return convert_currency(from_, to)
     except:
         return None
 
@@ -187,8 +191,13 @@ def compact_hashrate(hashrate, algorithm, compact_for='rig', return_as_string=Fa
         letter = algo_map[algorithm]
     else:
         letter = algo_map['__default__']
-    value = hashrate / mult_map[letter]
     units = "{}h/s".format(letter)
-    if return_as_string:
-        return "{} {}".format(round_to_n(value), units)
-    return value, units
+    if hashrate:
+        value = hashrate / mult_map[letter]
+        if return_as_string:
+            return "{} {}".format(round_to_n(value), units)
+        return value, units
+    else:
+        if return_as_string:
+            return "{} {}".format('?', units)
+        return None, units

@@ -1,0 +1,10 @@
+---
+name: user egor.fedorov@gmail.com
+email: egor.fedorov@gmail.com
+api_key: 4D2Q2NIX0N94PIX1MK8H
+password: a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+client_secret: xknvsu
+settings:
+  profit_currency: RUR
+  default_configuration_group:
+    name: Ethash Benchmark

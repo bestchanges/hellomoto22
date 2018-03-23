@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../bmmonitoring">
+      <sourceFolder url="file://$MODULE_DIR$/../bmmonitoring" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/../bmpools">
+      <sourceFolder url="file://$MODULE_DIR$/../bmpools" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../bmpools/python" />
+    </content>
+    <content url="file://$MODULE_DIR$/../exchanges">
+      <sourceFolder url="file://$MODULE_DIR$/../exchanges" isTestSource="false" />
+    </content>
     <content url="file://$MODULE_DIR$/client">
       <excludeFolder url="file://$MODULE_DIR$/client/update" />
     </content>
     <content url="file://$MODULE_DIR$/server" />
     <content url="file://$MODULE_DIR$/smos" />
-    <content url="file://$MODULE_DIR$/stratum-proxy">
-      <sourceFolder url="file://$MODULE_DIR$/stratum-proxy/stratum-mining-proxy" isTestSource="false" />
-    </content>
     <content url="file://$MODULE_DIR$/trading-bot">
       <sourceFolder url="file://$MODULE_DIR$/trading-bot" isTestSource="false" />
     </content>

@@ -102,7 +102,7 @@ def get_miner_config_for_configuration(conf, rig):
         "miner_code": conf.miner_program.code,
         "miner_directory": dir,
         "miner_exe": bin,
-        "miner_command_line": expand_command_line(configuration_group=conf, worker=rig.worker),
+        "miner_command_line": expand_command_line(configuration_group=conf, rig=rig),
         "miner_version": get_miner_version(dir),
         "env": conf.env,
         "read_output": False,

@@ -1,0 +1,117 @@
+---
+code: ALTCOM
+algo: Skunkhash
+---
+code: BCC
+algo: SHA256
+---
+code: BCN
+algo: CryptoNight
+---
+code: BTC
+algo: SHA256
+---
+code: BTG
+algo: Equihash
+---
+code: DCR
+algo: Blake (14r)
+---
+code: DGB
+algo: Myriad-Groestl
+---
+code: ETC
+algo: Ethash
+---
+code: ETH
+algo: Ethash
+---
+code: ETN
+algo: CryptoNight
+---
+code: ETP
+algo: Ethash
+---
+code: EXP
+algo: Ethash
+---
+code: FTC
+algo: NeoScrypt
+---
+code: GRS
+algo: Groestl
+---
+code: HAL
+algo: NeoScrypt
+---
+code: HUSH
+algo: Equihash
+---
+code: KMD
+algo: Equihash
+---
+code: KRB
+algo: CryptoNight
+---
+code: LBC
+algo: LBRY
+---
+code: MONA
+algo: Lyra2REv2
+---
+code: MUSIC
+algo: Ethash
+---
+code: ORB
+algo: NeoScrypt
+---
+code: PASC
+algo: Pascal
+---
+code: PASL
+algo: Pascal
+---
+code: PIRL
+algo: Ethash
+---
+code: SC
+algo: Blake (2b)
+---
+code: SIB
+algo: X11Gost
+---
+code: SOIL
+algo: Ethash
+---
+code: SUMO
+algo: CryptoNight
+---
+code: TZC
+algo: NeoScrypt
+---
+code: UBQ
+algo: Ethash
+---
+code: VIVO
+algo: NeoScrypt
+---
+code: VTC
+algo: Lyra2REv2
+---
+code: XDN
+algo: CryptoNight
+---
+code: XMR
+algo: CryptoNight
+---
+code: XMY
+algo: Myriad-Groestl
+---
+code: ZCL
+algo: Equihash
+---
+code: ZEC
+algo: Equihash
+---
+code: ZEN
+algo: Equihash

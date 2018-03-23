@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import hashlib
 import json
 import logging
 import os, subprocess
@@ -23,6 +24,8 @@ import psutil
 from zipfile import ZipFile
 
 import sys
+
+import shutil
 import uptime as uptime
 
 logging.basicConfig(
@@ -218,6 +221,20 @@ def get_client_version():
     return file.readline().strip()
 
 
+def download_file_and_check(url, filename):
+    logger.info("Downloading file {}".format(url))
+    request.urlretrieve(url, filename)
+    md5_filename = filename + '.md5'
+    request.urlretrieve(url + '.md5', md5_filename)
+    md5_checksum = open(md5_filename, 'r', encoding='ascii').read()
+    if not md5_checksum:
+        raise Exception("Cannot check file checksum.")
+    md5_tocheck = hashlib.md5(open(filename, 'rb').read()).hexdigest()
+    if md5_checksum != md5_tocheck:
+        raise Exception("Checksum for downloaded file {} not correct. ".format(filename))
+    os.unlink(md5_filename)
+    return filename
+
 def self_update():
     '''
     Self update
@@ -228,13 +245,14 @@ def self_update():
     :return:
     '''
     update_dir = 'update'
-    if not os.path.exists(update_dir):
-        os.mkdir(update_dir)
+    # clean old updates
+    if os.path.exists(update_dir):
+        shutil.rmtree(update_dir)
+    os.mkdir(update_dir)
     my_os = get_my_os()
     zip_filename = "BestMiner-{}.zip".format(my_os)
     url = "http://{}/static/client/{}".format(config['server'], zip_filename)
-    logger.info("Downloading latest program from {}".format(url))
-    request.urlretrieve(url, zip_filename)
+    download_file_and_check(url, zip_filename)
     with ZipFile(zip_filename, 'r') as myzip:
         myzip.extractall(update_dir)
     os.remove(zip_filename)
@@ -356,7 +374,7 @@ class MinerManager():
                 self.miner_config['miner'], self.miner_config['miner_version'], url))
             zip_file = 'miners/%s.zip' % (self.miner_config["miner_directory"])
             if not os.path.exists('miners'): os.mkdir('miners')
-            request.urlretrieve(url, zip_file)
+            download_file_and_check(url, zip_file)
             with ZipFile(zip_file, 'r') as myzip:
                 myzip.extractall('miners')
             os.remove(zip_file)
@@ -892,7 +910,10 @@ if __name__ == "__main__":
 
     if config['client_version'] != get_client_version():
         logger.info("New version available! Going to install version {}".format(config['client_version']))
-        self_update()
+        try:
+            self_update()
+        except Exception as e:
+            logger.error("Error self_update: {}".format(e))
 
     task_manager = TaskManager()
     task_manager.start()

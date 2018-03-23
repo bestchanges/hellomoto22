@@ -1,0 +1,48 @@
+---
+name: Pseudo Claymore Miner
+linux_bin: python
+command_line: "-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt
+  --delay 0.3 "
+is_enabled: true
+supported_os:
+- Windows
+- Linux
+win_exe: "..\\..\\epython\\python.exe"
+algos:
+- Ethash+Blake (14r)
+- Ethash
+supported_pu:
+- nvidia
+- amd
+family: claymore
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+dir: miner_emu
+dir_linux: miner_emu
+code: pseudo_claymore_miner
+---
+name: Pseudo EWBF Miner
+linux_bin: python
+command_line: "-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log
+  --delay 0.5 "
+is_enabled: true
+supported_os:
+- Windows
+- Linux
+win_exe: "..\\..\\epython\\python.exe"
+algos:
+- Equihash
+supported_pu:
+- nvidia
+family: ewbf
+env:
+  GPU_MAX_HEAP_SIZE: '100'
+  GPU_USE_SYNC_OBJECTS: '1'
+  GPU_MAX_ALLOC_PERCENT: '100'
+  GPU_SINGLE_ALLOC_PERCENT: '100'
+dir: miner_emu
+dir_linux: miner_emu
+code: pseudo_ewbf_miner

@@ -1,200 +1,105 @@
-import json
 import logging
+import os
 import string
 from _sha256 import sha256
 
-from bestminer import profit_manager, app
+import yaml
+
+from bestminer import app
 from bestminer.models import *
 from bestminer.server_commons import assert_expr, gen_password
 
 logger=logging.getLogger(__name__)
 
-DEFAULT_MINER_ENV = {
-    'GPU_MAX_HEAP_SIZE': '100',
-    'GPU_USE_SYNC_OBJECTS': '1',
-    'GPU_MAX_ALLOC_PERCENT': '100',
-    'GPU_SINGLE_ALLOC_PERCENT': '100',
-}
-
-from bestminer.rig_manager import BenchmarkRigManager
-
-
-def initial_data():
-    # let's create static data according with GET_OR_CREATE technique as in https://stackoverflow.com/questions/8447502/how-to-do-insert-if-not-exist-else-update-with-mongoengine
-    profit_manager.update_currency_from_wtm(json.load(open('coins1.json', 'r')))
-
-    Currency.objects(code="BTC").update_one(algo='SHA256', upsert=True)
-    Currency.objects(code="BCC").update_one(algo='SHA256', upsert=True)
-
-    Exchange.objects(name="Poloniex").update_one(handler='PoloniexExchange', upsert=True)
-
-    miner_program = MinerProgram.objects(name='Claymore Dual').modify(
-        upsert=True,
-        set__family = 'claymore',
-        set__code = 'claymore_dual',
-        set__dir = 'claymore10_win',
-        set__win_exe = 'EthDcrMiner64.exe',
-        set__dir_linux = 'claymore10_linux',
-        set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool %DUAL_POOL_SERVER%:%DUAL_POOL_PORT% -dwal %DUAL_POOL_ACCOUNT% -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1',
-        set__env = DEFAULT_MINER_ENV,
-        set__algos = ['Ethash+Blake (14r)',],
-        set__supported_os = ['Windows', 'Linux'],
-        set__supported_pu = ['nvidia', 'amd'],
-        set__is_enabled=True,
-    )
-
-    miner_program = MinerProgram.objects(name='Claymore').modify(
-        upsert=True,
-        set__family = 'claymore',
-        set__code = 'claymore',
-        set__dir = 'claymore10_win',
-        set__win_exe = 'EthDcrMiner64.exe',
-        set__dir_linux = 'claymore10_linux',
-        set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL_PASSWORD% -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Ethash', ],
-        set__supported_os = ['Windows', 'Linux'],
-        set__supported_pu=['nvidia', 'amd'],
-        set__is_enabled=True,
-    )
-
-    miner_program = MinerProgram.objects(name='Claymore Zcash AMD').modify(
-        upsert=True,
-        set__family = 'claymore',
-        set__code = 'claymore_zcash_amd',
-        set__dir = 'claymore_zcash_amd',
-        set__win_exe = 'ZecMiner64.exe',
-        set__dir_linux = 'claymore_zcash_amd_linux',
-        set__linux_bin = 'ethdcrminer64',
-        set__command_line = '-zpool %POOL_SERVER%:%POOL_PORT% -zwal %POOL_ACCOUNT% -zpsw %POOL_PASSWORD% -allpools 1 -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -ftime 30 -asm 1',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Equihash', ],
-        set__supported_os = ['Windows'], # TODO: add linux later
-        set__supported_pu=['amd'],
-        set__is_enabled=True,
-    )
-
-    miner_program = MinerProgram.objects(name='EWBF').modify(
-        upsert=True,
-        set__family = 'ewbf',
-        set__code = 'ewbf',
-        set__dir = 'ewbf_win',
-        set__win_exe = 'miner.exe',
-        set__dir_linux = 'ewbf_linux',
-        set__linux_bin = 'miner',
-        set__command_line = '--server %POOL_SERVER% --port %POOL_PORT% --user %POOL_ACCOUNT% --log 2 --pass %POOL_PASSWORD% --eexit 3 --fee 0.5',
-        set__env=DEFAULT_MINER_ENV,
-        set__algos=['Equihash', ],
-        set__supported_os=['Windows', 'Linux'],
-        set__supported_pu = ['nvidia', ],
-        set__is_enabled=True,
-    )
-
-    poloniex = Exchange.objects(name="Poloniex").modify(
-        upsert=True,
-        set__name="Poloniex"
-    )
+def decode_field(object, field_name, field_value):
+    field = object._fields[field_name]
+    if isinstance(field, ReferenceField):
+        ref_object_type = field.document_type
+        try:
+            # object = ConfigurationGroup.objects(__raw__={'name': 'ETH+DCR'}).first()
+            referenced_objects = ref_object_type.objects(__raw__=field_value)
+            if len(referenced_objects) != 1:
+                raise Exception(
+                    "reference filed '{}' has query '{}'. Returned {} entries instead of expected 1".format(
+                       field_name, field_value, len(referenced_objects)))
+            setattr(object, field_name, referenced_objects[0])
+        except Exception as e:
+            raise Exception(
+                "reference filed '{}' has query '{}'. During query raised exception: {}".format(
+                    field_name, field_value, e))
+    elif isinstance(field, EmbeddedDocumentField):
+        embedded_object = field.document_type()
+        for field, value in field_value.items():
+            decode_field(embedded_object, field, value)
+        setattr(object, field_name, embedded_object)
+    else:
+        setattr(object, field_name, field_value)
 
 
-    pool = Pool.objects(name="Ethermine").modify(
-        upsert=True,
-    	set__pool_family = "ethermine",
-    	set__info = "",
-    	set__website = "https://ethermine.org",
-    	set__currency = Currency.objects.get(code="ETH"),
-    	set__fee = 0.01,
-    	set__servers = ['us1.ethermine.org:4444', 'us1.ethermine.org:14444', 'eu1.ethermine.org:4444',
-                    'eu1.ethermine.org:14444'],
-    	set__server = 'eu1.ethermine.org:4444',
-    )
-
-    pool = Pool.objects(name="ZEN suprnova").modify(
-        upsert=True,
-    	set__pool_family = "suprnova",
-    	set__info = "",
-    	set__website = "https://zen.suprnova.cc",
-    	set__currency = Currency.objects.get(code="ZEN"),
-    	set__fee = 0.01,
-    	set__servers = ['zen.suprnova.cc:3618'],
-    	set__server = 'zen.suprnova.cc:3618',
-    )
-
-    pool = Pool.objects(name="BTG suprnova").modify(
-        upsert=True,
-    	set__pool_family = "suprnova",
-    	set__info = "",
-    	set__website = "https://btg.suprnova.cc",
-    	set__currency = Currency.objects.get(code="BTG"),
-    	set__fee = 0.01,
-    	set__servers = ['btg.suprnova.cc:8816'],
-    	set__server = 'btg.suprnova.cc:8816',
-    )
-
-    pool = Pool.objects(name= "FlyPool").modify(
-        upsert=True,
-        set__pool_family = "ethermine",
-    	set__info = "Zcash 	pool",
-    	set__website = "http://zcash.flypool.org",
-    	set__currency = Currency.objects.get(code="ZEC"),
-    	set__fee = 0.01,
-    	set__servers = ['asia1-zcash.flypool.org:3333', 'eu1-zcash.flypool.org:3333', 'eu1-zcash.flypool.org:13333'],
-    	set__server = 'eu1-zcash.flypool.org:3333',
-    )
-
-    pool = Pool.objects(name="Decred Coinmine").modify(
-        upsert = True,
-        set__pool_family = "coinmine",
-        set__info = "",
-        set__website = "https://www2.coinmine.pl/dcr/index.php?page=statistics&action=pool",
-        set__currency = Currency.objects.get(code="DCR"),
-        set__fee = 0.01,
-        set__servers = ['dcr.coinmine.pl:2222', 'dcr-eu.coinmine.pl:2222', 'dcr-us.coinmine.pl:2222',
-                'dcr-as.coinmine.pl:2222'],
-        set__server = 'dcr.coinmine.pl:2222',
-    )
-
-    create_benckmark_configurations()
-
-    if app.config.get("TESTING"):
-        # ADD TESTING MINER FOR TESTING ENVIRONMENT
-        miner_program = MinerProgram.objects(name='Pseudo Claymore Miner').modify(
-            upsert=True,
-            set__family = 'claymore',
-            set__code = 'pseudo_claymore_miner',
-            set__dir = 'miner_emu',
-            set__win_exe = '..\..\epython\python.exe',
-            set__dir_linux = 'miner_emu',
-            set__linux_bin = 'python',
-            set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file log_noappend.txt --delay 0.3 ',
-            set__env=DEFAULT_MINER_ENV,
-            set__algos=['Ethash+Blake (14r)', 'Ethash'],
-            set__supported_os=['Windows', 'Linux'],
-            set__supported_pu=['nvidia', 'amd'],
-            set__is_enabled=True,
-        )
-        miner_program = MinerProgram.objects(name='Pseudo EWBF Miner').modify(
-            upsert=True,
-            set__family = 'ewbf',
-            set__code = 'pseudo_ewbf_miner',
-            set__dir = 'miner_emu',
-            set__win_exe = '..\..\epython\python.exe',
-            set__dir_linux = 'miner_emu',
-            set__linux_bin = 'python',
-            set__command_line = '-u miner_emu.py --file %CURRENCY%%DUAL_CURRENCY%.txt --dst_file miner.log --delay 0.5 ',
-            set__env=DEFAULT_MINER_ENV,
-            set__algos=['Equihash', ],
-            set__supported_os=['Windows', 'Linux'],
-            set__supported_pu=['nvidia', ],
-            set__is_enabled=True,
-        )
+def load_documents_from_yaml(yaml_content, doc_class, primary_key_field):
+    object_num = 0
+    for data in yaml.load_all(yaml_content):
+        object_num += 1
+        # load existing object by provided primary key and it's value in data
+        if not data or not data[primary_key_field]:
+            raise Exception("For {}, entry #{}, primary key '{}' not definied: {}".format(doc_class._class_name, object_num, primary_key_field, data))
+        try:
+            objects = doc_class.objects(__raw__={primary_key_field: data[primary_key_field]})
+        except Exception as e:
+            raise Exception("For {}, entry #{}, {}".format(doc_class._class_name, object_num, e))
+        if len(objects) > 1:
+            raise Exception(
+                "For {}, entry #{}, for primary key '{}' = '{}' was found {} entries instead of expected 1".format(
+                    doc_class._class_name, object_num, primary_key_field, data[primary_key_field], len(objects)))
+        if not objects:
+            # create new instance
+            object = doc_class()
+        else:
+            object = objects[0]
+        # now fill all fields to values
+        for field_name, field_value in data.items():
+            try:
+                decode_field(object, field_name, field_value)
+            except Exception as e:
+                raise Exception("For {}, entry #{}, {}".format(doc_class._class_name, object_num, e))
+        logger.debug("Store {} '{}'".format(doc_class._class_name, data[primary_key_field]))
+        object.save()
 
 
+def load_initial_data_for_doc_class(filename_prefix, platform_type, doc_class, primary_key_field):
+    directory = 'data'
+    logger.info("Loading data for {}".format(doc_class._class_name))
+    for suffix in ['_common', '_' + platform_type, '']:
+        load_filename = filename_prefix + suffix + '.yaml'
+        full_filename = os.path.join(directory, load_filename)
+        if os.path.isfile(full_filename):
+            logger.info("Parsing file {}".format(full_filename))
+            file = open(full_filename, 'r')
+            data = file.read()
+            # TODO: catch exception and display message with filename and entry
+            try:
+                load_documents_from_yaml(data, doc_class, primary_key_field)
+            except Exception as e:
+                raise Exception("Exception during loading data from file '{}'. {}".format(load_filename, e))
+
+
+def load_data(platform):
+    """
+    Refer to: https://github.com/bestchanges/hellomoto22/wiki/Inital-Data
+
+    :param platform: one of 'development', 'testing', 'production'
+    """
+
+    load_initial_data_for_doc_class('currency', platform, Currency, 'code')
+    load_initial_data_for_doc_class('miner_program', platform, MinerProgram, 'name')
+    load_initial_data_for_doc_class('exchange', platform, Exchange, 'name')
+    load_initial_data_for_doc_class('pool', platform, Pool, 'name')
+    load_initial_data_for_doc_class('pool_account', platform, PoolAccount, 'name')
+    load_initial_data_for_doc_class('configuration_group', platform, ConfigurationGroup, 'code')
+    load_initial_data_for_doc_class('user', platform, User, 'name')
 
 
 def test_data_for_user(user):
-
     mp_pc = MinerProgram.objects.get(code="pseudo_claymore_miner")
     eth = Currency.objects.get(code="ETH")
     dcr = Currency.objects.get(code="DCR")
@@ -256,15 +161,6 @@ def test_data_for_user(user):
 
 
 
-
-
-def sample_data():
-    email = 'egor.fedorov@gmail.com'
-    if not User.objects(email=email):
-        user, password = create_user(email, password='123')
-        logger.debug("Created sample user {} with password {}".format(user, password))
-
-
 def create_user(email, name=None, password=None, settings=None):
     """
 
@@ -293,105 +189,6 @@ def create_user(email, name=None, password=None, settings=None):
     create_initial_objects_for_user(user)
     return user, password
 
-def fix_users_missed_configurations():
-    for user in User.objects():
-        confs = ConfigurationGroup.objects(user=user)
-        if len(confs) == 0:
-            create_initial_objects_for_user(user)
-            for rig in Rig.objects(user=user):
-                rig.configuration_group = user.settings.default_configuration_group
-                rig.save()
-
-
-def create_benckmark_configurations():
-    eth = Currency.objects.get(code="ETH")
-    dcr = Currency.objects.get(code="DCR")
-    zec = Currency.objects.get(code="ZEC")
-
-    mp_cd = MinerProgram.objects.get(code="claymore_dual")
-    cg_n = BenchmarkRigManager.ETHASH_BLAKE
-    l = ConfigurationGroup.objects(user=None, name=cg_n)
-    if l:
-        cg = l[0]
-    else:
-        cg = ConfigurationGroup()
-        cg.name = cg_n
-    cg.currency = eth
-    cg.miner_program = mp_cd
-    cg.algo = "+".join([eth.algo, dcr.algo])
-    cg.pool_server = 'eu1.ethermine.org:4444'
-    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark"
-    cg.pool_password = "x"
-    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
-    cg.is_dual = True
-    cg.dual_currency = dcr
-    cg.dual_pool_server = 'dcr.coinmine.pl:2222'
-    cg.dual_pool_login = "egoaga19.benchmark"
-    cg.dual_pool_password = "x"
-    cg.dual_wallet = "DsZAfQcte7c6xKoaVyva2YpNycLh2Kzc8Hq"
-    cg.save()
-
-    cg_n = BenchmarkRigManager.ETHASH
-    mp_c = MinerProgram.objects.get(code="claymore")
-    l = ConfigurationGroup.objects(user=None, name=cg_n)
-    if l:
-        cg = l[0]
-    else:
-        cg = ConfigurationGroup()
-        cg.name = cg_n
-    cg.miner_program = mp_c
-    cg.algo = "+".join([eth.algo])
-    cg.command_line = mp_c.command_line
-    cg.env = mp_c.env
-    cg.currency = eth
-    cg.pool_server = 'eu1.ethermine.org:4444'
-    cg.pool_login = "0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark"
-    cg.pool_password = "x"
-    cg.wallet = "0x397b4b2fa22b8154ad6a92a53913d10186170974"
-    cg.is_dual = False
-    cg.save()
-
-    # ZEC
-    cg_n = BenchmarkRigManager.EQUIHASH_NVIDIA
-    mp_e = MinerProgram.objects.get(code="ewbf")
-    l = ConfigurationGroup.objects(user=None, name=cg_n)
-    if l:
-        cg = l[0]
-    else:
-        cg = ConfigurationGroup()
-        cg.name = cg_n
-    cg.miner_program = mp_e
-    cg.algo = "+".join([zec.algo])
-    cg.command_line = mp_e.command_line
-    cg.env = mp_e.env
-    cg.currency = zec
-    cg.pool_server = 'eu1-zcash.flypool.org:3333'
-    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.benchmark"
-    cg.pool_password = "x"
-    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
-    cg.is_dual = False
-    cg.save()
-
-    mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
-    cg_n = BenchmarkRigManager.EQUIHASH_AMD
-    l = ConfigurationGroup.objects(user=None, name=cg_n)
-    if l:
-        cg = l[0]
-    else:
-        cg = ConfigurationGroup()
-        cg.name = cg_n
-    cg.miner_program = mp_e
-    cg.algo = "+".join([zec.algo])
-    cg.command_line = mp_e.command_line
-    cg.env = mp_e.env
-    cg.currency = zec
-    cg.pool_server = 'eu1-zcash.flypool.org:3333'
-    cg.pool_login = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q.%WORKER%"
-    cg.pool_password = "x"
-    cg.wallet = "t1Q99nQXpQqBbutcaFhZSe3r93R9w4HzV2Q"
-    cg.is_dual = False
-    cg.save()
-
 
 def create_initial_objects_for_user(user):
     """
@@ -407,6 +204,7 @@ def create_initial_objects_for_user(user):
     mp_cd = MinerProgram.objects.get(code="claymore_dual")
     cg = ConfigurationGroup()
     cg.name="ETH+DCR"
+    cg.code = user.email + '_' + "ETH+DCR"
     cg.user = user
     cg.command_line = mp_cd.command_line
     cg.currency = eth
@@ -427,6 +225,7 @@ def create_initial_objects_for_user(user):
     mp_c = MinerProgram.objects.get(code="claymore")
     cg = ConfigurationGroup()
     cg.name="ETH"
+    cg.code = user.email + '_' + "ETH"
     cg.user=user
     cg.miner_program=mp_c
     cg.algo = "+".join([eth.algo])
@@ -447,6 +246,7 @@ def create_initial_objects_for_user(user):
     mp_e = MinerProgram.objects.get(code="ewbf")
     cg = ConfigurationGroup()
     cg.name="ZEC(nvidia)"
+    cg.code = user.email + '_' + "ZEC(nvidia)"
     cg.user=user
     cg.miner_program=mp_e
     cg.algo = "+".join([zec.algo])
@@ -463,6 +263,7 @@ def create_initial_objects_for_user(user):
     mp_e = MinerProgram.objects.get(code="claymore_zcash_amd")
     cg = ConfigurationGroup()
     cg.name="ZEC(amd)"
+    cg.code = user.email + '_' + "ZEC(amd)"
     cg.user=user
     cg.miner_program=mp_e
     cg.algo = "+".join([zec.algo])

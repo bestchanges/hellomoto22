@@ -1,6 +1,0 @@
-name,pool_family,info,website,currency,fee,servers,server
-Ethermine,ethermine,login=your_wallet.%WORKER%,https://ethermine.org,ETH,0.01,"[""us1.ethermine.org:4444"",""us1.ethermine.org:14444"",""eu1.ethermine.org:4444"",""eu1.ethermine.org:14444""]",eu1.ethermine.org:4444
-FlyPool,ethermine,login=your_wallet.%WORKER%,http://zcash.flypool.org,ZEC,0.01,"[""asia1-zcash.flypool.org:3333"",""eu1-zcash.flypool.org:3333"",""eu1-zcash.flypool.org:13333""]",eu1-zcash.flypool.org:3333
-Decred Coinmine,coinmine,,https://www2.coinmine.pl/dcr/index.php?page=statistics&action=pool,DCR,0.01,"[""dcr.coinmine.pl:2222"",""dcr-eu.coinmine.pl:2222"",""dcr-us.coinmine.pl:2222"",""dcr-as.coinmine.pl:2222""]",dcr.coinmine.pl:2222
-ZEN suprnova,suprnova,login=suprnova_account.%WORKER%\nDo not forget to create workers in suprnova (MyAccount-My workers),https://zen.suprnova.cc,ZEN,0.01,"[""zen.suprnova.cc:3618""]",zen.suprnova.cc:3618
-BTG suprnova,suprnova,login=suprnova_account.%WORKER%\nDo not forget to create workers in suprnova (MyAccount-My workers),https://btg.suprnova.cc,BTG,0.01,"[""btg.suprnova.cc:8816""]",btg.suprnova.cc:8816

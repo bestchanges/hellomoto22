@@ -1,4 +1,7 @@
 import sys
+
+from requests import Response
+
 sys.path.append('./python_libs')
 
 import calendar
@@ -254,7 +257,9 @@ def get_client_version():
 
 
 def download_file(url, filename):
-    r = requests.get(url, stream=True, timeout=NETWORK_TIMEOUT)
+    r = requests.get(url, stream=True, timeout=NETWORK_TIMEOUT) # type: Response
+    if r.status_code != 200:
+        raise Exception("URL '{}' return error code '{}'".format(url, r.status_code))
     with open(filename, 'wb') as fd:
         for chunk in r.iter_content(chunk_size=1024*100):
             fd.write(chunk)

@@ -477,12 +477,17 @@ def rig_info(uuid=None):
     rate = get_exchange_rate('BTC', user.settings.profit_currency)
     if not rate:
         rate = 0
-    for config,profit in autoswitch_manager.list_configuration_group_profit_for_rig(rig):
+    for config in ConfigurationGroup.filter_applicable_for_rig(ConfigurationGroup.list_for_user(rig.user), rig):
+        profit = autoswitch_manager.calculate_profit_for_config(rig, config)
+        if profit:
+            profit_str =  "{} {}".format(round_to_n(profit * rate), user.settings.profit_currency)
+        else:
+            profit_str = '?'
         select_config.append({
             'name': config.name,
             'id': str(config.id),
             'current': rig.configuration_group.id == config.id,
-            'profit': "{} {}".format(round_to_n(profit * rate), user.settings.profit_currency)
+            'profit': profit_str
         })
     all_algos = []
     miners = MinerProgram.objects(supported_pu=rig.pu, supported_os=rig.os)

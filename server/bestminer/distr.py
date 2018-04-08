@@ -178,4 +178,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger.info("RUN generation of ZIP files for client")
     client_zip_linux_for_update()
+    client_zip_windows_for_update()
+    miners_zip()
     # miners_zip()

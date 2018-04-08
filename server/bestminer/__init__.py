@@ -7,12 +7,25 @@ import bestminer.logging_config
 
 import json
 
+# when you need to sleep() use exit_event.wait(seconds)
+exit_event = threading.Event()
+
+def quit(signo, _frame):
+    print("Interrupted by %d, shutting down" % signo)
+    exit_event.set()
+
+# from https://stackoverflow.com/questions/5114292/break-interrupt-a-time-sleep-in-python
+import signal
+for sig in ('TERM', 'INT'):
+    signal.signal(getattr(signal, 'SIG'+sig), quit)
+
+
 from bestminer.distr import client_zip_windows_for_update
 from bestminer.monitoring import MonitoringManager
 import flask
 from flask_login import LoginManager, UserMixin
 
-from bestminer.models import User
+from bestminer.models import User, Rig
 
 
 from bestminer.logging_server import LoggingServer
@@ -126,6 +139,20 @@ import bestminer.api_client.api
 @app.route("/")
 def index():
     return flask.redirect('http://www.bestminer.io')
+
+@app.route("/stat")
+def stat():
+    stat_data = {
+        'users': {
+            'total': User.objects().count(),
+            'online': len(Rig.objects(is_online=True).item_frequencies('user')),
+        },
+        'rigs': {
+            'total': Rig.objects().count(),
+            'online': Rig.objects(is_online=True).count(),
+        },
+    }
+    return flask.jsonify(stat_data)
 
 app.register_blueprint(bestminer.mod_auth.views.mod, url_prefix='/auth')
 app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')

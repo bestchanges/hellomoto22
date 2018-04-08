@@ -65,6 +65,7 @@ def register_rig():
     config["miner_config"] = get_miner_config_for_configuration(conf, rig)
     config['server'] = request.host  # 127.0.0.1:5000
     config['rig_id'] = rig_uuid
+    config['pu'] = rig.pu
     config['email'] = email
     config['worker'] = rig.worker
     config['client_version'] = get_client_version()
@@ -195,7 +196,7 @@ def receive_stat():
     do_run_benchmark = False
     if not rig.pu and 'pu_types' in stat and stat['pu_types']:
         # WE GOT PU TYPE FROM CLIENT. AND THAT's NEW INFORMATION FOR US
-        # do not overwrite pu if set explicitly
+        # do not overwrite pu if already set
         # Note: now rig supports only ONE PU family
         rig.pu = stat['pu_types'][0]
         do_run_benchmark = True

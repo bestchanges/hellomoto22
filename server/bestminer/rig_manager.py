@@ -2,8 +2,8 @@ import logging
 import threading
 import traceback
 from datetime import datetime
-from time import sleep
 
+from bestminer import exit_event
 from bestminer.models import *
 
 
@@ -117,7 +117,7 @@ class AutoSwitchRigManager(RigManager):
                     self.logger.error("Exception during execution. {}".format(e))
                     traceback.print_exc()
             # ok. now sleep for next iteration
-            sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)
 
     def list_configuration_group_profit_for_rig(self, rig):
         """
@@ -198,6 +198,10 @@ class BenchmarkRigManager(RigManager):
 
     benchmark_configs = {
         'Windows': {
+            'nvidia' : [ETHASH, ETHASH_BLAKE, EQUIHASH_NVIDIA],
+            'amd' : [ETHASH, ETHASH_BLAKE, EQUIHASH_AMD],
+        },
+        'Linux': {
             'nvidia' : [ETHASH, ETHASH_BLAKE, EQUIHASH_NVIDIA],
             'amd' : [ETHASH, ETHASH_BLAKE, EQUIHASH_AMD],
         }
@@ -302,7 +306,7 @@ class BenchmarkRigManager(RigManager):
                     self.logger.error("Exception during execution. {}".format(e))
                     traceback.print_exc()
             # ok. now sleep for next iteration
-            sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)
 
     def remove_rig(self, rig):
         del self.tasks[rig.uuid]

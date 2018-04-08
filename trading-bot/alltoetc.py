@@ -8,8 +8,8 @@ poloniex_configurations = {
 }
 
 poloniex_account = 'egor.fedorov@gmail.com'
-config = poloniex_configurations[poloniex_account]
-polo = Poloniex(config['APIKEY'], config['SECRET'])
+settings = poloniex_configurations[poloniex_account]
+polo = Poloniex(settings['APIKEY'], settings['SECRET'])
 
 
 def coin_to_btc(coin):

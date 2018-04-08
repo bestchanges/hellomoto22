@@ -11,7 +11,7 @@ poloniex_configurations = {
 }
 
 poloniex_account = 'egor.fedorov@gmail.com'
-config = poloniex_configurations[poloniex_account]
+settings = poloniex_configurations[poloniex_account]
 
 connect("okminer")
 
@@ -52,7 +52,7 @@ class PoloniexExchangeAccount(ExchangeAccount):
 
 pp = pprint.PrettyPrinter(indent=4, width=100)
 
-polo = Poloniex(config['APIKEY'], config['SECRET'])
+polo = Poloniex(settings['APIKEY'], settings['SECRET'])
 ticker = polo.returnTicker()['BTC_ETH']
 balances = polo.returnBalances()
 coin = 'DCR'

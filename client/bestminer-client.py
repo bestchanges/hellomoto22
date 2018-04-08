@@ -1,3 +1,6 @@
+import sys
+sys.path.append('./python_libs')
+
 import calendar
 import datetime
 import hashlib
@@ -5,16 +8,13 @@ import json
 import logging
 import os, subprocess
 import platform
-import pprint
 import re
 import shlex
 import threading
 import time
 import traceback
-import urllib
 from logging import handlers
 from queue import Queue, Empty
-from urllib import request
 from uuid import uuid5
 
 import requests
@@ -33,9 +33,24 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger('client')
+logger.setLevel(logging.INFO)
 server_only_logger = logging.getLogger('server_logger')
 server_only_logger.setLevel(logging.INFO)
 
+
+
+import argparse
+
+parser = argparse.ArgumentParser(description='BestMiner client application', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('--timeout', '-t', nargs="?", default=10, type=int, help="Network timeout when accessing the server")
+parser.add_argument('--version', action='version', version=open('version.txt', 'r').read())
+parser.add_argument('--debug', '-d', action="store_true", help="Print debug messages")
+args = parser.parse_args()
+
+# default timeout of network response
+NETWORK_TIMEOUT = args.timeout
+if args.debug:
+    logger.setLevel(logging.DEBUG)
 
 class LimitedList(list):
     '''
@@ -78,7 +93,7 @@ miner_monitor = None
 miner_monitor_tasks = Queue()
 
 config_ini = load_config_ini()
-config = {}
+settings = {}
 stat_manager = None
 task_manager = None
 
@@ -179,40 +194,39 @@ def register_on_server():
     Get/update config from server. Save updated config
     :return:
     """
-    global config, config_ini
+    global settings, config_ini
     try:
-        config = json.load(open('settings.json'))
+        settings = json.load(open('settings.json'))
     except Exception as e:
         # json config not exists. OK, we will request it from server
         pass
     # default server
-    # TODO: set default public server here
-    server_address = 'localhost:5000'
-    if 'server' in config:
+    server_address = 'bestminer.io'
+    if 'server' in settings:
         # last contacted server
-        server_address = config['server']
+        server_address = settings['server']
     if 'server' in config_ini:
         # can override from user configuration
         server_address = config_ini['server']
     # Ok. Now we call server and update config from it
     try:
         # send current config to the server for update and review
-        newconfig = call_server_api("client/rig_config", data=config, server_address=server_address)
+        newconfig = call_server_api("client/rig_config", data=settings, server_address=server_address)
         if newconfig['rig_id']:
             # Save config from server as new
-            config = newconfig
+            settings = newconfig
             save_config()
-        return config
-    except requests.exceptions.ConnectionError as e:
+        return settings
+    except requests.exceptions.RequestException as e:
         logging.error("Cannot connect to server %s" % e)
         return None
 
 
 def save_config():
-    if not config["server"]:
+    if not settings["server"]:
         raise Exception("Broken config. Not saving")
     file = open("settings.json", "w")
-    json.dump(config, file, indent=2, sort_keys=True)
+    json.dump(settings, file, indent=2, sort_keys=True)
 
 
 def get_client_version():
@@ -221,11 +235,17 @@ def get_client_version():
     return file.readline().strip()
 
 
+def download_file(url, filename):
+    r = requests.get(url, stream=True, timeout=NETWORK_TIMEOUT)
+    with open(filename, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=1024*100):
+            fd.write(chunk)
+
 def download_file_and_check(url, filename):
     logger.info("Downloading file {}".format(url))
-    request.urlretrieve(url, filename)
+    download_file(url, filename)
     md5_filename = filename + '.md5'
-    request.urlretrieve(url + '.md5', md5_filename)
+    download_file(url + '.md5', md5_filename)
     md5_checksum = open(md5_filename, 'r', encoding='ascii').read()
     if not md5_checksum:
         raise Exception("Cannot check file checksum.")
@@ -251,11 +271,12 @@ def self_update():
     os.mkdir(update_dir)
     my_os = get_my_os()
     zip_filename = "BestMiner-{}.zip".format(my_os)
-    url = "http://{}/static/client/{}".format(config['server'], zip_filename)
+    url = "http://{}/static/client/{}".format(settings['server'], zip_filename)
     download_file_and_check(url, zip_filename)
     with ZipFile(zip_filename, 'r') as myzip:
         myzip.extractall(update_dir)
-    os.remove(zip_filename)
+    # according to: Update improvements #14
+    # os.remove(zip_filename)
     logger.info("Download complete. Going to stop miner and install update.")
 
     global miner_monitor
@@ -300,6 +321,12 @@ class LogReaderThread(threading.Thread):
                 else:
                     return # EXIT FROM this THREAD
 
+
+def get_value(dict, key, default=None):
+    if key in dict:
+        return dict[key]
+    else:
+        return default
 
 class MinerManager():
     """
@@ -368,7 +395,7 @@ class MinerManager():
         # Let's download miner if required to update
         miner_dir = os.path.join('miners', self.miner_config["miner_directory"])
         if not os.path.exists(miner_dir) or self.get_miner_version(miner_dir) != self.miner_config['miner_version']:
-            url = "http://%s/static/miners/%s.zip" % (config['server'], self.miner_config["miner_directory"])
+            url = "http://%s/static/miners/%s.zip" % (settings['server'], self.miner_config["miner_directory"])
             self.logger.info(
                 "Downloading miner '%s' (ver %s) from %s" % (
                 self.miner_config['miner'], self.miner_config['miner_version'], url))
@@ -377,11 +404,44 @@ class MinerManager():
             download_file_and_check(url, zip_file)
             with ZipFile(zip_file, 'r') as myzip:
                 myzip.extractall('miners')
-            os.remove(zip_file)
-            self.logger.info("Successfully download miner.")
+            logger.info("Successfully download miner.")
+            # do not remove miner zip
+            # os.remove(zip_file)
+            if get_my_os() == "Linux":
+                # set executable attribute on miner
+                cmd = "chmod +x {}".format(os.path.join(miner_dir, self.miner_config["miner_exe"]))
+                logger.debug(cmd)
+                subprocess.run(cmd, shell=True)
 
     def handle_log_line(self, line):
         self.logger.info(line)
+
+
+    def overclocking(self):
+        if not 'overclocking' in self.miner_config:
+            logger.warning("Overclocking not applied. Not defined values in setttings")
+        oc_settings = self.miner_config['overclocking']
+        if get_my_os() != 'Linux':
+            logger.warning("Overclocking not applied. Overclocking support only Linux")
+
+        if settings.get('pu') == 'nvidia':
+            # set nvidia overclocking
+            cmd = "sudo /root/utils/oc_nv.sh {core} {memory} {powerlimit}".format(
+                core=oc_settings.get('core', 0),
+                memory=oc_settings.get('memory', 0),
+                powerlimit=oc_settings.get('power_limit', 0),
+            )
+            logger.debug(cmd)
+            proc = subprocess.run(cmd, shell=True, stdout=None)
+        if settings.get('pu') == 'amd':
+            # set amd overclocking
+            cmd = "sudo /root/utils/oc_dpm.sh {core} {memory} {core_voltage}".format(
+                core=oc_settings.get('core', 0),
+                memory=oc_settings.get('memory', 0),
+                core_voltage=oc_settings.get('core_voltage', ''),
+            )
+            proc = subprocess.run(cmd, shell=True, stdout=None)
+            pass
 
 
     # TODO: remove
@@ -432,12 +492,13 @@ class MinerManager():
             return
 
         self.download_miner_if_required()
+        self.overclocking()
 
         miner_dir = os.path.join('miners', self.miner_config["miner_directory"])
         miner_exe = self.miner_config["miner_exe"]
         args = shlex.split(self.miner_config["miner_command_line"])
         args.insert(0, miner_exe)
-        self.logger.info("Going to run miner from '%s' %s" % (miner_dir, " ".join(args)))
+        logger.debug("Going to run miner from '%s' %s" % (miner_dir, " ".join(args)))
         env = self.miner_config["env"]
         full_env = {**os.environ, **env}
 
@@ -445,7 +506,7 @@ class MinerManager():
             # we've got some problem using stdout=PIPE because of system buffer of stdout (about 8k).
             # thus we cannot read stdout in realtime, which is quite useless.
             # Workaround is to parse miner's log (at least claymore and ewbf write logs)
-            self.miner_process = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            self.miner_process = subprocess.Popen(" ".join(args), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                                   bufsize=0,
                                                   env=full_env, cwd=miner_dir, universal_newlines=True)
 
@@ -453,10 +514,11 @@ class MinerManager():
             log_reader.start()
 
         else:
-            self.miner_process = subprocess.Popen(args, shell=True, stdout=None, stderr=None, bufsize=0,
+            # when start under windows shell=False has bug when args converted to string anyway. and
+            self.miner_process = subprocess.Popen(" ".join(args), shell=True, stdout=None, stderr=None, bufsize=0,
                                                   env=full_env, cwd=miner_dir, universal_newlines=True)
 
-        self.logger.info("Runned miner process %s PID %s" % (miner_exe, self.miner_process.pid))
+        logger.debug("Runned miner process %s PID %s" % (miner_exe, self.miner_process.pid))
 
 
 class ClaymoreMinerManager(MinerManager):
@@ -709,7 +771,7 @@ def get_my_os():
 
 
 def call_server_api(path, data={}, server_address=None):
-    global config, rig_id, config_ini
+    global settings, rig_id, config_ini
     vars = {
         'rig_id': rig_id,
         'email': config_ini['email'],
@@ -717,11 +779,11 @@ def call_server_api(path, data={}, server_address=None):
         'os': get_my_os(),
     }
     if not server_address:
-        server_address = config["server"]
-    url = 'http://%s/%s?%s' % (server_address, path, urllib.parse.urlencode(vars))
+        server_address = settings["server"]
+    url = 'http://%s/%s' % (server_address, path)
     logger.debug("Request server API: {}".format(url))
     #    'application/json'
-    response = requests.put(url=url, json=data)
+    response = requests.put(url=url, params=vars, json=data, timeout=NETWORK_TIMEOUT)
     error_code = response.status_code
     if error_code != 200:
         raise Exception("Got error code %s for url %s" % (error_code, url))
@@ -745,7 +807,7 @@ class TaskManager(threading.Thread):
                 miner_config = task_data["miner_config"]
                 logger.info("New mining config '{}'".format(miner_config['config_name']))
                 # save new config in order to start correct miner next run
-                config['miner_config'] = miner_config
+                settings['miner_config'] = miner_config
                 save_config()
                 miner_monitor_tasks.put(['start_miner', miner_config])
             elif task_name == "self_update":
@@ -757,7 +819,7 @@ class TaskManager(threading.Thread):
                 raise Exception("Received unknown task '{}'".format(task_name))
 
     def run(self):
-        request_interval = config["task_manager"]["request_interval_sec"]
+        request_interval = settings["task_manager"]["request_interval_sec"]
         if request_interval is None or request_interval == 0:
             request_interval = 30
         while True:
@@ -784,7 +846,7 @@ class StatisticManager(threading.Thread):
                     'is_run': miner_manager.is_run(),
                     'miner_config': miner_manager.miner_config, # currently runned miner config
                 },
-                "config": config, # current saved config
+                "config": settings, # current saved config
                 "hashrate": {
                     "current": miner_manager.current_hashrate,
                     "target": miner_manager.target_hashrate,
@@ -811,17 +873,16 @@ class StatisticManager(threading.Thread):
             pass
 
     def run(self):
-        request_interval = config["statistic_manager"]["request_interval_sec"]
+        request_interval = settings["statistic_manager"]["request_interval_sec"]
         if request_interval is None or request_interval == 0:
             request_interval = 30
-        # for first run wait while statistic will be ready
-        time.sleep(request_interval)
         while True:
+            # for first run wait while statistic will be ready
+            time.sleep(request_interval)
             try:
                 self.send_stat()
             except:
                 pass
-            time.sleep(request_interval)
 
 
 class MinerMonitor(threading.Thread):
@@ -849,11 +910,11 @@ class MinerMonitor(threading.Thread):
         return miner_manager
 
     def run(self):
-        global config
+        global settings
 
 
-        if "miner_config" in config:
-            self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
+        if "miner_config" in settings:
+            self.miner_manager = self.get_miner_manager_for_config(settings['miner_config'])
             self.miner_manager.run_miner()
 
         restart_counter = 0
@@ -872,7 +933,7 @@ class MinerMonitor(threading.Thread):
                     delay = 5
                     self.logger.warning("Miner not run. Going to restart after %d seconds. restart counter=%d" % (delay, restart_counter))
                     time.sleep(delay)
-                    self.miner_manager = self.get_miner_manager_for_config(config['miner_config'])
+                    self.miner_manager = self.get_miner_manager_for_config(settings['miner_config'])
                     self.miner_manager.run_miner()
                     time.sleep(0.5)
             except Exception as e:
@@ -903,13 +964,13 @@ if __name__ == "__main__":
 
     killexternal_miner_process()
     register_on_server()
-    if not 'rig_id' in config:
+    if not 'rig_id' in settings:
         logging.error("Cannot load config from server. Exiting")
         exit()
-    logger.info("Running as worker '%s'" % config['worker'])
+    logger.info("Running as worker '%s'" % settings['worker'])
 
-    if config['client_version'] != get_client_version():
-        logger.info("New version available! Going to install version {}".format(config['client_version']))
+    if settings['client_version'] != get_client_version():
+        logger.info("New version available! Going to install version {}".format(settings['client_version']))
         try:
             self_update()
         except Exception as e:
@@ -922,7 +983,7 @@ if __name__ == "__main__":
     stat_manager.start()
 
     # server log no need to send to stdout. So config it separately without propogate
-    server_logger_handler = BestMinerSocketHandler(config['logger']['server'], config['logger']['port'])
+    server_logger_handler = BestMinerSocketHandler(settings['logger']['server'], settings['logger']['port'])
     server_only_logger.addHandler(server_logger_handler)
     server_only_logger.propagate = False
 

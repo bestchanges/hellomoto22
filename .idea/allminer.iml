@@ -12,14 +12,18 @@
       <sourceFolder url="file://$MODULE_DIR$/../exchanges" isTestSource="false" />
     </content>
     <content url="file://$MODULE_DIR$/client">
+      <sourceFolder url="file://$MODULE_DIR$/client/python_libs" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/client/update" />
     </content>
     <content url="file://$MODULE_DIR$/server" />
-    <content url="file://$MODULE_DIR$/smos" />
     <content url="file://$MODULE_DIR$/trading-bot">
       <sourceFolder url="file://$MODULE_DIR$/trading-bot" isTestSource="false" />
     </content>
     <content url="file://$MODULE_DIR$/../ico" />
+    <content url="file://$MODULE_DIR$/../smos" />
+    <content url="file://$MODULE_DIR$/../wallet">
+      <sourceFolder url="file://$MODULE_DIR$/../wallet" isTestSource="false" />
+    </content>
     <orderEntry type="jdk" jdkName="Python 3.5.4 virtualenv at C:\Users\i\Documents\allminer\env\idea\bestminer server for pycharm" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

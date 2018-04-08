@@ -59,6 +59,21 @@ def client_zip_windows_for_update():
     )
     return zip_location
 
+def client_zip_linux_for_update():
+    '''
+    create client ZIP file for client autoupdate.
+    Shall be run once new client version release
+    :return: str of ZIP location on the server.
+    '''
+    script_path = os.path.dirname(__file__)
+    zip_location = os.path.join(script_path, 'static/client/BestMiner-Linux.zip')
+    _client_zip_linux(
+        client_config={'email': '', 'secret': ''},
+        zip_location=zip_location,
+        client_dir="."
+    )
+    return zip_location
+
 def client_zip_windows_for_user(user, server):
     '''
     create client ZIP for download and install by user.
@@ -89,14 +104,14 @@ def _client_zip_windows(client_config={}, zip_location='static/client/BestMiner-
     script_path = os.path.dirname(__file__)
     source_dir = os.path.join(script_path, '../../client')
     # prefix of directories/files to add to archive
-    includes = '''
-bestminer-client.py
-epython
-ChangeLog.txt
-BestMiner.bat
-version.txt
-'''
-    include = set(includes.split())
+    include = [
+        'bestminer-client.py',
+        'ChangeLog.txt',
+        'version.txt',
+        'BestMiner.bat',
+        'python_libs',
+        'epython',
+    ]
     logger.info("Building bestminer client in %s" % zip_location)
     with ZipFile(zip_location, 'w') as myzip:
         for root, dirs, files in os.walk(source_dir):
@@ -124,8 +139,43 @@ version.txt
     save_md5_for_file(zip_location)
     logger.info("... done")
 
+def _client_zip_linux(client_config={}, zip_location='static/client/BestMiner-Windows.zip', client_dir="."):
+    '''
+
+    :param client_dir:  root directory in client archive
+    :param client_config: will be saved as content of config.txt
+    :param zip_location: where to put distributive on the server (directory path shall exist!)
+    :return:
+    '''
+    # client source dir
+    script_path = os.path.dirname(__file__)
+    source_dir = os.path.join(script_path, '../../client')
+    # prefix of directories/files to add to archive
+    include = [
+        'bestminer-client.py',
+        'version.txt',
+        'bestminer.sh',
+        'python_libs',
+    ]
+    logger.info("Building bestminer client in %s" % zip_location)
+    with ZipFile(zip_location, 'w') as myzip:
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                fn = os.path.join(root, file)
+                rel = os.path.relpath(os.path.join(root, file), source_dir)
+                do_add = False
+                for prefix in include:
+                    if rel.startswith(prefix):
+                        do_add = True
+                        break
+                if do_add:
+                    rel = os.path.join(client_dir, rel)
+                    myzip.write(fn, arcname=rel)
+    save_md5_for_file(zip_location)
+    logger.info("... done")
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger.info("RUN generation of ZIP files for client")
-    client_zip_windows_for_update()
-    miners_zip()
+    client_zip_linux_for_update()
+    # miners_zip()

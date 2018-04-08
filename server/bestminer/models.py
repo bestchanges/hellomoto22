@@ -262,6 +262,26 @@ class ConfigurationGroup(Document):
         except:
             return None
 
+
+class Overclocking(EmbeddedDocument):
+    core = IntField(verbose_name="Core frequency")
+    memory = IntField(verbose_name="Memory frequency")
+    power_limit = IntField(verbose_name="Power Limit")
+    fan_start_value = IntField(verbose_name="Fan initial value (0-100)", min_value=0, max_value=100)
+    fan_target_temperature = IntField(verbose_name="Target temperature")
+
+
+class OverclockingTemplate(Document):
+    name = StringField(max_length=50, unique_with=['user'])
+    user = ReferenceField(User)
+    applicable_to = StringField(choices=[
+        ["nvidia-1060", "nvidia-1060"],
+        ["nvidia-1070", "nvidia-1070"],
+        ["nvidia-1070ti", "nvidia-1070ti"],
+     ], verbose_name='Applicable To')
+    settings = EmbeddedDocumentField(Overclocking)
+
+
 class Rig(Document):
     uuid = UUIDField(required=True, binary=False, unique=True)
     worker = StringField(regex='^[a-zA-Z0-9_]+$', max_length=50)
@@ -282,8 +302,9 @@ class Rig(Document):
     last_online_at = DateTimeField()
     is_miner_run = BooleanField(default=False)
     log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
-#    disabled_algos = ListField(StringField(choices=[('a','a'),('b','b')]), default=[])
     disabled_miner_programs = ListField(ReferenceField(MinerProgram, reverse_delete_rule=mongoengine.CASCADE), verbose_name="Disabled Miners", help_text="You may turn off some miners from running on this rig")
+    overclocking = EmbeddedDocumentField(Overclocking)
+    overclocking_template = ReferenceField(OverclockingTemplate)
 
     def __unicode__(self):
         return "rig '{}' (uuid={})".format(self.worker, self.uuid)

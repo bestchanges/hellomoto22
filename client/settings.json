@@ -2,8 +2,8 @@
   "client_version": "0.31.2",
   "email": "egor.fedorov@gmail.com",
   "logger": {
-    "port": 9020,
-    "server": "192.168.234.1"
+    "port": 9022,
+    "server": "bestminer.io"
   },
   "miner_config": {
     "config_name": "Ethash Benchmark",

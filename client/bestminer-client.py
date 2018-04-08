@@ -36,8 +36,7 @@ logger = logging.getLogger('client')
 logger.setLevel(logging.INFO)
 server_only_logger = logging.getLogger('server_logger')
 server_only_logger.setLevel(logging.INFO)
-
-
+server_only_logger.propagate = False
 
 import argparse
 
@@ -181,12 +180,31 @@ def get_rig_id():
 rig_id = get_rig_id()
 
 
-class BestMinerSocketHandler(handlers.SocketHandler):
-    def emit(self, record):
-        global rig_id
-        # Add rig id for server can recognize client id
-        record.rig_id = rig_id
-        super().emit(record)
+class BestMinerLoggingServerHandler(handlers.SocketHandler):
+    def __init__(self, hostname, port, uuid : uuid.UUID):
+        handlers.SocketHandler.__init__(self, host=hostname, port=port)
+        self.uuid = uuid
+
+    def data_to_bytes(self, data):
+        """
+        converts data to json and serialize to bytes ready to send to the server
+        :param data:
+        :return:
+        """
+        return json.dumps(data).encode('utf-8') + b'\r\n'
+
+    def makeSocket(self, timeout=1):
+        socket = super().makeSocket(timeout=10)
+        socket.sendall(self.data_to_bytes({'uuid': str(self.uuid)}))
+        return socket
+
+    def makePickle(self, record):
+        data = {
+            'level': record.levelname,
+            'msg': record.getMessage(),
+            'time': int(record.created),
+        }
+        return self.data_to_bytes(data)
 
 
 def register_on_server():
@@ -418,8 +436,9 @@ class MinerManager():
 
 
     def overclocking(self):
-        if not 'overclocking' in self.miner_config:
+        if not self.miner_config.get('overclocking'):
             logger.warning("Overclocking not applied. Not defined values in setttings")
+            return
         oc_settings = self.miner_config['overclocking']
         if get_my_os() != 'Linux':
             logger.warning("Overclocking not applied. Overclocking support only Linux")
@@ -983,9 +1002,13 @@ if __name__ == "__main__":
     stat_manager.start()
 
     # server log no need to send to stdout. So config it separately without propogate
-    server_logger_handler = BestMinerSocketHandler(settings['logger']['server'], settings['logger']['port'])
-    server_only_logger.addHandler(server_logger_handler)
-    server_only_logger.propagate = False
+    if settings.get('logger'):
+        server_logger_handler = BestMinerLoggingServerHandler(
+            settings['logger']['server'],
+            settings['logger']['port'],
+            rig_id
+        )
+        server_only_logger.addHandler(server_logger_handler)
 
     # TODO: hope it is thread safe to use one socket_handler for several loggers
     # send all log messages to server

@@ -7,7 +7,7 @@ from uuid import UUID
 import flask
 from flask import Blueprint, request
 
-from bestminer import task_manager, models, rig_managers
+from bestminer import task_manager, models, rig_managers, app
 from bestminer.client_api import get_miner_config_for_configuration
 from bestminer.models import Rig, ConfigurationGroup, User, TargetHashrate, MinerProgram
 from bestminer.server_commons import assert_expr, get_client_version, round_to_n, \
@@ -69,12 +69,11 @@ def register_rig():
     config['email'] = email
     config['worker'] = rig.worker
     config['client_version'] = get_client_version()
-    server_host = request.host.split(":")[0]
-    # TODO: get settings from logging_server
-    config['logger'] = {
-        'server': server_host,
-        'port': logging.handlers.DEFAULT_TCP_LOGGING_PORT
-    }
+    if app.config.get("LOGGING_SERVER"):
+        config['logger'] = {
+            'server': app.config.get("LOGGING_SERVER")['host'],
+            'port': app.config.get("LOGGING_SERVER")['port']
+        }
     config['task_manager'] = {
         "request_interval_sec": 15,
     }

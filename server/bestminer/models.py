@@ -301,7 +301,7 @@ class Rig(Document):
     is_online = BooleanField(default=False)
     last_online_at = DateTimeField()
     is_miner_run = BooleanField(default=False)
-    log_to_file = BooleanField(defaul=False)  # TODO: implement filter in logging_server. Now logs all
+    log_to_file = BooleanField(defaul=False)  # TODO: add function disable logging to the server
     disabled_miner_programs = ListField(ReferenceField(MinerProgram, reverse_delete_rule=mongoengine.CASCADE), verbose_name="Disabled Miners", help_text="You may turn off some miners from running on this rig")
     overclocking = EmbeddedDocumentField(Overclocking)
     overclocking_template = ReferenceField(OverclockingTemplate)

@@ -28,10 +28,3 @@ h = logging.handlers.TimedRotatingFileHandler("log/benchmark_server.log", backup
 h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
 l.addHandler(h)
 
-l = logging.getLogger('bestminer.logging_server')
-l.setLevel(logging.DEBUG)
-h = logging.handlers.TimedRotatingFileHandler("log/logging_server.log", backupCount=7, when='midnight',
-                                              encoding='utf-8')
-h.setFormatter(logging.Formatter('%(asctime)-10s|%(levelname)s|%(message)s)'))
-l.addHandler(h)
-

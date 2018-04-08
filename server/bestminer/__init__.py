@@ -28,8 +28,6 @@ from flask_login import LoginManager, UserMixin
 from bestminer.models import User, Rig
 
 
-from bestminer.logging_server import LoggingServer
-
 from flask import Flask
 from flask_mail import Mail
 from flask_mongoengine import MongoEngine
@@ -102,9 +100,6 @@ if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()
 else:
     profit_manager.update_currency_from_wtm(json.load(open('coins1.json')))
-
-logging_server_o = LoggingServer()
-logging_server_o.start()
 
 monitoring = MonitoringManager()
 monitoring.start()

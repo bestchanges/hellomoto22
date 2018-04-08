@@ -12,7 +12,7 @@ from flask_login import login_required
 from flask_mongoengine.wtf import model_form
 from flask_wtf import csrf
 
-from bestminer import client_api, logging_server, rig_managers
+from bestminer import client_api, rig_managers
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings, \
@@ -532,11 +532,8 @@ def rig_info(uuid=None):
 @mod.route('/rig/<uuid>/log')
 @login_required
 def rig_log(uuid):
-    logs = logging_server.rigs_memory_log
-    log = ''
-    if uuid in logs.keys():
-        log = "\n".join(logs[uuid])
-    return log
+    # TODO: read from log file '<uuid>.log'
+    return "Unavailable"
 
 
 @mod.route('/rig/<uuid>/switch_config.json', methods=['GET', 'POST'])

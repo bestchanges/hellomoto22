@@ -11,7 +11,7 @@ class base(object):
     MONGODB_PORT = None
     MONGODB_USERNAME = None
     MONGODB_PASSWORD = None
-
+    LOGGING_SERVER = { 'host': 'localhost', 'port': 9022 }
     SECRET_KEY = 'secret_for_bestminer_dsfsj3wasd'
 
     # Flask-login
@@ -55,6 +55,7 @@ class production(base):
     BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD = 300
 
     SECRET_KEY = 'production_' + socket.getfqdn()
+    LOGGING_SERVER = { 'host': 'bestminer.io', 'port': 9022 }
 
 
 class testing(production):

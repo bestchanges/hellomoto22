@@ -65,6 +65,7 @@ migration_manager.run()
 # TODO: if client/version.txt != zip_windows_for_update.version.txt
 distr.client_zip_windows_for_update()
 distr.client_zip_linux_for_update()
+distr.miners_zip()
 
 db = MongoEngine()
 db.init_app(app)

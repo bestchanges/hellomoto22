@@ -10,7 +10,7 @@ command_line: "-epool %POOL_SERVER%:%POOL_PORT% -ewal %POOL_ACCOUNT% -epsw %POOL
   -dpsw %DUAL_POOL_PASSWORD% -ftime 10 -dcri 26 -asm 1 -eres 0"
 dir: claymore10_win
 code: claymore_dual
-linux_bin: ethdcrminer64
+linux_bin: ./ethdcrminer64
 is_enabled: true
 supported_pu:
 - nvidia

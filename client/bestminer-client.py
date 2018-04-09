@@ -838,7 +838,10 @@ class TaskManager(threading.Thread):
                 self_update()
             elif task_name == "reboot":
                 self.logger.info("Receive reboot command. Going to reboot")
-                os.system("shutdown /t 7 /r /f")
+                if get_my_os() == "Windows":
+                    os.system("shutdown /t 7 /r /f")
+                if get_my_os() == "Linux":
+                    os.system("sudo shutdown -r now")
             else:
                 raise Exception("Received unknown task '{}'".format(task_name))
 

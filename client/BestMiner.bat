@@ -4,12 +4,12 @@ rem set PYTHONUNBUFFERED=1
 timeout 10
 
 :START
-echo start bestminer
+echo start BestMiner
 epython\python bestminer-client.py
 IF ERRORLEVEL 200 GOTO INSTALL_UPDATE
 echo Exit from miner
 echo Going to RE-start
-TIMEOUT 5
+timeout 5
 GOTO START
 GOTO END
 

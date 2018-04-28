@@ -1,16 +1,21 @@
 {
-  "client_version": "0.29.7",
+  "client_version": "0.31.2",
   "email": "egor.fedorov@gmail.com",
   "logger": {
-    "port": 9020,
-    "server": "localhost"
+    "port": 9022,
+    "server": "bestminer.io"
   },
   "miner_config": {
-    "config_name": "ETH+DCR",
-    "env": {},
-    "miner": "Claymore Dual",
-    "miner_code": "claymore_dual",
-    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.worker001 -epsw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 0 -erate 1 -estale 0 -dpool dcr.coinmine.pl:2222 -dwal egoaga19.worker001 -dpsw x -ftime 10 -dcri 26 -asm 1",
+    "config_name": "Ethash Benchmark",
+    "env": {
+      "GPU_MAX_ALLOC_PERCENT": "100",
+      "GPU_MAX_HEAP_SIZE": "100",
+      "GPU_SINGLE_ALLOC_PERCENT": "100",
+      "GPU_USE_SYNC_OBJECTS": "1"
+    },
+    "miner": "Claymore",
+    "miner_code": "claymore",
+    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark -epsw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1",
     "miner_directory": "claymore10_win",
     "miner_exe": "EthDcrMiner64.exe",
     "miner_family": "claymore",
@@ -18,7 +23,7 @@
     "read_output": false
   },
   "rig_id": "6b433e41-4267-5220-8419-0b0808cfe4b2",
-  "server": "localhost:5000",
+  "server": "192.168.234.1:5000",
   "statistic_manager": {
     "request_interval_sec": 30
   },

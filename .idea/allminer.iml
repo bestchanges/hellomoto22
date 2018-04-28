@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../bmcommon" />
+    <content url="file://$MODULE_DIR$/../bmlogging">
+      <sourceFolder url="file://$MODULE_DIR$/../bmlogging" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../bmlogging/.python" />
+      <excludeFolder url="file://$MODULE_DIR$/../bmlogging/logs" />
+    </content>
     <content url="file://$MODULE_DIR$/../bmmonitoring">
       <sourceFolder url="file://$MODULE_DIR$/../bmmonitoring" isTestSource="false" />
     </content>
@@ -11,15 +17,18 @@
     <content url="file://$MODULE_DIR$/../exchanges">
       <sourceFolder url="file://$MODULE_DIR$/../exchanges" isTestSource="false" />
     </content>
-    <content url="file://$MODULE_DIR$/client">
-      <excludeFolder url="file://$MODULE_DIR$/client/update" />
-    </content>
-    <content url="file://$MODULE_DIR$/server" />
-    <content url="file://$MODULE_DIR$/smos" />
-    <content url="file://$MODULE_DIR$/trading-bot">
-      <sourceFolder url="file://$MODULE_DIR$/trading-bot" isTestSource="false" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/client" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/client/python_libs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/server" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/client/python_libs" />
+      <excludeFolder url="file://$MODULE_DIR$/server/log" />
     </content>
     <content url="file://$MODULE_DIR$/../ico" />
+    <content url="file://$MODULE_DIR$/../smos" />
+    <content url="file://$MODULE_DIR$/../wallet">
+      <sourceFolder url="file://$MODULE_DIR$/../wallet" isTestSource="false" />
+    </content>
     <orderEntry type="jdk" jdkName="Python 3.5.4 virtualenv at C:\Users\i\Documents\allminer\env\idea\bestminer server for pycharm" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

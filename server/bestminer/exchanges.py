@@ -4,16 +4,16 @@ import logging
 import threading
 
 import ccxt
-import time
 
 import requests
 from pylocache import LocalCache
 
+from bestminer import exit_event
 from bestminer.models import Currency
 
 logger = logging.getLogger(__name__)
 
-exchange_rate_cache = LocalCache(expires=2)
+exchange_rate_cache = LocalCache(expires=3 * 60)
 
 def convert_currency(_from, _to):
     if not _from or not _to:
@@ -21,7 +21,6 @@ def convert_currency(_from, _to):
     symbol = "{}/{}".format(_from, _to)
     cached = exchange_rate_cache.get(symbol)
     if not cached:
-        print("loading")
         r = requests.get('https://min-api.cryptocompare.com/data/price?fsym={}&tsyms={}'.format(_from,_to))
         response = r.json()
         exchange_rate_cache.set(symbol, response[_to])
@@ -89,7 +88,7 @@ class Exchange(object):
                 self.update_listed()
             iteration += 1
             logger.debug("Suspend updater for {} seconds.".format(self.sleep))
-            time.sleep(self.sleep)
+            exit_event.wait(self.sleep)
 
     def __str__(self) -> str:
         return "Exchange {}".format(self.code)

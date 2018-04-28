@@ -4,22 +4,32 @@ import threading
 import os
 
 import bestminer.logging_config
-
 import json
+
+# when you need to sleep() use exit_event.wait(seconds)
+exit_event = threading.Event()
+
+def quit(signo, _frame):
+    print("Interrupted by %d, shutting down" % signo)
+    exit_event.set()
+
+# from https://stackoverflow.com/questions/5114292/break-interrupt-a-time-sleep-in-python
+import signal
+for sig in ('TERM', 'INT'):
+    signal.signal(getattr(signal, 'SIG'+sig), quit)
+
 
 from bestminer.distr import client_zip_windows_for_update
 from bestminer.monitoring import MonitoringManager
 import flask
 from flask_login import LoginManager, UserMixin
 
-from bestminer.models import User
+from bestminer.models import User, Rig
 
-
-from bestminer.logging_server import LoggingServer
 
 from flask import Flask
 from flask_mail import Mail
-from flask_mongoengine import MongoEngine
+from flask_mongoengine import MongoEngine, MongoEngineSessionInterface
 
 from bestminer.profit import WTMManager
 from bestminer import server_email, rig_manager, exchanges, client_api
@@ -53,10 +63,15 @@ migration_manager.config.mongo_port = app.config.get("MONGODB_PORT")
 migration_manager.run()
 
 # TODO: if client/version.txt != zip_windows_for_update.version.txt
-client_zip_windows_for_update()
+distr.client_zip_windows_for_update()
+distr.client_zip_linux_for_update()
+distr.miners_zip()
 
 db = MongoEngine()
 db.init_app(app)
+# store sessions in mongo db. Thus we can drop sessions
+# TODO: cleanup table from old sessions
+app.session_interface = MongoEngineSessionInterface(db)
 flask_mail = Mail(app)
 
 class LoginUser(UserMixin):
@@ -89,9 +104,6 @@ if app.config.get('BESTMINER_UPDATE_WTM', False):
     profit_manager.start()
 else:
     profit_manager.update_currency_from_wtm(json.load(open('coins1.json')))
-
-logging_server_o = LoggingServer()
-logging_server_o.start()
 
 monitoring = MonitoringManager()
 monitoring.start()
@@ -126,6 +138,20 @@ import bestminer.api_client.api
 @app.route("/")
 def index():
     return flask.redirect('http://www.bestminer.io')
+
+@app.route("/stat")
+def stat():
+    stat_data = {
+        'users': {
+            'total': User.objects().count(),
+            'online': len(Rig.objects(is_online=True).item_frequencies('user')),
+        },
+        'rigs': {
+            'total': Rig.objects().count(),
+            'online': Rig.objects(is_online=True).count(),
+        },
+    }
+    return flask.jsonify(stat_data)
 
 app.register_blueprint(bestminer.mod_auth.views.mod, url_prefix='/auth')
 app.register_blueprint(bestminer.mod_promosite.views.mod, url_prefix='/promo')

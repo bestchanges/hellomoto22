@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h1>Overclocking template</h1>
+  {% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+  {% endif %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  {{ form.csrf_token }}
+  {{ render_field(form.name) }}
+  {{ render_field(form.applicable_to) }}
+  {{ render_field(form.settings.core) }}
+  {{ render_field(form.settings.memory) }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

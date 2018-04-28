@@ -7,16 +7,16 @@ import flask
 import flask_login
 from copy import deepcopy
 
-import sys
 from flask import request, render_template, Blueprint, url_for
 from flask_login import login_required
 from flask_mongoengine.wtf import model_form
+from flask_wtf import csrf
 
-from bestminer import client_api, logging_server, rig_managers
+from bestminer import client_api, rig_managers
 from bestminer.dbq import list_supported_currencies
 from bestminer.distr import client_zip_windows_for_user
 from bestminer.models import ConfigurationGroup, PoolAccount, Rig, MinerProgram, Currency, UserSettings, \
-    TargetHashrate
+    TargetHashrate, OverclockingTemplate, Overclocking
 from bestminer.server_commons import round_to_n, \
     get_exchange_rate, compact_hashrate, assert_expr
 
@@ -88,6 +88,46 @@ def config_list_json():
         })
     return flask.jsonify({'data': data})
 
+@mod.route("/overclocking_list")
+@login_required
+def overclocking_list():
+    return render_template('overclocking_list.html')
+
+
+@mod.route("/overclocking_list.json")
+@login_required
+def overclocking_list_json():
+    user = flask_login.current_user.user
+    list = OverclockingTemplate.objects(user=user)
+    data = []
+    for entry in list:
+        data.append({
+            'id': str(entry.id),
+            'name': entry.name,
+            'applicable_to': entry.applicable_to,
+        })
+    return flask.jsonify({'data': data})
+
+
+@mod.route("/overclocking", methods=["GET", "POST"])
+@login_required
+def overclocking():
+    formtype = model_form(OverclockingTemplate)
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if form.validate():
+            obj = OverclockingTemplate()
+            form.populate_obj(obj)
+            # override user to prevent attack via form
+            obj.user = flask_login.current_user.user
+            obj.save()
+            flask.flash("Updated OK")
+            return flask.redirect(url_for('.overclocking_list'))
+    else:
+        form = formtype(obj=OverclockingTemplate())
+    return render_template('overclocking.html', form=form)
+
 
 @mod.route('/config_miner_program_data.json')
 @login_required
@@ -130,6 +170,7 @@ def config_edit(id=''):
     user = flask_login.current_user.user
 
     if id:
+        # TODO: are you kidding?!!! What about to authorization?????
         config = ConfigurationGroup.objects.get(id=id)
     else:
         config = ConfigurationGroup()
@@ -437,12 +478,17 @@ def rig_info(uuid=None):
     rate = get_exchange_rate('BTC', user.settings.profit_currency)
     if not rate:
         rate = 0
-    for config,profit in autoswitch_manager.list_configuration_group_profit_for_rig(rig):
+    for config in ConfigurationGroup.filter_applicable_for_rig(ConfigurationGroup.list_for_user(rig.user), rig):
+        profit = autoswitch_manager.calculate_profit_for_config(rig, config)
+        if profit:
+            profit_str =  "{} {}".format(round_to_n(profit * rate), user.settings.profit_currency)
+        else:
+            profit_str = '?'
         select_config.append({
             'name': config.name,
             'id': str(config.id),
             'current': rig.configuration_group.id == config.id,
-            'profit': "{} {}".format(round_to_n(profit * rate), user.settings.profit_currency)
+            'profit': profit_str
         })
     all_algos = []
     miners = MinerProgram.objects(supported_pu=rig.pu, supported_os=rig.os)
@@ -476,12 +522,13 @@ def rig_info(uuid=None):
              'queryset': MinerProgram.objects(supported_os=rig.os, supported_pu=rig.pu)
         }
     }
-    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs'], field_args=field_args)
+    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs', 'overclocking'], field_args=field_args)
     form = formtype(obj=rig)
 
     if request.method == 'POST':
         form = formtype(request.form)
         if (form.validate()):
+            # need it? rig.overclocking = Overclocking()
             form.populate_obj(rig)
             rig.save()
 
@@ -491,11 +538,8 @@ def rig_info(uuid=None):
 @mod.route('/rig/<uuid>/log')
 @login_required
 def rig_log(uuid):
-    logs = logging_server.rigs_memory_log
-    log = ''
-    if uuid in logs.keys():
-        log = "\n".join(logs[uuid])
-    return log
+    # TODO: read from log file '<uuid>.log'
+    return "Unavailable"
 
 
 @mod.route('/rig/<uuid>/switch_config.json', methods=['GET', 'POST'])

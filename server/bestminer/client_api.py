@@ -107,6 +107,14 @@ def get_miner_config_for_configuration(conf, rig):
         "env": conf.env,
         "read_output": False,
     }
+    if rig.overclocking:
+        conf['overclocking'] = {
+            'fan_initial': rig.overclocking.fan_start_value,
+            'fan_target_temp': rig.overclocking.fan_target_temperature,
+            'core': rig.overclocking.core,
+            'memory': rig.overclocking.memory,
+            'power_limit': rig.overclocking.power_limit
+        }
     return conf
 
 

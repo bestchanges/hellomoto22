@@ -1,8 +1,0 @@
-README.txt
-src/__init__.py
-src/__main__.py
-src/_posix.c
-uptime.egg-info/PKG-INFO
-uptime.egg-info/SOURCES.txt
-uptime.egg-info/dependency_links.txt
-uptime.egg-info/top_level.txt

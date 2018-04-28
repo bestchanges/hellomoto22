@@ -1,3 +1,6 @@
+0.32
+[improve] using new logging server
+
 0.31
 [fix] sometimes BM started before Afterburner and caused lower hashrate. Add delay on first start of miner
 [fix] profit calculation for dual mining was incorrect. fixed

@@ -95,8 +95,8 @@ def load_data(platform):
     load_initial_data_for_doc_class('exchange', platform, Exchange, 'name')
     load_initial_data_for_doc_class('pool', platform, Pool, 'name')
     load_initial_data_for_doc_class('pool_account', platform, PoolAccount, 'name')
-    load_initial_data_for_doc_class('configuration_group', platform, ConfigurationGroup, 'code')
     load_initial_data_for_doc_class('user', platform, User, 'name')
+    load_initial_data_for_doc_class('configuration_group', platform, ConfigurationGroup, 'code')
 
 
 def test_data_for_user(user):

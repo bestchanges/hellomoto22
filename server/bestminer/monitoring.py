@@ -2,8 +2,7 @@ import datetime
 import logging
 import threading
 
-import time
-
+from bestminer import exit_event
 from bestminer.models import Rig
 
 logger = logging.getLogger(__name__)
@@ -31,4 +30,4 @@ class MonitoringManager():
                     rig.cards_temp = []
                     rig.cards_fan = []
                     rig.save()
-            time.sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)

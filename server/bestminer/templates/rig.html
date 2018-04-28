@@ -30,7 +30,7 @@ $(function(){
   <div id="panel_info" class="tab-pane fade in active">
 <h2>Configurations:</h2>
         <div>
-            <h2>Set what to mine</h2>
+            <h2>Choose currency to mine</h2>
     <table class="table">
         <thead>
         <tr>
@@ -206,6 +206,12 @@ $(document).ready(function() {
   {{ render_field(form.os, style="height: 30px;") }}
   {{ render_field(form.pu, style="height: 30px;") }}
   {{ render_field(form.disabled_miner_programs, style="height: 100px;") }}
+  {{ form.overclocking.csrf_token }}
+  {{ render_field(form.overclocking.core) }}
+  {{ render_field(form.overclocking.memory) }}
+  {{ render_field(form.overclocking.power_limit) }}
+  {{ render_field(form.overclocking.fan_start_value) }}
+  {{ render_field(form.overclocking.fan_target_temperature) }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 

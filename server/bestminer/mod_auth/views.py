@@ -85,7 +85,7 @@ def login():
         if not is_safe_url(next):
             return flask.abort(400)
 
-        return flask.redirect(next or flask.url_for('user.download'))
+        return flask.redirect(next or flask.url_for('user.rigs'))
     return flask.render_template('login.html', form=form)
 
 

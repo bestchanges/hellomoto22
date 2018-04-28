@@ -1,4 +1,4 @@
+# need to be installed to 'python_lib' directory
 requests
 psutil
 uptime
-

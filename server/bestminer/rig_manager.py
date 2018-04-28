@@ -2,8 +2,8 @@ import logging
 import threading
 import traceback
 from datetime import datetime
-from time import sleep
 
+from bestminer import exit_event
 from bestminer.models import *
 
 
@@ -117,7 +117,23 @@ class AutoSwitchRigManager(RigManager):
                     self.logger.error("Exception during execution. {}".format(e))
                     traceback.print_exc()
             # ok. now sleep for next iteration
-            sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)
+
+
+    def calculate_profit_for_config(self, rig : Rig, config : ConfigurationGroup):
+        """
+        calculates expected profit for given RIG according with it's target hashrate and given configuration_group.
+        In case when cannot calculate profot (none target hashrate, empty currency parameters, etc) return None
+        :param rig:
+        :param config:
+        :return: profit in BTC or None
+        """
+        found = TargetHashrate.objects(rig=rig, miner_program=config.miner_program, algo=config.algo)
+        if not found:
+            return None
+        target_hashrate = found[0]
+        return config.calc_profit_for_target_hashrate(target_hashrate)
+
 
     def list_configuration_group_profit_for_rig(self, rig):
         """
@@ -130,15 +146,9 @@ class AutoSwitchRigManager(RigManager):
         configs = ConfigurationGroup.list_for_user(rig.user)
         for config in ConfigurationGroup.filter_applicable_for_rig(configs, rig):
             # find target hashrate value for miner and algo
-            found = TargetHashrate.objects(rig=rig, miner_program=config.miner_program, algo=config.algo)
-            if found:
-                target_hashrate = found[0]
-            else:
-                continue
-            # check profit for every one.
-            profit_btc = config.calc_profit_for_target_hashrate(target_hashrate)
+            profit_btc = self.calculate_profit_for_config(rig, config)
             if profit_btc is None:
-                self.logger.error("Cannot calc profit for config '{}' for target_hashrate '{}'".format(config, target_hashrate))
+                self.logger.error("Cannot calc profit for config '{}' for rig {}".format(config, rig))
                 profit_btc = 0
             result.append((config, profit_btc))
         result.sort(key=lambda tup: tup[1], reverse=True)
@@ -198,6 +208,10 @@ class BenchmarkRigManager(RigManager):
 
     benchmark_configs = {
         'Windows': {
+            'nvidia' : [ETHASH, ETHASH_BLAKE, EQUIHASH_NVIDIA],
+            'amd' : [ETHASH, ETHASH_BLAKE, EQUIHASH_AMD],
+        },
+        'Linux': {
             'nvidia' : [ETHASH, ETHASH_BLAKE, EQUIHASH_NVIDIA],
             'amd' : [ETHASH, ETHASH_BLAKE, EQUIHASH_AMD],
         }
@@ -302,7 +316,7 @@ class BenchmarkRigManager(RigManager):
                     self.logger.error("Exception during execution. {}".format(e))
                     traceback.print_exc()
             # ok. now sleep for next iteration
-            sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)
 
     def remove_rig(self, rig):
         del self.tasks[rig.uuid]

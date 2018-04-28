@@ -2,9 +2,8 @@ import datetime
 import json
 import logging
 import threading
-from threading import Thread
 from urllib.request import Request, urlopen
-import time
+from bestminer import exit_event
 
 import sys
 
@@ -75,7 +74,7 @@ class WTMManager():
             except Exception as e:
                 logger.error("Exception update_currency_data_from_whattomine: {}".format(e))
             logger.info("Load data from what to mine after {} ".format(self.sleep_time))
-            time.sleep(self.sleep_time)
+            exit_event.wait(self.sleep_time)
 
 
 def main():

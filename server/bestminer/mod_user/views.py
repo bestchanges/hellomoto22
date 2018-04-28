@@ -170,6 +170,7 @@ def config_edit(id=''):
     user = flask_login.current_user.user
 
     if id:
+        # TODO: are you kidding?!!! What about to authorization?????
         config = ConfigurationGroup.objects.get(id=id)
     else:
         config = ConfigurationGroup()

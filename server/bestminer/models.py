@@ -198,7 +198,7 @@ class PoolAccount(Document):
 
 class ConfigurationGroup(Document):
     name = StringField(max_length=100, required=True, verbose_name="Configuration Name")
-    code = StringField(required=True, unique=True, verbose_name="Unique code")
+    code = StringField(sparse=True, unique=True, verbose_name="Unique code")
     user = ReferenceField(User, reverse_delete_rule=mongoengine.CASCADE)
     miner_program = ReferenceField(MinerProgram, required=True, verbose_name="Miner", reverse_delete_rule=mongoengine.DENY)
     # algo: for single currency has taken from currency algo, for dual concatenate using '+'

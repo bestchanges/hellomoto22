@@ -7,4 +7,4 @@ client_secret: xknvsu
 settings:
   profit_currency: RUR
   default_configuration_group:
-    name: Ethash Benchmark
+    code: Ethash Benchmark

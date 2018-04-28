@@ -29,7 +29,7 @@ from bestminer.models import User, Rig
 
 from flask import Flask
 from flask_mail import Mail
-from flask_mongoengine import MongoEngine
+from flask_mongoengine import MongoEngine, MongoEngineSessionInterface
 
 from bestminer.profit import WTMManager
 from bestminer import server_email, rig_manager, exchanges, client_api
@@ -69,6 +69,9 @@ distr.miners_zip()
 
 db = MongoEngine()
 db.init_app(app)
+# store sessions in mongo db. Thus we can drop sessions
+# TODO: cleanup table from old sessions
+app.session_interface = MongoEngineSessionInterface(db)
 flask_mail = Mail(app)
 
 class LoginUser(UserMixin):

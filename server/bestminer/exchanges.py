@@ -21,7 +21,6 @@ def convert_currency(_from, _to):
     symbol = "{}/{}".format(_from, _to)
     cached = exchange_rate_cache.get(symbol)
     if not cached:
-        print("loading")
         r = requests.get('https://min-api.cryptocompare.com/data/price?fsym={}&tsyms={}'.format(_from,_to))
         response = r.json()
         exchange_rate_cache.set(symbol, response[_to])

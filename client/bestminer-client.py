@@ -955,6 +955,8 @@ class MinerMonitor(threading.Thread):
                         logger.error("Miner connot be restarted. Exit after {} attempts".format(restart_counter))
                         self.shutdown()
                         logging.shutdown()
+                        # exit. Starter scrip shall restart it
+                        # TODO: probably reboot will be better solution for this situation
                         os._exit(200)
                     self.miner_manager.kill_miner()  # actually not nessessary
                     delay = 5

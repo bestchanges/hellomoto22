@@ -39,7 +39,7 @@ def download_win():
 
 @mod.route("/settings", methods=["GET", "POST"])
 @login_required
-def settings():
+def user_settings():
     user = flask_login.current_user.user
     field_args = {
         'default_configuration_group': {
@@ -61,6 +61,30 @@ def settings():
     else:
         form = formtype(obj=obj)
     return render_template('settings.html', form=form)
+
+
+# make form AJAX as described here https://medium.com/@doobeh/posting-a-wtform-via-ajax-with-flask-b977782edeee
+@mod.route("/settings.json", methods=["GET", "POST"])
+@login_required
+def user_settings_json():
+    user = flask_login.current_user.user
+    field_args = {
+        'default_configuration_group': {
+            'queryset': ConfigurationGroup.objects(user=user)
+        }
+    }
+    formtype = model_form(UserSettings, field_args=field_args)
+    obj = user.settings
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if form.validate():
+            # do something
+            form.populate_obj(obj)
+            obj.save()
+            return flask.jsonify('OK')
+        else:
+            return flask.jsonify(error=True, validation_errors=form.errors)
+    raise Exception('unexpecred location')
 
 
 @mod.route("/configs")
@@ -170,8 +194,9 @@ def config_edit(id=''):
     user = flask_login.current_user.user
 
     if id:
-        # TODO: are you kidding?!!! What about to authorization?????
         config = ConfigurationGroup.objects.get(id=id)
+        if config.user != user:
+            raise Exception("Anauthorized for this rig")
     else:
         config = ConfigurationGroup()
 
@@ -469,7 +494,7 @@ def rig_profit_data_json(uuid=None):
 
 @mod.route('/rig/<uuid>/info', methods=["GET", "POST"])
 @login_required
-def rig_info(uuid=None):
+def rig(uuid=None):
     user = flask_login.current_user.user
     rig = Rig.objects.get(uuid=uuid)
     assert_expr(rig.user == user)
@@ -522,8 +547,10 @@ def rig_info(uuid=None):
              'queryset': MinerProgram.objects(supported_os=rig.os, supported_pu=rig.pu)
         }
     }
-    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs', 'overclocking'], field_args=field_args)
+    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs'], field_args=field_args)
     form = formtype(obj=rig)
+    formtype_oc = model_form(Overclocking)
+    form_oc = formtype_oc(obj=rig.overclocking)
 
     if request.method == 'POST':
         form = formtype(request.form)
@@ -532,14 +559,58 @@ def rig_info(uuid=None):
             form.populate_obj(rig)
             rig.save()
 
-    return flask.render_template('rig.html', rig_data=rig, configs=select_config, form=form, algos=all_algos)
+    return flask.render_template('rig.html', rig_data=rig, configs=select_config, settings_form=form, overclocking_form=form_oc, algos=all_algos)
+
+@mod.route('/rig/<uuid>/overclocking.json', methods=["GET", "POST"])
+@login_required
+def rig_overclocking(uuid=None):
+    user = flask_login.current_user.user
+    rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
+
+    formtype = model_form(Overclocking)
+    obj = rig.overclocking
+    if not obj:
+        obj = Overclocking()
+        rig.overclocking = obj
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if (form.validate()):
+            # need it? rig.overclocking = Overclocking()
+            form.populate_obj(rig.overclocking)
+            rig.overclocking.save()
+            return flask.jsonify('OK')
+        else:
+            return flask.jsonify(error=True, validation_errors=form.errors)
+    raise Exception('unexpected location')
+
+@mod.route('/rig/<uuid>/settings.json', methods=["GET", "POST"])
+@login_required
+def rig_settings(uuid=None):
+    user = flask_login.current_user.user
+    rig = Rig.objects.get(uuid=uuid)
+    assert_expr(rig.user == user)
+
+    formtype = model_form(Rig, only=['worker', 'comment', 'os', 'pu', 'disabled_miner_programs'])
+
+    if request.method == 'POST':
+        form = formtype(request.form)
+        if (form.validate()):
+            # need it? rig.overclocking = Overclocking()
+            form.populate_obj(rig)
+            rig.save()
+            return flask.jsonify('OK')
+        else:
+            return flask.jsonify(error=True, validation_errors=form.errors)
+    raise Exception('unexpected location')
 
 
 @mod.route('/rig/<uuid>/log')
 @login_required
 def rig_log(uuid):
-    # TODO: read from log file '<uuid>.log'
-    return "Unavailable"
+    # TODO: read from the socket or log file
+    return "Coming soon"
 
 
 @mod.route('/rig/<uuid>/switch_config.json', methods=['GET', 'POST'])

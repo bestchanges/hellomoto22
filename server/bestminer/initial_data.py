@@ -66,21 +66,19 @@ def load_documents_from_yaml(yaml_content, doc_class, primary_key_field):
         object.save()
 
 
-def load_initial_data_for_doc_class(filename_prefix, platform_type, doc_class, primary_key_field):
+def load_initial_data_for_doc_class(load_filename, platform_type, doc_class, primary_key_field):
     directory = 'data'
     logger.info("Loading data for {}".format(doc_class._class_name))
-    for suffix in ['_common', '_' + platform_type, '']:
-        load_filename = filename_prefix + suffix + '.yaml'
-        full_filename = os.path.join(directory, load_filename)
-        if os.path.isfile(full_filename):
-            logger.info("Parsing file {}".format(full_filename))
-            file = open(full_filename, 'r')
-            data = file.read()
-            # TODO: catch exception and display message with filename and entry
-            try:
-                load_documents_from_yaml(data, doc_class, primary_key_field)
-            except Exception as e:
-                raise Exception("Exception during loading data from file '{}'. {}".format(load_filename, e))
+    full_filename = os.path.join(directory, load_filename)
+    if os.path.isfile(full_filename):
+        logger.info("Parsing file {}".format(full_filename))
+        file = open(full_filename, 'r')
+        data = file.read()
+        # TODO: catch exception and display message with filename and entry
+        try:
+            load_documents_from_yaml(data, doc_class, primary_key_field)
+        except Exception as e:
+            raise Exception("Exception during loading data from file '{}'. {}".format(load_filename, e))
 
 
 def load_data(platform):
@@ -89,14 +87,19 @@ def load_data(platform):
 
     :param platform: one of 'development', 'testing', 'production'
     """
-
-    load_initial_data_for_doc_class('currency', platform, Currency, 'code')
-    load_initial_data_for_doc_class('miner_program', platform, MinerProgram, 'name')
-    load_initial_data_for_doc_class('exchange', platform, Exchange, 'name')
-    load_initial_data_for_doc_class('pool', platform, Pool, 'name')
-    load_initial_data_for_doc_class('pool_account', platform, PoolAccount, 'name')
-    load_initial_data_for_doc_class('user', platform, User, 'name')
-    load_initial_data_for_doc_class('configuration_group', platform, ConfigurationGroup, 'code')
+    # all yaml files like 'currency_common.yaml'
+    filename_suffixes = ['_common']
+    if platform:
+        # add platform specific files like 'currency_development.yaml'
+        filename_suffixes.append('_' + platform)
+    for suffix in filename_suffixes:
+        load_initial_data_for_doc_class('currency' + suffix + '.yaml', platform, Currency, 'code')
+        load_initial_data_for_doc_class('miner_program' + suffix + '.yaml', platform, MinerProgram, 'name')
+        load_initial_data_for_doc_class('exchange' + suffix + '.yaml', platform, Exchange, 'name')
+        load_initial_data_for_doc_class('pool' + suffix + '.yaml', platform, Pool, 'name')
+        load_initial_data_for_doc_class('pool_account' + suffix + '.yaml', platform, PoolAccount, 'name')
+        load_initial_data_for_doc_class('user' + suffix + '.yaml', platform, User, 'name')
+        load_initial_data_for_doc_class('configuration_group' + suffix + '.yaml', platform, ConfigurationGroup, 'code')
 
 
 def test_data_for_user(user):

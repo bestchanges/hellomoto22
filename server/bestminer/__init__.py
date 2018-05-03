@@ -62,13 +62,18 @@ migration_manager.config.mongo_port = app.config.get("MONGODB_PORT")
 # TODO: add mongo authentication config
 migration_manager.run()
 
+db = MongoEngine()
+db.init_app(app)
+
+import bestminer.initial_data
+initial_data.load_data(app.config.BESTMINER_PLATFORM)
+
+
 # TODO: if client/version.txt != zip_windows_for_update.version.txt
 distr.client_zip_windows_for_update()
 distr.client_zip_linux_for_update()
 distr.miners_zip()
 
-db = MongoEngine()
-db.init_app(app)
 # store sessions in mongo db. Thus we can drop sessions
 # TODO: cleanup table from old sessions
 app.session_interface = MongoEngineSessionInterface(db)
@@ -117,9 +122,6 @@ if app.config.get('BESTMINER_EXCHANGES_UPDATE_ONCE_AT_START'):
 if app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE'):
     # update in background
     exchanges.start_auto_update(app.config.get('BESTMINER_EXCHANGES_AUTOUPDATE_PERIOD'))
-
-import bestminer.initial_data
-initial_data.load_data(app.config.BESTMINER_PLATFORM)
 
 # can do only after initial_data
 rig_managers = bestminer.rig_manager.RigManagers()

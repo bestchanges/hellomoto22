@@ -99,7 +99,7 @@ PROFIT_CURRENCIES = (
 class UserSettings(EmbeddedDocument):
     profit_currency = StringField(choices=PROFIT_CURRENCIES, default='RUR', required=True)
     default_configuration_group = ReferenceField('ConfigurationGroup') # NOT SUPPORTED: reverse_delete_rule=mongoengine.DENY
-    auto_profit_switch_thresold = IntField(min_value=0, default=5, verbose_name="Profit threshold, %", help_text="threshold to switch better currency profit, %")
+    auto_profit_switch_thresold = IntField(min_value=0, max_value=100, default=5, verbose_name="Profit threshold, %", help_text="threshold to switch better currency profit, %")
 
 
 class User(Document):

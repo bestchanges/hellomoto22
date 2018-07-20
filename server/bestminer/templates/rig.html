@@ -23,6 +23,7 @@ $(function(){
   <li><a data-toggle="tab" href="#panel_hashrate">Benchmark</a></li>
   <li><a data-toggle="tab" href="#panel_profit">Profit</a></li>
   <li><a data-toggle="tab" href="#panel_screen">Screen</a></li>
+  <li><a data-toggle="tab" href="#panel_overclocking">Overclocking</a></li>
   <li><a data-toggle="tab" href="#panel_edit">Settings</a></li>
 </ul>
 
@@ -199,21 +200,37 @@ $(document).ready(function() {
 
       <h2>Edit rig properties</h2>
 
-<form method=post>
-  {{ form.csrf_token }}
-  {{ render_field(form.worker) }}
-  {{ render_field(form.comment) }}
-  {{ render_field(form.os, style="height: 30px;") }}
-  {{ render_field(form.pu, style="height: 30px;") }}
-  {{ render_field(form.disabled_miner_programs, style="height: 100px;") }}
-  {{ form.overclocking.csrf_token }}
-  {{ render_field(form.overclocking.core) }}
-  {{ render_field(form.overclocking.memory) }}
-  {{ render_field(form.overclocking.power_limit) }}
-  {{ render_field(form.overclocking.fan_start_value) }}
-  {{ render_field(form.overclocking.fan_target_temperature) }}
+<form class="ajax_form" method=post action="settings.json">
+  {{ settings_form.csrf_token }}
+  {{ render_field(settings_form.worker) }}
+  {{ render_field(settings_form.comment) }}
+  {{ render_field(settings_form.os, style="height: 30px;") }}
+  {{ render_field(settings_form.pu, style="height: 30px;") }}
+  {{ render_field(settings_form.disabled_miner_programs, style="height: 100px;") }}
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
+
+  </div><!-- END OF PANEL -->
+
+  <div id="panel_overclocking" class="tab-pane fade">
+
+
+
+      <h2>Overclocking Settings</h2>
+
+{% if rig_data.os == "Linux" %}
+<form class="ajax_form" method=post action="overclocking.json">
+  {{ overclocking_form.csrf_token }}
+  {{ render_field(overclocking_form.core) }}
+  {{ render_field(overclocking_form.memory) }}
+  {{ render_field(overclocking_form.power_limit) }}
+  {{ render_field(overclocking_form.fan_start_value) }}
+  {{ render_field(overclocking_form.fan_target_temperature) }}
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% else %}
+    Overclocking now supported only for Linux rigs
+{% endif %}
 
   </div><!-- END OF PANEL -->
 </div>

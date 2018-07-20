@@ -2,7 +2,7 @@
 {% block body %}
 {% from "_formhelpers.html" import render_field %}
 <h1>User settings</h1>
-<form method=post>
+<form class="ajax_form" method=post action="{{ url_for('.settings_json') }}">
   {{ form.csrf_token }}
   {{ render_field(form.profit_currency, style="height: 30px;") }}
   {{ render_field(form.default_configuration_group, style="height: 30px;") }}

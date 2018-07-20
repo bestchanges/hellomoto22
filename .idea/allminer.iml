@@ -21,6 +21,7 @@
       <sourceFolder url="file://$MODULE_DIR$/client" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/client/python_libs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/server" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/.python" />
       <excludeFolder url="file://$MODULE_DIR$/client/python_libs" />
       <excludeFolder url="file://$MODULE_DIR$/server/log" />
     </content>
@@ -29,8 +30,10 @@
     <content url="file://$MODULE_DIR$/../wallet">
       <sourceFolder url="file://$MODULE_DIR$/../wallet" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.5.4 virtualenv at C:\Users\i\Documents\allminer\env\idea\bestminer server for pycharm" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.6 (hellomoto22)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="R User Library" level="project" />
+    <orderEntry type="library" name="R Skeletons" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />

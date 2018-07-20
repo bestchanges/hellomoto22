@@ -1,0 +1,3 @@
+* run ETH+LBRY
+* run processor mining
+* run benchmark from client

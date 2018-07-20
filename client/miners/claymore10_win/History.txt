@@ -1,6 +1,172 @@
 VERSION HISTORY
 
 
+v11.9
+---------------------------------------------------------------------
+
+- fixed issue with incorrect shares for Keccak.
+
+
+
+v11.8
+---------------------------------------------------------------------
+
+- fixed issue with missed GPU temperatures when miner is started via Remote Desktop Connection (RDC).
+- Linux version: removed libcurl library dependency.
+- added "-showdiff" option.
+- a few minor bug fixes and improvements.
+
+
+
+v11.7
+---------------------------------------------------------------------
+
+- added temperature management and overclock support for recent Nvidia cards in Windows: "-tt", "-powlim", "-cclock", "-mclock", "-tt", "-fanmax", "-fanmin" options are supported for Nvidia too.
+- now "y" key also disables CrossFire.
+- added "-y" option.
+- fixed issue with miner restart that was required sometimes to apply overclock settings for AMD cards.
+- fixed issue with rejected shares when "-esm 3" option is used.
+- Linux version: fixed issue with remote management.
+- some changes in watchdog routines to improve ability to restart miner after various OpenCL fails.
+- a few minor bug fixes and improvements.
+
+
+
+v11.6
+---------------------------------------------------------------------
+
+- improved hashrate for weak Nvidia cards by about 1%.
+- zero devfee for 3GB cards in Windows 10, same as for all 2GB cards.
+- applied some tricks to increase available memory for 3GB cards in Windows 10 so you can mine ETH a bit longer.
+- now you can press "y" key to turn on "Compute Mode" in AMD drivers for all cards (Windows only).
+- Linux version: removed openssl library dependency.
+- improved "-logfile" option, now you can use it to specify a folder for log files, use slash at the end to do it, for example, "-logfile logs\".
+- added "-epoolsfile" and "-dpoolsfile" options.
+- remote management: now "miner_getstat2" command also returns PCI bus index for every GPU.
+- a few minor bug fixes and improvements.
+
+
+
+v11.5
+---------------------------------------------------------------------
+
+- added "-oldkernels" option (AMD GPUs only), you can try "-oldkernels 1" to use old-style GPU kernels from v10, they can be more stable for hard OC and custom BIOSes.
+- a bit reduced stale shares for Nvidia GPUs.
+
+
+
+v11.4
+---------------------------------------------------------------------
+
+- fixed issue with stale shares.
+- fixed issue with incorrect shares.
+- a few minor bug fixes and improvements.
+
+
+
+v11.3
+---------------------------------------------------------------------
+
+- added automatic detection of best -dcri values in ASM ETH-only mode if -dcri option is missed. 
+  Press "s" key to see current values, you can also press "z" key to restart detection.
+- improved support for systems with many GPUs (eight and more) and slow CPU: much less CPU load, EthMan works fine now.
+- added assembler kernel for RX550 card. This card is not good for dual mining, but in ETH-only mode ASM kernel is faster by about 7%.
+- added "x" key to select GPU for manual -dcri value adjustment.
+- several minor bug fixes and improvements.
+
+
+
+v11.2
+---------------------------------------------------------------------
+
+- some improvements in AMD GPU kernels, it can increase hashrate a bit in some cases.
+- reduced some delays, it will cause a bit less stale shares.
+
+
+
+v11.1
+---------------------------------------------------------------------
+
+- added SSL support with pool certificate verification, it significantly improves security, use "ssl://" prefix for pools that support SSL encryption.
+- added "-checkcert" option.
+- EthMan updated.
+
+
+
+v11.0
+---------------------------------------------------------------------
+
+- added new algorithm for dual mode: blake2s (stratum pools only), use "-dcoin blake2s" option.
+- added new algorithm for dual mode: keccak (stratum pools only), use "-dcoin keccak" option.
+- reduced devfee for dual mode, now it is 1.5%.
+- for 2GB cards devfee is removed completely, i.e. on 2GB cards you can mine all ETH forks without devfee. Check Readme for details.
+- added "-tstart" option.
+- "-asm 2" option value now supports Tahiti, Tonga, Ellesmere, Baffin; in some cases it can be a bit faster in ETH-only mode.
+- removed "-allcoins exp" option value.
+- a few minor bug fixes and improvements.
+
+
+
+v10.6
+---------------------------------------------------------------------
+
+- fixed critical issue in remote management feature (attacker could crash miner even in read-only mode).
+
+
+
+v10.5
+---------------------------------------------------------------------
+
+- applied another workaround for ADL, you must not see "Temperature control thread hangs" message now.
+- added version for CUDA 9.1.
+- now miner shows a warning if you enabled full remote management (-mport > 0) and did not specify -mpsw parameter.
+- now miner shows a warning if you specified default ETH wallet (from default start.bat).
+
+
+
+v10.4
+---------------------------------------------------------------------
+
+- fixed issue with rejected shares in ETH+SIA mode for Vega cards.
+- improved watchdog for temperature/fan management thread.
+
+
+
+v10.3
+---------------------------------------------------------------------
+
+- added support for Adrenalin drivers (GPU sorting, fan/temperature/clocks management).
+- fixed issue with possible GPU crash during miner shutdown.
+- now miner shows PCI bus number for every GPU.
+- a few minor improvements.
+- EthMan: some bug fixes and minor improvements.
+
+
+
+v10.2
+---------------------------------------------------------------------
+
+- fixed critical issues in remote management feature (attacker could crash miner even in read-only mode).
+- now miner supports up to #299 epoch.
+- in rare cases ADL API calls can hang, now watchdog checks it as well.
+- improved "-minspeed" option, check readme for details.
+- added "miner_getstat2" command to remote management, check "API.txt" for details.
+- EthMan: added detailed stats mode in main window.
+
+
+
+v10.1
+---------------------------------------------------------------------
+
+- now if miner has to recreate DAG for devfee, new DAG generation time will be included in devfee time.
+- improved "-gser" option, now you can set custom delay between DAG generation on GPUs, check Readme for details.
+- added detailed stats about rejected shares per GPU ("s" key).
+- added "-logsmaxsize" option.
+- fixed issues with "-r -1" option value.
+- EthMan: added detailed stats mode in web server.
+- a few minor bug fixes and improvements.
+
+
 
 v10.0
 ---------------------------------------------------------------------

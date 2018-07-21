@@ -22,7 +22,6 @@
       <sourceFolder url="file://$MODULE_DIR$/client/python_libs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/server" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.python" />
-      <excludeFolder url="file://$MODULE_DIR$/client/python_libs" />
       <excludeFolder url="file://$MODULE_DIR$/server/log" />
     </content>
     <content url="file://$MODULE_DIR$/../ico" />

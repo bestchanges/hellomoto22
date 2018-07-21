@@ -1,9 +1,8 @@
 import sys
 
-from requests import Response
-
 sys.path.append('./python_libs')
 
+from requests import Response
 import calendar
 import datetime
 import hashlib

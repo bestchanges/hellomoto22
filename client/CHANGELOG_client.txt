@@ -1,3 +1,7 @@
+0.32.2
+[fix] missed client's python lib urllib3 broke installer
+[update] Claymore Miner updated to version 11.9
+
 0.32
 [improve] using new logging server
 

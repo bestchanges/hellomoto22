@@ -1,29 +1,30 @@
 {
-  "client_version": "0.31.2",
+  "client_version": "0.32.1",
   "email": "egor.fedorov@gmail.com",
   "logger": {
     "port": 9022,
-    "server": "bestminer.io"
+    "server": "localhost"
   },
   "miner_config": {
-    "config_name": "Ethash Benchmark",
+    "config_name": "BTG(nvidia)",
     "env": {
       "GPU_MAX_ALLOC_PERCENT": "100",
       "GPU_MAX_HEAP_SIZE": "100",
       "GPU_SINGLE_ALLOC_PERCENT": "100",
       "GPU_USE_SYNC_OBJECTS": "1"
     },
-    "miner": "Claymore",
-    "miner_code": "claymore",
-    "miner_command_line": "-epool eu1.ethermine.org:4444 -ewal 0x397b4b2fa22b8154ad6a92a53913d10186170974.benchmark -epsw x -r 1 -dbg 0 -logfile log_noappend.txt -mport 3333 -retrydelay 3 -mode 1 -erate 1 -estale 0 -ftime 10 -asm 1",
-    "miner_directory": "claymore10_win",
-    "miner_exe": "EthDcrMiner64.exe",
-    "miner_family": "claymore",
-    "miner_version": "10.0",
+    "miner": "EWBF",
+    "miner_code": "ewbf",
+    "miner_command_line": "--server btg.suprnova.cc --port 8816 --user egoaga19.worker001 --log 2 --pass x --eexit 3 --fee 0.5",
+    "miner_directory": "ewbf_win",
+    "miner_exe": "miner.exe",
+    "miner_family": "ewbf",
+    "miner_version": "0.3.4b",
     "read_output": false
   },
+  "pu": "nvidia",
   "rig_id": "6b433e41-4267-5220-8419-0b0808cfe4b2",
-  "server": "192.168.234.1:5000",
+  "server": "localhost:5000",
   "statistic_manager": {
     "request_interval_sec": 30
   },

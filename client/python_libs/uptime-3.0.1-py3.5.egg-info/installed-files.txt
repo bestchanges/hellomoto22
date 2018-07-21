@@ -1,0 +1,9 @@
+..\uptime\__init__.py
+..\uptime\__main__.py
+..\uptime\__pycache__\__init__.cpython-35.pyc
+..\uptime\__pycache__\__main__.cpython-35.pyc
+..\uptime\_posix.cp35-win_amd64.pyd
+dependency_links.txt
+PKG-INFO
+SOURCES.txt
+top_level.txt

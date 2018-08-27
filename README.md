@@ -1,1 +1,3 @@
-# hellomoto22
+# BestMiner
+
+BestMiner is a services for mining cryptocurrencies.
